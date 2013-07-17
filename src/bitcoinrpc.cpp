@@ -183,12 +183,12 @@ Value stop(const Array& params, bool fHelp)
         throw runtime_error(
             "stop <detach>\n"
             "<detach> is true or false to detach the database or not for this stop only\n"
-            "Stop BottleCaps server (and possibly override the detachdb config value).");
+            "Stop HoboNickels server (and possibly override the detachdb config value).");
     // Shutdown will take long enough that the response should get back
     if (params.size() > 0)
         bitdb.SetDetach(params[0].get_bool());
     StartShutdown();
-    return "BottleCaps server stopping";
+    return "HoboNickels server stopping";
 }
 
 
@@ -300,7 +300,7 @@ string HTTPPost(const string& strMsg, const map<string,string>& mapRequestHeader
 {
     ostringstream s;
     s << "POST / HTTP/1.1\r\n"
-      << "User-Agent: BottleCaps-json-rpc/" << FormatFullVersion() << "\r\n"
+      << "User-Agent: HoboNickels-json-rpc/" << FormatFullVersion() << "\r\n"
       << "Host: 127.0.0.1\r\n"
       << "Content-Type: application/json\r\n"
       << "Content-Length: " << strMsg.size() << "\r\n"
@@ -331,7 +331,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
     if (nStatus == HTTP_UNAUTHORIZED)
         return strprintf("HTTP/1.0 401 Authorization Required\r\n"
             "Date: %s\r\n"
-            "Server: BottleCaps-json-rpc/%s\r\n"
+            "Server: HoboNickels-json-rpc/%s\r\n"
             "WWW-Authenticate: Basic realm=\"jsonrpc\"\r\n"
             "Content-Type: text/html\r\n"
             "Content-Length: 296\r\n"
@@ -358,7 +358,7 @@ static string HTTPReply(int nStatus, const string& strMsg, bool keepalive)
             "Connection: %s\r\n"
             "Content-Length: %"PRIszu"\r\n"
             "Content-Type: application/json\r\n"
-            "Server: BottleCaps-json-rpc/%s\r\n"
+            "Server: HoboNickels-json-rpc/%s\r\n"
             "\r\n"
             "%s",
         nStatus,
@@ -732,7 +732,7 @@ void ThreadRPCServer2(void* parg)
     {
         unsigned char rand_pwd[32];
         RAND_bytes(rand_pwd, 32);
-        string strWhatAmI = "To use BottleCapsd";
+        string strWhatAmI = "To use HoboNickelsd";
         if (mapArgs.count("-server"))
             strWhatAmI = strprintf(_("To use the %s option"), "\"-server\"");
         else if (mapArgs.count("-daemon"))
@@ -778,7 +778,7 @@ void ThreadRPCServer2(void* parg)
     // Try a dual IPv6/IPv4 socket, falling back to separate IPv4 and IPv6 sockets
     const bool loopback = !mapArgs.count("-rpcallowip");
     asio::ip::address bindAddress = loopback ? asio::ip::address_v6::loopback() : asio::ip::address_v6::any();
-    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", GetDefaultRPCPort()));
+    ip::tcp::endpoint endpoint(bindAddress, GetArg("-rpcport", 7373()));
     boost::system::error_code v6_only_error;
     boost::shared_ptr<ip::tcp::acceptor> acceptor(new ip::tcp::acceptor(io_service));
 
@@ -1071,7 +1071,7 @@ Object CallRPC(const string& strMethod, const Array& params)
     asio::ssl::stream<asio::ip::tcp::socket> sslStream(io_service, context);
     SSLIOStreamDevice<asio::ip::tcp> d(sslStream, fUseSSL);
     iostreams::stream< SSLIOStreamDevice<asio::ip::tcp> > stream(d);
-    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", itostr(GetDefaultRPCPort()))))
+    if (!d.connect(GetArg("-rpcconnect", "127.0.0.1"), GetArg("-rpcport", itostr("7373"()))))
         throw runtime_error("couldn't connect to server");
 
     // HTTP basic authentication

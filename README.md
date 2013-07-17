@@ -1,7 +1,7 @@
 
-BottleCaps Crypto Tokens
+HoboNickels Crypto Tokens
 
-Based on NVC/BitGems
+Based on NVC/BitGems/Bottlecaps
 Proof of Work/Proof of Stake Hybrid
 Scrypt
 Linear Difficulty Retarget

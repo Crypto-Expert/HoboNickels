@@ -1,4 +1,4 @@
-IDI_ICON1 ICON DISCARDABLE "icons/BottleCaps.ico"
+IDI_ICON1 ICON DISCARDABLE "icons/HoboNickels.ico"
 
 #include <windows.h>             // needed for VERSIONINFO
 #include "../../clientversion.h" // holds the needed client version information
@@ -18,14 +18,14 @@ BEGIN
     BEGIN
         BLOCK "040904E4" // U.S. English - multilingual (hex)
         BEGIN
-            VALUE "CompanyName",        "BottleCaps"
-            VALUE "FileDescription",    "BottleCaps-Qt (OSS GUI client for BottleCaps)"
+            VALUE "CompanyName",        "HoboNickels"
+            VALUE "FileDescription",    "HoboNickels-Qt (OSS GUI client for HoboNickels)"
             VALUE "FileVersion",        VER_FILEVERSION_STR
-            VALUE "InternalName",       "BottleCaps-qt"
-            VALUE "LegalCopyright",     "2009-2012 The Bitcoin developers, 2012-2013 The BottleCaps & PPCoin developers"
+            VALUE "InternalName",       "HoboNickels-qt"
+            VALUE "LegalCopyright",     "2009-2012 The Bitcoin developers, 2012-2013 The HoboNickels & PPCoin developers"
             VALUE "LegalTrademarks1",   "Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php."
-            VALUE "OriginalFilename",   "BottleCaps-qt.exe"
-            VALUE "ProductName",        "BottleCaps-Qt"
+            VALUE "OriginalFilename",   "HoboNickels-qt.exe"
+            VALUE "ProductName",        "HoboNickels-Qt"
             VALUE "ProductVersion",     VER_PRODUCTVERSION_STR
         END
     END

@@ -2488,7 +2488,7 @@ bool LoadBlockIndex(bool fAllowNew)
         nStakeMinAge = 2 * 60 * 60; // test net min age is 2 hours
         nModifierInterval = 20 * 60; // test modifier interval is 20 minutes
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
-        nStakeTargetSpacing = 1 * 60; // test block spacing is 3 minutes
+        nStakeTargetSpacing = 3 * 60; // test block spacing is 3 minutes
     }
 
     //
@@ -2527,7 +2527,7 @@ bool LoadBlockIndex(bool fAllowNew)
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime    = 1374028434;
+        block.nTime    = 1371910069;
         block.nBits    = bnProofOfWorkLimit.GetCompact();
         block.nNonce   = 3858650;
 
