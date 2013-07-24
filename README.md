@@ -1,5 +1,7 @@
 HoboNickels Crypto Tokens
 
+2% proof of stake every 10 days.
+
 Based on NVC/BitGems/Bottlecaps
 Proof of Work/Proof of Stake Hybrid
 Scrypt
