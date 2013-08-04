@@ -1,4 +1,4 @@
-//#include "optionsdialog.h"
+#include "optionsdialog.h"
 #include "ui_optionsdialog.h"
 
 #include "bitcoinunits.h"

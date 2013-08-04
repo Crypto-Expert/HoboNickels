@@ -33,7 +33,7 @@ unsigned int nTransactionsUpdated = 0;
 map<uint256, CBlockIndex*> mapBlockIndex;
 set<pair<COutPoint, unsigned int> > setStakeSeen;
 uint256 hashGenesisBlock = hashGenesisBlockOfficial;
-static CBigNum bnProofOfWorkLimit(~uint256(0) >> 30);
+static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum bnProofOfStakeLimit(~uint256(0) >> 24);
 static CBigNum bnProofOfStakeHardLimit(~uint256(0) >> 30); // disabled temporarily, will be used in the future to fix minimum PoS difficulty at 0.25
 
@@ -941,7 +941,7 @@ int64 GetProofOfWorkReward(unsigned int nHeight)
 {
 		int64 nSubsidy = 5 * COIN;
 
-	   
+    return nSubsidy;	   
 }
 
 // miner's coin stake reward based on nBits and coin age spent (coin-days)
@@ -2515,7 +2515,7 @@ bool LoadBlockIndex(bool fAllowNew)
 //    CTxOut(empty)
 //vMerkleTree: ea6fed5e2
         // Genesis block
-        const char* pszTimestamp = "Jun 22, 2013 9:47am EDT. The United States has filed espionage charges against Edward Snowden";
+        const char* pszTimestamp = "HoboNickels are Go!";
         CTransaction txNew;
         txNew.nTime = nChainStartTime;
         txNew.vin.resize(1);
@@ -2527,11 +2527,11 @@ bool LoadBlockIndex(bool fAllowNew)
         block.hashPrevBlock = 0;
         block.hashMerkleRoot = block.BuildMerkleTree();
         block.nVersion = 1;
-        block.nTime    = 1374028434;
+        block.nTime    = 1374635824;
         block.nBits    = bnProofOfWorkLimit.GetCompact();
-        block.nNonce   = 3858650;
+        block.nNonce   = 4215582;
 
- 	   if (false  && (block.GetHash() != hashGenesisBlock)) {
+ 	   if (true  && (block.GetHash() != hashGenesisBlock)) {
 	 
 		// This will figure out a valid hash and Nonce if you're
 		// creating a different genesis block:
@@ -2555,7 +2555,7 @@ bool LoadBlockIndex(bool fAllowNew)
         printf("block.nTime = %u \n", block.nTime);
         printf("block.nNonce = %u \n", block.nNonce);
 
-        assert(block.hashMerkleRoot == uint256("0x42eda43959f2726e4ea033cab3af3c86d04cee4d5e736760387ba7dae87093ac"));
+        assert(block.hashMerkleRoot == uint256("0xbe06386a1644f7448ff25d28862b6c28e3a334e4a58f1c5ebd99ee49daa370c7"));
 
         assert(block.GetHash() == hashGenesisBlock);
 
