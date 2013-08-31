@@ -959,7 +959,7 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         CBigNum bnTargetLimit = bnProofOfStakeLimit;
         bnTargetLimit.SetCompact(bnTargetLimit.GetCompact());
 
-        // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
+          // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
         // A reasonably continuous curve is used to avoid shock to market
         // (nRewardCoinYearLimit / nRewardCoinYear) ** 4 == bnProofOfStakeLimit / bnTarget
         //
@@ -967,7 +967,7 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         //
         // nRewardCoinYear = 1 / (posdiff ^ 1/4)
 
-        CBigNum bnLowerBound = 10 * CENT; // Lower interest bound is 1% per year
+        CBigNum bnLowerBound = 1 * CENT; // Lower interest bound is 1% per year
         CBigNum bnUpperBound = bnRewardCoinYearLimit;
         while (bnLowerBound + CENT <= bnUpperBound)
         {
@@ -981,20 +981,29 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         }
 
         nRewardCoinYear = bnUpperBound.getuint64();
-        nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, MAX_MINT_PROOF_OF_STAKE);
+            if (nTime > POS_REWARD_SWITCH_TIME)
+          nRewardCoinYear = min(nRewardCoinYear, MAX_MINT_PROOF_OF_STAKE);
+    else
+          nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, MAX_MINT_PROOF_OF_STAKE);
     }
     else
     {
         // Old creation amount per coin-year, 5% fixed stake mint rate
         nRewardCoinYear = 0.015 * CENT;
     }
+   
+//Stake calculation fix for small tx values courtesy of Mineral And Yukon Coinelius. This will fix the rounding of small stake rewards to zero
+    int64 nSubsidy = nRewardCoinYear * nCoinAge * 33 / (365 * 33 + 8);
+    if (nTime > POS_REWARD_SWITCH_TIME)
+        nSubsidy = (nCoinAge * 33 * nRewardCoinYear) / (365 * 33 + 8);
+  else
+        nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
 
-    int64 nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
+    
     if (fDebug && GetBoolArg("-printcreation"))
         printf("GetProofOfStakeReward(): create=%s nCoinAge=%"PRI64d" nBits=%d\n", FormatMoney(nSubsidy).c_str(), nCoinAge, nBits);
     return nSubsidy;
 }
-
 static const int64 nTargetTimespan = 0.16 * 24 * 60 * 60;  // 4-hour
 static const int64 nTargetSpacingWorkMax = 12 * nStakeTargetSpacing; // 2-hour
 
