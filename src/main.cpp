@@ -967,7 +967,7 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         //
         // nRewardCoinYear = 1 / (posdiff ^ 1/4)
 
-        CBigNum bnLowerBound = 1 * CENT; // Lower interest bound is 1% per year
+        CBigNum bnLowerBound = 10 * CENT; // Lower interest bound is 1% per year
         CBigNum bnUpperBound = bnRewardCoinYearLimit;
         while (bnLowerBound + CENT <= bnUpperBound)
         {
