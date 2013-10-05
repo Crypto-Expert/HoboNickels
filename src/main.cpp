@@ -949,17 +949,28 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 {
     int64 nRewardCoinYear;
 
+    int64 nRewardCoinYearLimit;
+
     if(fTestNet || nTime > PROTOCOL_SWITCH_TIME)
     {
         // Stage 2 of emission process is PoS-based. It will be active on mainNet since 20 Jun 2013.
 
-        CBigNum bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Base stake mint rate, 100% year interest
+        if(fTestNet || nTime > POS_REWARD_FIX_TIME)
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX; // Fixed Base stake mint rate, 100% year interest
+        else
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Incorrect Base stake mint rate, 100% year interest
+
+
         CBigNum bnTarget;
+
         bnTarget.SetCompact(nBits);
+
         CBigNum bnTargetLimit = bnProofOfStakeLimit;
+
         bnTargetLimit.SetCompact(bnTargetLimit.GetCompact());
 
-          // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
+
+        // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
         // A reasonably continuous curve is used to avoid shock to market
         // (nRewardCoinYearLimit / nRewardCoinYear) ** 4 == bnProofOfStakeLimit / bnTarget
         //
@@ -967,24 +978,33 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         //
         // nRewardCoinYear = 1 / (posdiff ^ 1/4)
 
-        CBigNum bnLowerBound = 10 * CENT; // Lower interest bound is 1% per year
-        CBigNum bnUpperBound = bnRewardCoinYearLimit;
+        CBigNum bnLowerBound;
+        if(fTestNet || nTime > POS_REWARD_FIX_TIME)
+           bnLowerBound = 100 * CENT; // Fixed Lower interest bound is 1% per year
+        else
+           bnLowerBound = 10 * CENT; // Incorrect Lower interest bound is 1% per year
+
+
+
+        CBigNum bnUpperBound = nRewardCoinYearLimit;
+
         while (bnLowerBound + CENT <= bnUpperBound)
         {
             CBigNum bnMidValue = (bnLowerBound + bnUpperBound) / 2;
             if (fDebug && GetBoolArg("-printcreation"))
                 printf("GetProofOfStakeReward() : lower=%"PRI64d" upper=%"PRI64d" mid=%"PRI64d"\n", bnLowerBound.getuint64(), bnUpperBound.getuint64(), bnMidValue.getuint64());
-            if (bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnTargetLimit > bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnTarget)
+            if (bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnTargetLimit > nRewardCoinYearLimit * nRewardCoinYearLimit * nRewardCoinYearLimit * nRewardCoinYearLimit * bnTarget)
                 bnUpperBound = bnMidValue;
             else
                 bnLowerBound = bnMidValue;
         }
 
         nRewardCoinYear = bnUpperBound.getuint64();
-            if (nTime > POS_REWARD_SWITCH_TIME)
-          nRewardCoinYear = min(nRewardCoinYear, MAX_MINT_PROOF_OF_STAKE);
-    else
-          nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, MAX_MINT_PROOF_OF_STAKE);
+        if (nTime > POS_REWARD_SWITCH_TIME)
+           nRewardCoinYear = min(nRewardCoinYear, nRewardCoinYearLimit);
+        else
+           nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, nRewardCoinYearLimit);
+
     }
     else
     {
@@ -999,9 +1019,10 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
   else
         nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
 
-    
+
     if (fDebug && GetBoolArg("-printcreation"))
-        printf("GetProofOfStakeReward(): create=%s nCoinAge=%"PRI64d" nBits=%d\n", FormatMoney(nSubsidy).c_str(), nCoinAge, nBits);
+    printf("GetProofOfStakeReward(): create=%s nCoinAge=%"PRI64d" nBits=%d\n", FormatMoney(nSubsidy).c_str(), nCoinAge, nBits);
+
     return nSubsidy;
 }
 static const int64 nTargetTimespan = 0.16 * 24 * 60 * 60;  // 4-hour
@@ -2524,7 +2545,9 @@ bool LoadBlockIndex(bool fAllowNew)
 //    CTxOut(empty)
 //vMerkleTree: ea6fed5e2
         // Genesis block
-        const char* pszTimestamp = "HoboNickels are Go!";
+
+        const char* pszTimestamp = !fTestNet ? "HoboNickels are Go!" : "Tranz Testnet";
+
         CTransaction txNew;
         txNew.nTime = nChainStartTime;
         txNew.vin.resize(1);
@@ -2539,8 +2562,14 @@ bool LoadBlockIndex(bool fAllowNew)
         block.nTime    = 1374635824;
         block.nBits    = bnProofOfWorkLimit.GetCompact();
         block.nNonce   = 4215582;
+        if (fTestNet)
+        {
+            block.nTime    = 1380383684;
+            block.nBits    = bnProofOfWorkLimit.GetCompact();
+            block.nNonce   = 47018;
+        }
 
- 	   if (true  && (block.GetHash() != hashGenesisBlock)) {
+	   if (true  && (block.GetHash() != hashGenesisBlock)) {
 	 
 		// This will figure out a valid hash and Nonce if you're
 		// creating a different genesis block:
@@ -2565,6 +2594,8 @@ bool LoadBlockIndex(bool fAllowNew)
         printf("block.nNonce = %u \n", block.nNonce);
 
         assert(block.hashMerkleRoot == uint256("0xbe06386a1644f7448ff25d28862b6c28e3a334e4a58f1c5ebd99ee49daa370c7"));
+        if (fTestNet)
+           assert(block.hashMerkleRoot == uint256("0x25756655bce43a9b72363c06979768cafba833a10de2e754fbef715a217ed241"));
 
         assert(block.GetHash() == hashGenesisBlock);
 
