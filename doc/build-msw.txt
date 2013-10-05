@@ -36,9 +36,9 @@ Boost          MIT-like license
 miniupnpc      New (3-clause) BSD license
 
 Versions used in this release:
-OpenSSL      1.0.1b
+OpenSSL      1.0.13
 Berkeley DB  4.8.30.NC
-Boost        1.47.0
+Boost        1.54.0
 miniupnpc    1.6
 
 
@@ -82,3 +82,161 @@ DOS prompt:
 cd \bitcoin\src
 mingw32-make -f makefile.mingw
 strip bitcoind.exe
+
+
+More detailed instructions below. Thanks to nitrogenetics via btctalk 
+
+. Prepare your build system. I suggest setting up a clean virtual machine via Virtualbox or similar.
+
+1.1 Install MinGW: https://sourceforge.net/downloads/mingw
+Make sure to select prepackaged repository catalogues (use gcc 4.6.2 as 4.7.2 won't work).
+A minimal setup will require "C Compiler", "C++ Compiler" and "MSYS Basic System" to be installed.
+
+1.2 Perl is needed by openssl configuration script.
+You can choose one from ActivePerl Community Edition (see 1.2.a) and msys-perl (see 1.2.b, thanks to phelix)
+
+1.2.a Install ActivePerl Community Edition: http://www.activestate.com/activeperl/downloads
+I used the latest x64 version, but x86 should work just fine.
+You can exclude Perl Script, PPM, documentation and examples if you don't need them for other purposes.
+
+1.2.b From a MinGw shell (MSYS) run the following
+Code:
+
+mingw-get install msys-perl
+
+
+1.3. Add MinGW bin folder to your PATH environment variable (C:\MinGW\bin if you used installer defaults).
+
+
+2. Download, unpack and build required dependencies.
+I'll save them in c:\deps folder.
+
+2.1 OpenSSL: http://www.openssl.org/source/openssl-1.0.1e.tar.gz
+From a MinGw shell (MSYS), unpack the source archive with tar (this will avoid symlink issues) then configure and make:
+Code:
+
+cd /c/deps/
+tar xvfz openssl-1.0.1e.tar.gz
+cd openssl-1.0.1e
+./config
+make
+
+
+2.2 Berkeley DB: http://download.oracle.com/berkeley-db/db-4.8.30.NC.tar.gz
+We'll use version 4.8 to preserve binary wallet compatibility.
+From a MinGW shell unpack the source archive, configure, edit line 113 of db.h then make:
+Code:
+
+cd /c/deps/
+tar xvfz db-4.8.30.NC.tar.gz
+cd db-4.8.30.NC/build_unix
+../dist/configure --disable-replication --enable-mingw --enable-cxx
+
+
+after configuring make sure to edit your build_unix/db.h by replacing line 113:
+Code:
+
+typedef pthread_t db_threadid_t;
+
+with
+Code:
+
+typedef u_int32_t db_threadid_t;
+
+Thanks to Icy, see: https://bitcointalk.org/index.php?topic=45507.0
+
+now you can:
+Code:
+
+make
+
+
+2.3 Boost: http://sourceforge.net/projects/boost/files/boost/1.54.0/
+Unzip boost inside your C:\deps folder, then bootstrap and compile from a Windows command prompt:
+Code:
+
+cd C:\deps\boost_1_54_0\
+bootstrap.bat mingw
+b2 --build-type=complete --with-chrono --with-filesystem --with-program_options --with-system --with-thread toolset=gcc stage
+
+
+This will compile the required boost libraries and put them into the stage folder (C:\deps\boost_1_54_0\stage).
+
+
+3. Download latest bitcoin from git, compile leveldb then compile bitcoin https://github.com/bitcoin/bitcoin/archive/master.zip
+Leveldb libraries will not compile automatically so we'll need to compile them first.
+
+3.1 Extract bitcoin-master.zip (for example to C:\bitcoin) then start MinGW shell and change into leveldb folder:
+Code:
+
+cd /C/bitcoin/bitcoin-master/src/leveldb
+TARGET_OS=NATIVE_WINDOWS make libleveldb.a libmemenv.a
+
+
+this will compile both libleveldb.a and libmemenv.a libraries required by bitcoin.
+
+3.2 Now with a texteditor edit BOOST_SUFFIX, INCLUDEPATHS and LIBPATHS in your C:\bitcoin\bitcoin-master\src\makefile.mingw according to your dependencies location:
+Code:
+
+BOOST_SUFFIX?=-mgw46-mt-sd-1_54
+
+INCLUDEPATHS= \
+ -I"$(CURDIR)" \
+ -I"c:/deps/boost_1_54_0" \
+ -I"c:/deps/db-4.8.30.NC/build_unix" \
+ -I"c:/deps/openssl-1.0.1e/include"
+ 
+LIBPATHS= \
+ -L"$(CURDIR)/leveldb" \
+ -L"c:/deps/boost_1_54_0/stage/lib" \
+ -L"c:/deps/db-4.8.30.NC/build_unix" \
+ -L"c:/deps/openssl-1.0.1e"
+
+
+Consider adding -static option to LDFLAGS in makefile.mingw if you plan using the compiled binary on machines without MinGW installed.
+If you compile without -static option you will need to distribute libgcc_s_dw2-1.dll and libstdc++-6.dll along with the executable.
+Code:
+
+LDFLAGS=-Wl,--dynamicbase -Wl,--nxcompat -Wl,--large-address-aware -static
+
+
+3.3 From a Windows command prompt run:
+Code:
+
+cd C:\bitcoin\bitcoin-master\src
+mingw32-make -f makefile.mingw
+strip bitcoind.exe
+
+
+
+4. Setup Qt 4.8.5 and compile Bitcoin-qt
+4.1 Install Qt 4.8.5 http://download.qt-project.org/official_releases/qt/4.8/4.8.5/qt-win-opensource-4.8.5-mingw.exe
+Setup will probably complain about MinGw being an unsupported version, accept anyway.
+
+4.2 Open C:\bitcoin\bitcoin-master\bitcoin-qt.pro with your favourite text editor and add dependency library locations:
+Code:
+
+# Dependency library locations can be customized with:
+#    BOOST_INCLUDE_PATH, BOOST_LIB_PATH, BDB_INCLUDE_PATH,
+#    BDB_LIB_PATH, OPENSSL_INCLUDE_PATH and OPENSSL_LIB_PATH respectively
+
+BOOST_LIB_SUFFIX=-mgw46-mt-sd-1_54
+BOOST_INCLUDE_PATH=C:\deps\boost_1_54_0
+BOOST_LIB_PATH=C:\deps\boost_1_54_0\stage\lib
+BDB_INCLUDE_PATH=C:\deps\db-4.8.30.NC\build_unix
+BDB_LIB_PATH=C:\deps\db-4.8.30.NC\build_unix
+OPENSSL_INCLUDE_PATH=C:\deps\openssl-1.0.1e\include
+OPENSSL_LIB_PATH=C:\deps\openssl-1.0.1e
+
+
+4.3 From "Qt 4.8.5 command prompt" configure then make:
+Code:
+
+cd C:\bitcoin\bitcoin-master
+qmake "USE_UPNP=-" bitcoin-qt.pro
+mingw32-make -f Makefile.Release
+
+
+"USE_UPNP=-" will build bitcoin-qt without UPNP support.
+Compiling with UPNP support will require miniupnpc libraries. See: http://miniupnp.tuxfamily.org/files/
+Qt (QtCore4.dll QtGui4.dll QtNetwork4.dll) and MinGW (libgcc_s_dw2-1.dll and libstdc++-6.dll) libraries will need to be distributed along with the executable.
