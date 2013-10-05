@@ -35,14 +35,14 @@ static const int64 MIN_RELAY_TX_FEE = 0.1 * CENT;
 static const int64 MAX_MONEY = 120000000 * COIN;
 static const int64 MAX_MINT_PROOF_OF_WORK = 5 * COIN;
 static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
-static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT;
+static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; //Incorrect value
+static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
-
 static const unsigned int REWARD_SWITCH_TIME = 1369432800; // 25 May 2013 00:00:00
-
 static const unsigned int POS_REWARD_SWITCH_TIME = 1378684800; // 9 SEP 2013 00:00:00
+static const unsigned int POS_REWARD_FIX_TIME = 1383177600; // 31 OCT 2013 00:00:00
 
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 // Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
@@ -55,7 +55,8 @@ static const int fHaveUPnP = false;
 #endif
 
 static const uint256 hashGenesisBlockOfficial("0x000009ea5ef5019446b315e7e581fc2ea184315ed46c9ddeadc8aa9442deedc9");
-static const uint256 hashGenesisBlockTestNet("0x");
+static const uint256 hashGenesisBlockTestNet("0x0000f9e0292f278190e4d58cd1e1e9a32b7466c8092bd2371ffc80b06f8eca4a");
+
 
 static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
 
