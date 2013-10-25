@@ -14,6 +14,7 @@ QT_BEGIN_NAMESPACE
 class QTimer;
 QT_END_NAMESPACE
 
+
 class SendCoinsRecipient
 {
 public:

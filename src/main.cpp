@@ -100,29 +100,47 @@ void UnregisterWallet(CWallet* pwalletIn)
     }
 }
 
+void UnregisterAllWallets()
+{
+    {
+        LOCK(cs_setpwalletRegistered);
+        setpwalletRegistered.clear();
+    }
+}
+
 // check whether the passed transaction is from us
 bool static IsFromMe(CTransaction& tx)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        if (pwallet->IsFromMe(tx))
-            return true;
-    return false;
+    {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              if (pwallet->IsFromMe(tx))
+                  return true;
+    }
+      return false;
 }
 
 // get the wallet transaction with the given hash (if it exists)
 bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        if (pwallet->GetTransaction(hashTx,wtx))
-            return true;
-    return false;
+    {
+         LOCK(cs_setpwalletRegistered);
+         BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+             if (pwallet->GetTransaction(hashTx,wtx))
+                 return true;
+         return false;
+     }
 }
 
 // erases transaction with the given hash from all wallets
 void static EraseFromWallets(uint256 hash)
+
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->EraseFromWallet(hash);
+  {
+      LOCK(cs_setpwalletRegistered);
+      BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+          pwallet->EraseFromWallet(hash);
+  }
 }
 
 // make sure all wallets know about the given transaction, in the given block
@@ -133,6 +151,7 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
         // ppcoin: wallets need to refund inputs when disconnecting coinstake
         if (tx.IsCoinStake())
         {
+            LOCK(cs_setpwalletRegistered);
             BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
                 if (pwallet->IsFromMe(tx))
                     pwallet->DisableTransaction(tx);
@@ -140,43 +159,75 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
         return;
     }
 
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
+    {
+            LOCK(cs_setpwalletRegistered);
+            BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+                pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
+    }
+
+}
+
+// Add wallet transactions that aren't already in a block to mapTransactions
+void ReacceptWalletTransactions()
+{
+    {
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+        pwallet->ReacceptWalletTransactions();
+    }
 }
 
 // notify wallets about a new best chain
 void static SetBestChain(const CBlockLocator& loc)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->SetBestChain(loc);
-}
+   {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              pwallet->SetBestChain(loc);
+   }
+ }
 
 // notify wallets about an updated transaction
 void static UpdatedTransaction(const uint256& hashTx)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->UpdatedTransaction(hashTx);
+   {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              pwallet->UpdatedTransaction(hashTx);
+   }
+
 }
 
 // dump all wallets
 void static PrintWallets(const CBlock& block)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->PrintWallet(block);
+  {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              pwallet->PrintWallet(block);
+  }
+
 }
 
 // notify wallets about an incoming inventory (for request counts)
 void static Inventory(const uint256& hash)
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->Inventory(hash);
+  {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              pwallet->Inventory(hash);
+  }
+
 }
 
 // ask wallets to resend their transactions
 void ResendWalletTransactions()
 {
-    BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-        pwallet->ResendWalletTransactions();
+  {
+          LOCK(cs_setpwalletRegistered);
+          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+              pwallet->ResendWalletTransactions();
+  }
 }
 
 
@@ -691,6 +742,9 @@ bool CTxMemPool::accept(CTxDB& txdb, CTransaction &tx, bool fCheckInputs,
     printf("CTxMemPool::accept() : accepted %s (poolsz %"PRIszu")\n",
            hash.ToString().substr(0,10).c_str(),
            mapTx.size());
+
+    SyncWithWallets(tx, NULL, true);
+
     return true;
 }
 
@@ -1028,14 +1082,10 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 static const int64 nTargetTimespan = 0.16 * 24 * 60 * 60;  // 4-hour
 static const int64 nTargetSpacingWorkMax = 12 * nStakeTargetSpacing; // 2-hour
 
+// maximum nBits value could possible be required nTime after
 //
-// minimum amount of work that could possibly be required nTime after
-// minimum work required was nBase
-//
-unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
+unsigned int ComputeMaxBits(CBigNum bnTargetLimit, unsigned int nBase, int64 nTime)
 {
-    CBigNum bnTargetLimit = bnProofOfWorkLimit;
-
     CBigNum bnResult;
     bnResult.SetCompact(nBase);
     bnResult *= 2;
@@ -1050,6 +1100,24 @@ unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
     return bnResult.GetCompact();
 }
 
+//
+// minimum amount of work that could possibly be required nTime after
+// minimum proof-of-work required was nBase
+//
+unsigned int ComputeMinWork(unsigned int nBase, int64 nTime)
+{
+    return ComputeMaxBits(bnProofOfWorkLimit, nBase, nTime);
+}
+
+//
+// minimum amount of stake that could possibly be required nTime after
+// minimum proof-of-stake required was nBase
+//
+unsigned int ComputeMinStake(unsigned int nBase, int64 nTime, unsigned int nBlockTime)
+{
+    return ComputeMaxBits(bnProofOfStakeLimit, nBase, nTime);
+}
+
 // ppcoin: find last block index up to pindex
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake)
 {
@@ -1058,9 +1126,9 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
     return pindex;
 }
 
-unsigned int static GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
+unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
-    CBigNum bnTargetLimit = bnProofOfWorkLimit;
+  CBigNum bnTargetLimit = !fProofOfStake ? bnProofOfWorkLimit : bnProofOfStakeLimit;
 
     if(fProofOfStake)
     {
@@ -1632,6 +1700,7 @@ bool CBlock::ConnectBlock(CTxDB& txdb, CBlockIndex* pindex, bool fJustCheck)
         if (!txdb.WriteBlockIndex(blockindexPrev))
             return error("ConnectBlock() : WriteBlockIndex failed");
     }
+
 
     // Watch for transactions paying to me
     BOOST_FOREACH(CTransaction& tx, vtx)
@@ -2211,6 +2280,26 @@ bool CBlockIndex::IsSuperMajority(int minVersion, const CBlockIndex* pstart, uns
     return (nFound >= nRequired);
 }
 
+CBigNum CBlockIndex::GetBlockTrust() const
+{
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
+    if (bnTarget <= 0)
+        return 0;
+
+    if (IsProofOfStake())
+    {
+        // Return trust score as usual
+        return (CBigNum(1)<<256) / (bnTarget+1);
+    }
+    else
+    {
+        // Calculate work amount for block
+        CBigNum bnPoWTrust = (bnProofOfWorkLimit / (bnTarget+1));
+        return bnPoWTrust > 1 ? bnPoWTrust : 1;
+    }
+}
+
 bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 {
     // Check for duplicate
@@ -2251,7 +2340,12 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
         CBigNum bnNewBlock;
         bnNewBlock.SetCompact(pblock->nBits);
         CBigNum bnRequired;
-        bnRequired.SetCompact(ComputeMinWork(GetLastBlockIndex(pcheckpoint, pblock->IsProofOfStake())->nBits, deltaTime));
+
+        if (pblock->IsProofOfStake())
+           bnRequired.SetCompact(ComputeMinStake(GetLastBlockIndex(pcheckpoint, true)->nBits, deltaTime, pblock->nTime));
+        else
+           bnRequired.SetCompact(ComputeMinWork(GetLastBlockIndex(pcheckpoint, false)->nBits, deltaTime));
+
         if (bnNewBlock > bnRequired)
         {
             if (pfrom)
@@ -2537,13 +2631,6 @@ bool LoadBlockIndex(bool fAllowNew)
         if (!fAllowNew)
             return false;
 
-        // Genesis Block:
-//CBlock(hash=0000068e0b99f3db472b, ver=1, hashPrevBlock=00000000000000000000, 
-// hashMerkleRoot=ea6fed5e25, nTime=1368496587, nBits=1e0fffff, nNonce=578618, vtx=1, vchBlockSig=)
-//  Coinbase(hash=ea6fed5e25, nTime=1368496567, ver=1, vin.size=1, vout.size=1, nLockTime=0)
-//    CTxIn(COutPoint(0000000000, 4294967295), coinbase 04ffff001d020f2706787878787878)
-//    CTxOut(empty)
-//vMerkleTree: ea6fed5e2
         // Genesis block
 
         const char* pszTimestamp = !fTestNet ? "HoboNickels are Go!" : "Tranz Testnet";
@@ -4383,7 +4470,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             // ppcoin: if proof-of-stake block found then process block
             if (pblock->IsProofOfStake())
             {
-                if (!pblock->SignBlock(*pwalletMain))
+                if (!pblock->SignBlock(*pwallet))
                 {
                     strMintWarning = strMintMessage;
                     continue;
@@ -4391,7 +4478,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
                 strMintWarning = "";
                 printf("CPUMiner : proof-of-stake block found %s\n", pblock->GetHash().ToString().c_str()); 
                 SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                CheckWork(pblock.get(), *pwalletMain, reservekey);
+                CheckWork(pblock.get(), *pwallet, reservekey);
                 SetThreadPriority(THREAD_PRIORITY_LOWEST);
             }
             Sleep(500);
@@ -4446,7 +4533,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
                     // Found a solution
                     pblock->nNonce = nNonceFound;
                     assert(result == pblock->GetHash());
-                    if (!pblock->SignBlock(*pwalletMain))
+                    if (!pblock->SignBlock(*pwallet))
                     {
 //                        strMintWarning = strMintMessage;
                         break;
@@ -4454,7 +4541,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
                     strMintWarning = "";
 
                     SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                    CheckWork(pblock.get(), *pwalletMain, reservekey);
+                    CheckWork(pblock.get(), *pwallet, reservekey);
                     SetThreadPriority(THREAD_PRIORITY_LOWEST);
                     break;
                 }
