@@ -8,9 +8,15 @@
 #include "transactionfilterproxy.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "ui_interface.h"
+#include "init.h"
+
+
 
 #include <QAbstractItemDelegate>
 #include <QPainter>
+
+using namespace boost;
 
 #define DECORATION_SIZE 64
 #define NUM_ITEMS 3
@@ -107,6 +113,12 @@ OverviewPage::OverviewPage(QWidget *parent) :
     ui->listTransactions->setMinimumHeight(NUM_ITEMS * (DECORATION_SIZE + 2));
     ui->listTransactions->setAttribute(Qt::WA_MacShowFocusRect, false);
 
+    ui->qvcbWallet->setEnabled(true);
+
+    ui->qvcbWallet->addItem("default", 0);
+    ui->qvcbWallet->setCurrentIndex(0);
+
+
     connect(ui->listTransactions, SIGNAL(clicked(QModelIndex)), this, SLOT(handleTransactionClicked(QModelIndex)));
 
     // init "out of sync" warning labels
@@ -127,7 +139,6 @@ OverviewPage::~OverviewPage()
 {
     delete ui;
 }
-
 void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance)
 {
     int unit = model->getOptionsModel()->getDisplayUnit();

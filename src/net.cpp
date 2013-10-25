@@ -1302,10 +1302,11 @@ void static ProcessOneShot()
 }
 
 // ppcoin: stake minter thread
+//hbn: added multi-wallets
 void static ThreadStakeMinter(void* parg)
 {
-    printf("ThreadStakeMinter started\n");
     CWallet* pwallet = (CWallet*)parg;
+    printf("ThreadStakeMinter started for wallet: %s\n", pwallet->strWalletFile.c_str() );
     try
     {
         vnThreadsRunning[THREAD_MINTER]++;
@@ -1884,8 +1885,17 @@ void StartNode(void* parg)
         printf("Error; NewThread(ThreadDumpAddress) failed\n");
 
     // ppcoin: mint proof-of-stake blocks in the background
-    if (!NewThread(ThreadStakeMinter, pwalletMain))
-        printf("Error: NewThread(ThreadStakeMinter) failed\n");
+    //hbn: each wallet gets its own thread.
+    //Todo: Need to add a method to choose not to run stake off wallet.
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+      printf("Starting MultiThreadStakeMinter\n");
+      pwalletMain = pWalletManager->GetWallet(item.first.c_str()).get();
+      if (!NewThread(ThreadStakeMinter, pwalletMain))
+          printf("Error: NewThread(ThreadStakeMinter) failed\n");
+    }
+    //Tranz For now put pwalletMain back to default.
+    pwalletMain = pWalletManager->GetDefaultWallet().get();
 
     // Generate coins in the background
     GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain);
