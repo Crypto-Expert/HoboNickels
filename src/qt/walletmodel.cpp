@@ -35,7 +35,6 @@ WalletModel::~WalletModel()
 {
     unsubscribeFromCoreSignals();
 }
-
 qint64 WalletModel::getBalance() const
 {
     return wallet->GetBalance();

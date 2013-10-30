@@ -36,7 +36,7 @@ Boost          MIT-like license
 miniupnpc      New (3-clause) BSD license
 
 Versions used in this release:
-OpenSSL      1.0.13
+OpenSSL      1.0.1e
 Berkeley DB  4.8.30.NC
 Boost        1.54.0
 miniupnpc    1.6
@@ -157,7 +157,7 @@ Code:
 
 cd C:\deps\boost_1_54_0\
 bootstrap.bat mingw
-b2 --build-type=complete --with-chrono --with-filesystem --with-program_options --with-system --with-thread toolset=gcc stage
+b2 --build-type=complete --with-chrono --with-filesystem --with-program_options --with-regex --with-system --with-thread toolset=gcc stage
 
 
 This will compile the required boost libraries and put them into the stage folder (C:\deps\boost_1_54_0\stage).

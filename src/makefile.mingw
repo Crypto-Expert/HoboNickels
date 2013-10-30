@@ -20,6 +20,7 @@ LIBS= \
  -l boost_filesystem-mgw44-mt-1_53 \
  -l boost_program_options-mgw44-mt-1_53 \
  -l boost_thread-mgw44-mt-1_53 \
+ -l boost_regex-mgw44-mt-s-1_53 \
  -l boost_chrono-mgw44-mt-1_53 \
  -l db_cxx \
  -l ssl \
@@ -75,6 +76,7 @@ OBJS= \
     obj/rpcrawtransaction.o \
     obj/script.o \
     obj/sync.o \
+    obj/timer.o \
     obj/util.o \
     obj/wallet.o \
     obj/walletdb.o \

@@ -37,7 +37,14 @@
              </font>
             </property>
             <property name="text">
-             <string>Wallet</string>
+             <string>Wallet:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QValueComboBox" name="qvcbWallet">
+            <property name="toolTip">
+             <string>Change Active Wallet (not yet implemented)</string>
             </property>
            </widget>
           </item>
@@ -323,6 +330,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QValueComboBox</class>
+   <extends>QComboBox</extends>
+   <header>qvaluecombobox.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

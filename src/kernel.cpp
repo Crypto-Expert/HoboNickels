@@ -20,6 +20,8 @@ unsigned int nModifierInterval = MODIFIER_INTERVAL;
 static std::map<int, unsigned int> mapStakeModifierCheckpoints =
     boost::assign::map_list_of
     ( 0, 0x0e00670bu )
+    ( 261031, 0x08c12bdb8 )
+
     ;
 
 // Get the last stake modifier and its generation time from a given block
@@ -373,6 +375,9 @@ unsigned int GetStakeModifierChecksum(const CBlockIndex* pindex)
     ss << pindex->nFlags << pindex->hashProofOfStake << pindex->nStakeModifier;
     uint256 hashChecksum = Hash(ss.begin(), ss.end());
     hashChecksum >>= (256 - 32);
+    if (fDebug && GetBoolArg("-printstakechecksum"))
+        printf("GetStakeModifierChecksum: StakeCheckSum=0x%09"PRI64x", at height=%d\n",
+            hashChecksum.Get64(), pindex->nHeight );
     return hashChecksum.Get64();
 }
 
