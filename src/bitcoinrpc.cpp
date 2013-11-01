@@ -224,17 +224,17 @@ static const CRPCCommand vRPCCommands[] =
     { "listreceivedbyaccount",  &listreceivedbyaccount,  false,  false,    true  },
     { "backupwallet",           &backupwallet,           true,   false,    true  },
     { "keypoolrefill",          &keypoolrefill,          true,   false,    true  },
-  //{ "walletpassphrase",       &walletpassphrase,       true,   false,    true  }, //new
-  //{ "walletpassphrasechange", &walletpassphrasechange, false,  false,    true  }, //new
-  //{ "walletlock",             &walletlock,             true,   false,    true  }, //new
-  //{ "encryptwallet",          &encryptwallet,          false,  false,    true  },
+    { "walletpassphrase",       &walletpassphrase,       true,   false,    true  },
+    { "walletpassphrasechange", &walletpassphrasechange, false,  false,    true  },
+    { "walletlock",             &walletlock,             true,   false,    true  },
+    { "encryptwallet",          &encryptwallet,          false,  false,    true  },
     { "validateaddress",        &validateaddress,        true,   false,    true  },
     { "getbalance",             &getbalance,             false,  false,    true  },
     { "move",                   &movecmd,                false,  false,    true  },
     { "sendfrom",               &sendfrom,               false,  false,    true  },
     { "sendmany",               &sendmany,               false,  false,    true  },
     { "addmultisigaddress",     &addmultisigaddress,     false,  false,    true  },
-  //{ "createmultisig",         &createmultisig,         true,   true,     true  }, //new
+    { "createmultisig",         &createmultisig,         true,   true,     true  },
     { "getrawmempool",          &getrawmempool,          true,   false,    false },
     { "getblock",               &getblock,               false,  false,    false },
     { "getblockhash",           &getblockhash,           false,  false,    false },
@@ -257,8 +257,8 @@ static const CRPCCommand vRPCCommands[] =
     { "decoderawtransaction",   &decoderawtransaction,   false,  false,    false },
     { "signrawtransaction",     &signrawtransaction,     false,  false,    true  },
     { "sendrawtransaction",     &sendrawtransaction,     false,  false,    false },
-  //{ "gettxoutsetinfo",        &gettxoutsetinfo,        true,   false,    false }, //new
-  //{ "gettxout",               &gettxout,               true,   false,    true  }, //new
+  //{ "gettxoutsetinfo",        &gettxoutsetinfo,        true,   false,    false },// For Future Release
+ // { "gettxout",               &gettxout,               true,   false,    true  },// For Future Release
     { "lockunspent",            &lockunspent,            false,  false,    true  },
     { "listlockunspent",        &listlockunspent,        false,  false,    true  },
     { "getnewpubkey",           &getnewpubkey,           true,   false,    true  },
@@ -1202,7 +1202,6 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
-    if (strMethod == "walletpassphrase"       && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "getblocktemplate"       && n > 0) ConvertTo<Object>(params[0]);
     if (strMethod == "listsinceblock"         && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendmany"               && n > 1) ConvertTo<Object>(params[1]);
@@ -1211,6 +1210,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "reservebalance"         && n > 1) ConvertTo<double>(params[1]);
     if (strMethod == "addmultisigaddress"     && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "addmultisigaddress"     && n > 1) ConvertTo<Array>(params[1]);
+    if (strMethod == "createmultisig"         && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "createmultisig"         && n > 1) ConvertTo<Array>(params[1]);
     if (strMethod == "listunspent"            && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "listunspent"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listunspent"            && n > 2) ConvertTo<Array>(params[2]);

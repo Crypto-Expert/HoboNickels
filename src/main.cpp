@@ -1003,16 +1003,24 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 {
     int64 nRewardCoinYear;
 
+    CBigNum bnRewardCoinYearLimit;
     int64 nRewardCoinYearLimit;
+
 
     if(fTestNet || nTime > PROTOCOL_SWITCH_TIME)
     {
         // Stage 2 of emission process is PoS-based. It will be active on mainNet since 20 Jun 2013.
 
         if(fTestNet || nTime > POS_REWARD_FIX_TIME)
-           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX; // Fixed Base stake mint rate, 100% year interest
+        {
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX; // Fixed Base stake mint rate, 100% year interest
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX;
+        }
         else
-           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Incorrect Base stake mint rate, 100% year interest
+        {
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Incorrect Base stake mint rate, 100% year interest
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE;
+        }
 
 
         CBigNum bnTarget;
@@ -1026,7 +1034,7 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 
         // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
         // A reasonably continuous curve is used to avoid shock to market
-        // (nRewardCoinYearLimit / nRewardCoinYear) ** 4 == bnProofOfStakeLimit / bnTarget
+        // (bnRewardCoinYearLimit / nRewardCoinYear) ** 4 == bnProofOfStakeLimit / bnTarget
         //
         // Human readable form:
         //
@@ -1040,14 +1048,14 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 
 
 
-        CBigNum bnUpperBound = nRewardCoinYearLimit;
+        CBigNum bnUpperBound = bnRewardCoinYearLimit;
 
         while (bnLowerBound + CENT <= bnUpperBound)
         {
             CBigNum bnMidValue = (bnLowerBound + bnUpperBound) / 2;
             if (fDebug && GetBoolArg("-printcreation"))
                 printf("GetProofOfStakeReward() : lower=%"PRI64d" upper=%"PRI64d" mid=%"PRI64d"\n", bnLowerBound.getuint64(), bnUpperBound.getuint64(), bnMidValue.getuint64());
-            if (bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnTargetLimit > nRewardCoinYearLimit * nRewardCoinYearLimit * nRewardCoinYearLimit * nRewardCoinYearLimit * bnTarget)
+            if (bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnTargetLimit > bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnTarget)
                 bnUpperBound = bnMidValue;
             else
                 bnLowerBound = bnMidValue;
@@ -3012,6 +3020,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CAddress addrMe;
         CAddress addrFrom;
         uint64 nNonce = 1;
+        bool badVersion = false;  //Must force disconnect for bad peers!
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (pfrom->nVersion < MIN_PROTO_VERSION)
         {
@@ -3021,6 +3030,23 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             pfrom->fDisconnect = true;
             return false;
         }
+
+      if(nTime < 1383606000)
+      {
+          if(pfrom->nVersion < 60000)
+              badVersion = true;
+      }
+      else
+      {
+          if(pfrom->nVersion < 70000)
+              badVersion = true;
+      }
+      if(badVersion)
+      {
+          printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
+          pfrom->fDisconnect = true;
+          return false;
+      }
 
         if (pfrom->nVersion == 10300)
             pfrom->nVersion = 300;
@@ -4420,6 +4446,7 @@ static bool fGenerateBitcoins = false;
 static bool fLimitProcessors = false;
 static int nLimitProcessors = -1;
 
+//Tranz signle to stop thread.
 void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
 {
     void *scratchbuf = scrypt_buffer_alloc();
@@ -4434,7 +4461,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
-    while (fGenerateBitcoins || fProofOfStake)
+    while ((fGenerateBitcoins || fProofOfStake) && !fStopMining)
     {
         if (fShutdown)
             return;
@@ -4443,7 +4470,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             Sleep(1000);
             if (fShutdown)
                 return;
-            if ((!fGenerateBitcoins) && !fProofOfStake)
+            if (((!fGenerateBitcoins) && !fProofOfStake) || fStopMining)
                 return;
         }
 
@@ -4578,6 +4605,8 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
 
             // Check for stop or if block needs to be rebuilt
             if (fShutdown)
+                return;
+            if (fStopMining)
                 return;
             if (!fGenerateBitcoins)
                 return;

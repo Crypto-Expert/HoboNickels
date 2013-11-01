@@ -6,9 +6,11 @@
 #include "wallet.h"
 #include "walletdb.h"
 #include "crypter.h"
+#include "util.h"
 #include "ui_interface.h"
 #include "base58.h"
 #include "kernel.h"
+#include "net.h"
 
 using namespace std;
 extern int nStakeMaxAge;
@@ -2415,10 +2417,17 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
 
     return true;
 }
-
 bool CWalletManager::UnloadWallet(const std::string& strName)
 {
+
     {
+        if (!fShutdown)
+        {
+          //Shut down mining on all wallets while we unload.
+          printf ("Halting Stake Mining while we unload wallet(s)\n");
+          fStopMining = true;
+          Sleep(1000);
+        }
         LOCK(cs_WalletManager);
         if (!wallets.count(strName)) return false;
         boost::shared_ptr<CWallet> spWallet(wallets[strName]);
@@ -2428,8 +2437,31 @@ bool CWalletManager::UnloadWallet(const std::string& strName)
             UnregisterWallet(spWallet.get());
             wallets.erase(strName);
         }
-    }
-    return true;
+
+        //Re-Start Stake for the remaining wallets
+        if (!fShutdown)
+        {
+          fStopMining = false;
+          Sleep(1000);
+          LOCK(cs_WalletManager);
+          vector<string> vstrNames;
+          vector<boost::shared_ptr<CWallet> > vpWallets;
+
+          BOOST_FOREACH(const wallet_map::value_type& item, wallets)
+          {
+             vstrNames.push_back(item.first);
+             vpWallets.push_back(item.second);
+          }
+          for (unsigned int i = 0; i < vstrNames.size(); i++)
+          {
+               printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
+               if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
+                  printf("Error: NewThread(ThreadStakeMinter) failed\n");
+
+          }
+        }
+     }
+  return true;
 }
 
 void CWalletManager::UnloadAllWallets()

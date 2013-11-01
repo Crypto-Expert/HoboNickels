@@ -645,7 +645,7 @@ Value sendfrom(CWallet* pWallet, const Array& params, bool fHelp)
         throw runtime_error(
             "sendfrom <fromaccount> <toHoboNickelsaddress> <amount> [minconf=1] [comment] [comment-to]\n"
             "<amount> is a real and is rounded to the nearest 0.000001"
-            + HelpRequiringPassphrase());
+            + HelpRequiringPassphrase(pWallet));
 
     string strAccount = AccountFromValue(params[0]);
     CBitcoinAddress address(params[1].get_str());
@@ -751,22 +751,14 @@ Value sendmany(CWallet* pWallet, const Array& params, bool fHelp)
     return wtx.GetHash().GetHex();
 }
 
-Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() < 2 || params.size() > 3)
-    {
-        string msg = "addmultisigaddress <nrequired> <'[\"key\",\"key\"]'> [account]\n"
-            "Add a nrequired-to-sign multisignature address to the wallet\"\n"
-            "each key is a HoboNickels address or hex-encoded public key\n"
-            "If [account] is specified, assign address to [account].";
-        throw runtime_error(msg);
-    }
+//
+// Used by addmultisigaddress / createmultisig:
+//
 
+static CScript _createmultisig(CWallet* pWallet, const Array& params)
+{
     int nRequired = params[0].get_int();
     const Array& keys = params[1].get_array();
-    string strAccount;
-    if (params.size() > 2)
-        strAccount = AccountFromValue(params[2]);
 
     // Gather public keys
     if (nRequired < 1)
@@ -781,7 +773,7 @@ Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
     {
         const std::string& ks = keys[i].get_str();
 
-        // Case 1: Bitcoin address and we have full public key:
+        // Case 1: HoboNickels address and we have full public key:
         CBitcoinAddress address(ks);
         if (address.IsValid())
         {
@@ -809,15 +801,57 @@ Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
             throw runtime_error(" Invalid public key: "+ks);
         }
     }
+    CScript result;
+    result.SetMultisig(nRequired, pubkeys);
+    return result;
+}
+
+Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
+{
+  if (fHelp || params.size() < 2 || params.size() > 3)
+  {
+      string msg = "addmultisigaddress <nrequired> <'[\"key\",\"key\"]'> [account]\n"
+          "Add a nrequired-to-sign multisignature address to the wallet\"\n"
+          "each key is a HoboNickels address or hex-encoded public key\n"
+          "If [account] is specified, assign address to [account].";
+      throw runtime_error(msg);
+  }
+
+  string strAccount;
+  if (params.size() > 2)
+      strAccount = AccountFromValue(params[2]);
+
+  // Construct using pay-to-script-hash:
+  CScript inner = _createmultisig(pWallet, params);
+  CScriptID innerID = inner.GetID();
+  pWallet->AddCScript(inner);
+
+  pWallet->SetAddressBookName(innerID, strAccount);
+  return CBitcoinAddress(innerID).ToString();
+}
+
+Value createmultisig(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 2 || params.size() > 2)
+    {
+        string msg = "createmultisig <nrequired> <'[\"key\",\"key\"]'>\n"
+            "Creates a multi-signature address and returns a json object\n"
+            "with keys:\n"
+            "address : bitcoin address\n"
+            "redeemScript : hex-encoded redemption script";
+        throw runtime_error(msg);
+    }
 
     // Construct using pay-to-script-hash:
-    CScript inner;
-    inner.SetMultisig(nRequired, pubkeys);
+    CScript inner = _createmultisig(pWallet, params);
     CScriptID innerID = inner.GetID();
-    pWallet->AddCScript(inner);
+    CBitcoinAddress address(innerID);
 
-    pWallet->SetAddressBookName(innerID, strAccount);
-    return CBitcoinAddress(innerID).ToString();
+    Object result;
+    result.push_back(Pair("address", address.ToString()));
+    result.push_back(Pair("redeemScript", HexStr(inner.begin(), inner.end())));
+
+    return result;
 }
 
 
@@ -1337,18 +1371,17 @@ void ThreadTopUpKeyPool(void* parg)
 
 Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (pWallet->IsCrypted() && (fHelp || params.size() < 2 || params.size() > 3))
-        throw runtime_error(
-            "walletpassphrase <passphrase> <timeout> [mintonly]\n"
-            "Stores the wallet decryption key in memory for <timeout> seconds.\n"
-            "mintonly is optional true/false allowing only block minting.");
-    if (fHelp)
-        return true;
-    if (!pWallet->IsCrypted())
-        throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
+  if (fHelp || params.size() != 2)
+      throw runtime_error(
+          "walletpassphrase <passphrase> <timeout>\n"
+          "Stores the wallet decryption key in memory for <timeout> seconds.");
+  if (!pWallet->IsCrypted())
+      throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
 
-    if (!pWallet->IsLocked())
-        throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already unlocked, use walletlock first if need to change unlock settings.");
+  if (!pWallet->IsLocked())
+      throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already unlocked.");
+
+
     // Note that the walletpassphrase is stored in params[0] which is not mlock()ed
     SecureString strWalletPass;
     strWalletPass.reserve(100);
@@ -1367,7 +1400,6 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
             "Stores the wallet decryption key in memory for <timeout> seconds.");
 
 
-
     // ppcoin: if user OS account compromised prevent trivial sendmoney commands
     if (params.size() > 2)
         fWalletUnlockMintOnly = params[2].get_bool();
@@ -1379,17 +1411,14 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
     return Value::null;
 }
 
-
 Value walletpassphrasechange(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (pWallet->IsCrypted() && (fHelp || params.size() != 2))
-        throw runtime_error(
-            "walletpassphrasechange <oldpassphrase> <newpassphrase>\n"
-            "Changes the wallet passphrase from <oldpassphrase> to <newpassphrase>.");
-    if (fHelp)
-        return true;
-    if (!pWallet->IsCrypted())
-        throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrasechange was called.");
+  if (fHelp || params.size() != 2)
+      throw runtime_error(
+          "walletpassphrasechange <oldpassphrase> <newpassphrase>\n"
+          "Changes the wallet passphrase from <oldpassphrase> to <newpassphrase>.");
+  if (!pWallet->IsCrypted())
+      throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrasechange was called.");
 
     // TODO: get rid of these .c_str() calls by implementing SecureString::operator=(std::string)
     // Alternately, find a way to make params[0] mlock()'d to begin with.
@@ -1415,14 +1444,12 @@ Value walletpassphrasechange(CWallet* pWallet, const Array& params, bool fHelp)
 
 Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (pWallet->IsCrypted() && (fHelp || params.size() != 0))
-        throw runtime_error(
-            "walletlock\n"
-            "Removes the wallet encryption key from memory, locking the wallet.\n"
-            "After calling this method, you will need to call walletpassphrase again\n"
-            "before being able to call any methods which require the wallet to be unlocked.");
-    if (fHelp)
-        return true;
+  if (fHelp || params.size() != 0)
+      throw runtime_error(
+          "walletlock\n"
+          "Removes the wallet encryption key from memory, locking the wallet.\n"
+          "After calling this method, you will need to call walletpassphrase again\n"
+          "before being able to call any methods which require the wallet to be unlocked.");
     if (!pWallet->IsCrypted())
         throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletlock was called.");
 
@@ -1434,12 +1461,11 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
 
 Value encryptwallet(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (!pWallet->IsCrypted() && (fHelp || params.size() != 1))
-        throw runtime_error(
-            "encryptwallet <passphrase>\n"
-            "Encrypts the wallet with <passphrase>.");
-    if (fHelp)
-        return true;
+  if (fHelp || params.size() != 1)
+      throw runtime_error(
+          "encryptwallet <passphrase>\n"
+          "Encrypts the wallet with <passphrase>.");
+
     if (pWallet->IsCrypted())
         throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an encrypted wallet, but encryptwallet was called.");
 
@@ -1853,6 +1879,28 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (!pWalletManager->LoadWallet(strWalletName, strErrors, fRescan, fUpgrade, nMaxVersion))
         throw JSONRPCError(RPC_WALLET_ERROR, string("Load failed: ") + strErrors.str());
+
+    boost::shared_ptr<CWallet> spWallet;
+    try
+    {
+        spWallet = pWalletManager->GetWallet(strWalletName);
+    }
+    catch (const CWalletManagerException& e)
+    {
+        switch (e.type)
+        {
+           case CWalletManagerException::WALLET_NOT_LOADED:
+               throw JSONRPCError(RPC_WALLET_ERROR, string("Wallet ") + strWalletName + " not loaded.");
+
+            default:
+                throw JSONRPCError(RPC_WALLET_ERROR, "Unknown wallet error.");
+       }
+    }
+
+    pWallet = spWallet.get();
+
+    if (!NewThread(ThreadStakeMinter, pWallet))
+       printf("Error: NewThread(ThreadStakeMinter) failed\n");
 
     return string("Wallet ") + strWalletName + " loaded.";
 }
