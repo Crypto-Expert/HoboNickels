@@ -1303,7 +1303,7 @@ void static ProcessOneShot()
 
 // ppcoin: stake minter thread
 //hbn: added multi-wallets
-void static ThreadStakeMinter(void* parg)
+void ThreadStakeMinter(void* parg)
 {
     CWallet* pwallet = (CWallet*)parg;
     printf("ThreadStakeMinter started for wallet: %s\n", pwallet->strWalletFile.c_str() );
@@ -1933,6 +1933,7 @@ bool StopNode()
     if (vnThreadsRunning[THREAD_DNSSEED] > 0) printf("ThreadDNSAddressSeed still running\n");
     if (vnThreadsRunning[THREAD_ADDEDCONNECTIONS] > 0) printf("ThreadOpenAddedConnections still running\n");
     if (vnThreadsRunning[THREAD_DUMPADDRESS] > 0) printf("ThreadDumpAddresses still running\n");
+    //Tranz THREAD_MINTER vnThreadRunning
     if (vnThreadsRunning[THREAD_MINTER] > 0) printf("ThreadStakeMinter still running\n");
     while (vnThreadsRunning[THREAD_MESSAGEHANDLER] > 0 || vnThreadsRunning[THREAD_RPCHANDLER] > 0)
         Sleep(20);

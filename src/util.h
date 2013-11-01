@@ -149,6 +149,7 @@ extern bool fPrintToConsole;
 extern bool fPrintToDebugger;
 extern bool fRequestShutdown;
 extern bool fShutdown;
+extern bool fStopMining;
 extern bool fDaemon;
 extern bool fServer;
 extern bool fCommandLine;
@@ -615,7 +616,7 @@ inline void SetThreadPriority(int nPriority)
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif
 }
-
+//Tranz ExitThread
 inline void ExitThread(size_t nExitCode)
 {
     pthread_exit((void*)nExitCode);
