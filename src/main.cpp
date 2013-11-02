@@ -1013,12 +1013,12 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
 
         if(fTestNet || nTime > POS_REWARD_FIX_TIME)
         {
-           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX; // Fixed Base stake mint rate, 100% year interest
-           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX;
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2; // Incorrect Base stake mint rate, 1000% year interest
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2;
         }
         else
         {
-           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Incorrect Base stake mint rate, 100% year interest
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE; // Incorrect Base stake mint rate, 10% year interest
            nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE;
         }
 
@@ -1041,10 +1041,7 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
         // nRewardCoinYear = 1 / (posdiff ^ 1/4)
 
         CBigNum bnLowerBound;
-        if(fTestNet || nTime > POS_REWARD_FIX_TIME)
-           bnLowerBound = 100 * CENT; // Fixed Lower interest bound is 1% per year
-        else
-           bnLowerBound = 10 * CENT; // Incorrect Lower interest bound is 1% per year
+        bnLowerBound = 10 * CENT; // Lower interest bound is 1% per year
 
 
 
@@ -3038,7 +3035,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
       }
       else
       {
-          if(pfrom->nVersion < 70000)
+          if(pfrom->nVersion < 70001)
               badVersion = true;
       }
       if(badVersion)
