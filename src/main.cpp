@@ -1011,10 +1011,15 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
     {
         // Stage 2 of emission process is PoS-based. It will be active on mainNet since 20 Jun 2013.
 
-        if(fTestNet || nTime > POS_REWARD_FIX_TIME)
+        if(fTestNet || nTime > POS_REWARD_FIX_TIME2)
         {
-           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2; // Incorrect Base stake mint rate, 1000% year interest
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2; // Correct Base stake mint rate, 100% year interest
            nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2;
+        }
+        else if (fTestNet || nTime > POS_REWARD_FIX_TIME)
+        {
+           bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX; // Incorrect Base stake mint rate, 1000% year interest
+           nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX;
         }
         else
         {
