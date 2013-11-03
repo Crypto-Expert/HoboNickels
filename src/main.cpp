@@ -3040,7 +3040,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
       }
       else
       {
-          if(pfrom->nVersion < 70001)
+          if(pfrom->nVersion < 70002)
               badVersion = true;
       }
       if(badVersion)
