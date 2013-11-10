@@ -137,9 +137,9 @@ void static EraseFromWallets(uint256 hash)
 
 {
   {
-      LOCK(cs_setpwalletRegistered);
-      BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-          pwallet->EraseFromWallet(hash);
+     LOCK(cs_setpwalletRegistered);
+     BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+         pwallet->EraseFromWallet(hash);
   }
 }
 
@@ -160,11 +160,10 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
     }
 
     {
-            LOCK(cs_setpwalletRegistered);
-            BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-                pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+            pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
     }
-
 }
 
 // Add wallet transactions that aren't already in a block to mapTransactions
@@ -181,11 +180,11 @@ void ReacceptWalletTransactions()
 void static SetBestChain(const CBlockLocator& loc)
 {
    {
-          LOCK(cs_setpwalletRegistered);
-          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-              pwallet->SetBestChain(loc);
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+            pwallet->SetBestChain(loc);
    }
- }
+}
 
 // notify wallets about an updated transaction
 void static UpdatedTransaction(const uint256& hashTx)
@@ -201,33 +200,33 @@ void static UpdatedTransaction(const uint256& hashTx)
 // dump all wallets
 void static PrintWallets(const CBlock& block)
 {
-  {
-          LOCK(cs_setpwalletRegistered);
-          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-              pwallet->PrintWallet(block);
-  }
+   {
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+            pwallet->PrintWallet(block);
+   }
 
 }
 
 // notify wallets about an incoming inventory (for request counts)
 void static Inventory(const uint256& hash)
 {
-  {
-          LOCK(cs_setpwalletRegistered);
-          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-              pwallet->Inventory(hash);
-  }
+   {
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+            pwallet->Inventory(hash);
+   }
 
 }
 
 // ask wallets to resend their transactions
 void ResendWalletTransactions()
 {
-  {
-          LOCK(cs_setpwalletRegistered);
-          BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-              pwallet->ResendWalletTransactions();
-  }
+   {
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
+            pwallet->ResendWalletTransactions();
+   }
 }
 
 
@@ -2895,6 +2894,9 @@ string GetWarnings(string strFor)
     if (GetBoolArg("-testsafemode"))
         strRPC = "test";
 
+    if (!CLIENT_VERSION_IS_RELEASE)
+        strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
+
     // ppcoin: wallet lock warning for minting
     if (strMintWarning != "")
     {
@@ -4448,7 +4450,6 @@ static bool fGenerateBitcoins = false;
 static bool fLimitProcessors = false;
 static int nLimitProcessors = -1;
 
-//Tranz signle to stop thread.
 void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
 {
     void *scratchbuf = scrypt_buffer_alloc();
@@ -4514,7 +4515,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             continue;
         }
 
-        printf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        printf("Running CPUMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
