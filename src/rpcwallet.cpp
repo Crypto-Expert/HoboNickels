@@ -346,7 +346,7 @@ Value signmessage(CWallet* pWallet, const Array& params, bool fHelp)
             "signmessage <HoboNickelsaddress> <message>\n"
             "Sign a message with the private key of an address");
 
-    EnsureWalletIsUnlocked();
+    EnsureWalletIsUnlocked(pWallet);
 
     string strAddress = params[0].get_str();
     string strMessage = params[1].get_str();
@@ -987,13 +987,12 @@ Value listreceivedbyaccount(CWallet* pWallet, const Array& params, bool fHelp)
     return ListReceived(pWallet, params, true);
 }
 
-void ListTransactions(CWallet* pWallet,const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
+void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
 {
     int64 nGeneratedImmature, nGeneratedMature, nFee;
     string strSentAccount;
     list<pair<CTxDestination, int64> > listReceived;
     list<pair<CTxDestination, int64> > listSent;
-
     wtx.GetAmounts(nGeneratedImmature, nGeneratedMature, listReceived, listSent, nFee, strSentAccount);
 
     bool fAllAccounts = (strAccount == string("*"));
@@ -1347,9 +1346,9 @@ Value keypoolrefill(CWallet* pWallet, const Array& params, bool fHelp)
         throw runtime_error(
             "keypoolrefill\n"
             "Fills the keypool."
-            + HelpRequiringPassphrase());
+            + HelpRequiringPassphrase(pWallet));
 
-    EnsureWalletIsUnlocked();
+    EnsureWalletIsUnlocked(pWallet);
 
     pWallet->TopUpKeyPool();
 
@@ -1876,7 +1875,7 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     bool fRescan = (params.size() > 1) ? params[1].get_bool() : false;
     bool fUpgrade = (params.size() > 2) ? params[2].get_bool() : false;
     int nMaxVersion = (params.size() > 3) ? params[3].get_int() : 0;
-
+    //Tranz This should be changed to LoadWalletFromFile
     if (!pWalletManager->LoadWallet(strWalletName, strErrors, fRescan, fUpgrade, nMaxVersion))
         throw JSONRPCError(RPC_WALLET_ERROR, string("Load failed: ") + strErrors.str());
 
@@ -1896,7 +1895,6 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
                 throw JSONRPCError(RPC_WALLET_ERROR, "Unknown wallet error.");
        }
     }
-
     pWallet = spWallet.get();
 
     if (!NewThread(ThreadStakeMinter, pWallet))
@@ -1918,6 +1916,8 @@ Value unloadwallet(CWallet* pWallet, const Array& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ERROR, "Default wallet cannot be unloaded.");
     if (!pWalletManager->UnloadWallet(strWalletName))
         throw JSONRPCError(RPC_WALLET_ERROR, string("No wallet named ") + strWalletName + " is currently loaded.");
+
+    //walletStack->removeWalletView(strWalletName);
 
     return string("Wallet ") + strWalletName + " unloaded.";
 }
