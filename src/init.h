@@ -9,7 +9,7 @@
 
 extern CWalletManager* pWalletManager;
 //TODO: get rid of pwalletMain
- extern CWallet* pwalletMain;
+extern CWallet* pwalletMain;
 
 void StartShutdown();
 void Shutdown(void* parg);
