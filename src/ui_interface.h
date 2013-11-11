@@ -55,6 +55,9 @@ public:
         HELP                  = 0x00008000,
         MORE                  = 0x00010000,
         SETUP                 = 0x00020000,
+
+        BTN_MASK = (OK | YES | NO | CANCEL | APPLY | RESET |
+                  CLOSE | MORE | HELP ),
         // Force blocking, modal message box dialog (not just OS notification)
         MODAL                 = 0x00040000,
         /** Predefined combinations for certain default usage cases */
