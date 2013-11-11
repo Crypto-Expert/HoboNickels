@@ -80,6 +80,8 @@ OBJS= \
     obj/util.o \
     obj/wallet.o \
     obj/walletdb.o \
+    obj/walletstack.o \
+    obj/walletview.o
     obj/noui.o \
     obj/kernel.o \
     obj/pbkdf2.o \

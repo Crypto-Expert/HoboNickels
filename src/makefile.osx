@@ -49,7 +49,7 @@ LIBS += \
  -lboost_filesystem-mt \
  -lboost_program_options-mt \
  -lboost_thread-mt \
- -lboost_regex-mt \ 
+ -lboost_regex-mt \
  -lssl \
  -lcrypto \
  -lz
@@ -99,6 +99,8 @@ OBJS= \
     obj/util.o \
     obj/wallet.o \
     obj/walletdb.o \
+    obj/walletstack.o \
+    obj/walletview.o \
     obj/noui.o \
     obj/pbkdf2.o \
     obj/kernel.o \
