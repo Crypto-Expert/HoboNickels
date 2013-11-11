@@ -239,7 +239,7 @@ void WalletView::gotoHistoryPage()
 
 void WalletView::gotoAddressBookPage()
 {
-    addressBookAction->setChecked(true);
+    //addressBookAction->setChecked(true);
     setCurrentWidget(addressBookPage);
 
     exportAction->setEnabled(true);
