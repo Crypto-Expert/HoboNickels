@@ -68,7 +68,7 @@ bool fDebug = false;
 bool fDebugNet = false;
 bool fPrintToConsole = false;
 bool fPrintToDebugger = false;
-bool fRequestShutdown = false;
+volatile bool fRequestShutdown = false;
 bool fShutdown = false;
 bool fStopMining = false;
 bool fDaemon = false;
@@ -79,7 +79,7 @@ bool fTestNet = false;
 bool fNoListen = false;
 bool fLogTimestamps = false;
 CMedianFilter<int64> vTimeOffsets(200,0);
-bool fReopenDebugLog = false;
+volatile bool fReopenDebugLog = false;
 
 // Init OpenSSL library multithreading support
 static CCriticalSection** ppmutexOpenSSL;
@@ -161,7 +161,7 @@ void RandAddSeedPerfmon()
     if (ret == ERROR_SUCCESS)
     {
         RAND_add(pdata, nSize, nSize/100.0);
-        memset(pdata, 0, nSize);
+        OPENSSL_cleanse(pdata, nSize);
         printf("RandAddSeed() %lu bytes\n", nSize);
     }
 #endif
