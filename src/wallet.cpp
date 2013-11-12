@@ -2347,11 +2347,11 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
             InitWarning(msg);
         }
         else if (nLoadWalletRet == DB_TOO_NEW)
-            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of Bitcoin") << "\n";
+            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of HoboNickels") << "\n";
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             LEAVE_CRITICAL_SECTION(cs_WalletManager);
-            strErrors << _("Wallet needed to be rewritten: restart Bitcoin to complete") << "\n";
+            strErrors << _("Wallet needed to be rewritten: restart HoboNickels to complete") << "\n";
             printf("%s", strErrors.str().c_str());
             return InitError(strErrors.str());
         }
@@ -2482,11 +2482,11 @@ bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, 
             InitWarning(msg);
         }
         else if (nLoadWalletRet == DB_TOO_NEW)
-            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of Bitcoin") << "\n";
+            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of HoboNickels") << "\n";
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             LEAVE_CRITICAL_SECTION(cs_WalletManager);
-            strErrors << _("Wallet needed to be rewritten: restart Bitcoin to complete") << "\n";
+            strErrors << _("Wallet needed to be rewritten: restart HoboNickels to complete") << "\n";
             printf("%s", strErrors.str().c_str());
             return InitError(strErrors.str());
         }
