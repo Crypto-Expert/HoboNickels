@@ -35,6 +35,7 @@ bool WalletStack::addWalletView(const QString& name, WalletModel *walletModel)
     addWidget(walletView);
     mapWalletViews[name] = walletView;
     return true;
+
 }
 
 bool WalletStack::removeWalletView(const QString& name)
@@ -68,25 +69,40 @@ void WalletStack::gotoOverviewPage()
         i.value()->gotoOverviewPage();
 }
 
-void WalletStack::gotoHistoryPage()
+void WalletStack::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
-        i.value()->gotoHistoryPage();
+    {
+        if ((WalletView*)currentWidget() == i.value())
+          i.value()->gotoHistoryPage(false, true, false);
+        else
+          i.value()->gotoHistoryPage(false, false, false);
+    }
 }
 
-void WalletStack::gotoAddressBookPage()
+void WalletStack::gotoAddressBookPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
-        i.value()->gotoAddressBookPage();
+    {
+       if ((WalletView*)currentWidget() == i.value())
+         i.value()->gotoAddressBookPage(false, true, false);
+       else
+         i.value()->gotoAddressBookPage(false, false, false);
+    }
 }
 
-void WalletStack::gotoReceiveCoinsPage()
+void WalletStack::gotoReceiveCoinsPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
-        i.value()->gotoReceiveCoinsPage();
+    {
+       if ((WalletView*)currentWidget() == i.value())
+         i.value()->gotoReceiveCoinsPage(false, true, false);
+       else
+         i.value()->gotoReceiveCoinsPage(false, false, false);
+    }
 }
 
 void WalletStack::gotoSendCoinsPage()
@@ -138,10 +154,39 @@ void WalletStack::setEncryptionStatus()
     if (walletView) walletView->setEncryptionStatus();
 }
 
+QString WalletStack::getCurrentWallet()
+{
+  return QString (mapWalletViews.key((WalletView*)currentWidget()));
+}
+
 void WalletStack::setCurrentWalletView(const QString& name)
 {
     if (mapWalletViews.count(name) == 0) return;
     WalletView *walletView = mapWalletViews.value(name);
     setCurrentWidget(walletView);
     walletView->setEncryptionStatus();
+
+    //Call the pages that have export and only set that connect
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+    {
+        bool x;
+        if ( mapWalletViews.constBegin() == (i) )
+            x=true;
+        else
+            x=false;
+
+        if ((WalletView*)currentWidget() == i.value())
+        {
+          i.value()->gotoReceiveCoinsPage(true, true, x);
+          i.value()->gotoHistoryPage(true, true, x);
+          i.value()->gotoAddressBookPage(true, true, x);
+        }
+        else
+        {
+          i.value()->gotoReceiveCoinsPage(true, false, x);
+          i.value()->gotoHistoryPage(true, false, x);
+          i.value()->gotoAddressBookPage(true, false, x );
+        }
+     }
 }

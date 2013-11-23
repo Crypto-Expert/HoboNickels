@@ -98,11 +98,11 @@ public slots:
     /** Switch to overview (home) page */
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
-    void gotoHistoryPage();
+    void gotoHistoryPage(bool fExportOnly =false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to address book page */
-    void gotoAddressBookPage();
+    void gotoAddressBookPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to receive coins page */
-    void gotoReceiveCoinsPage();
+    void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
 
@@ -124,7 +124,7 @@ public slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
-    
+
     void setEncryptionStatus();
 };
 

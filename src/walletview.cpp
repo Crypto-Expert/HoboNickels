@@ -223,38 +223,80 @@ void WalletView::gotoOverviewPage()
     overviewAction->setChecked(true);
     setCurrentWidget(overviewPage);
 
-    exportAction->setEnabled(false);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
+    gui->exportAction->setEnabled(false);
+    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
 
-void WalletView::gotoHistoryPage()
+void WalletView::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
-    historyAction->setChecked(true);
-    setCurrentWidget(transactionsPage);
+    if (fExportOnly && historyAction->isChecked() )
+    {
+        if (fExportFirstTime)
+            disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+        if (fExportConnect)
+           connect(gui->exportAction, SIGNAL(triggered()), transactionView, SLOT(exportClicked()));
+    }
+    else if (fExportOnly && !historyAction->isChecked())
+    {
+        return;
+    }
+    else
+    {
+        historyAction->setChecked(true);
+        setCurrentWidget(transactionsPage);
+        gui->exportAction->setEnabled(true);
+        if (fExportConnect)
+          connect(gui->exportAction, SIGNAL(triggered()), transactionView, SLOT(exportClicked()));
 
-    exportAction->setEnabled(true);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
-    connect(exportAction, SIGNAL(triggered()), transactionView, SLOT(exportClicked()));
+    }
+
 }
 
-void WalletView::gotoAddressBookPage()
+void WalletView::gotoAddressBookPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
-    //addressBookAction->setChecked(true);
-    setCurrentWidget(addressBookPage);
-
-    exportAction->setEnabled(true);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
-    connect(exportAction, SIGNAL(triggered()), addressBookPage, SLOT(exportClicked()));
+    if (fExportOnly && addressBookAction->isChecked() )
+    {
+        if (fExportFirstTime)
+            disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+        if (fExportConnect)
+           connect(gui->exportAction, SIGNAL(triggered()), addressBookPage, SLOT(exportClicked()));
+    }
+    else if (fExportOnly && !addressBookAction->isChecked())
+    {
+        return;
+    }
+    else
+    {
+        addressBookAction->setChecked(true);
+        setCurrentWidget(addressBookPage);
+        gui->exportAction->setEnabled(true);
+        if (fExportConnect)
+           connect(gui->exportAction, SIGNAL(triggered()), addressBookPage, SLOT(exportClicked()));
+    }
 }
 
-void WalletView::gotoReceiveCoinsPage()
+void WalletView::gotoReceiveCoinsPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
-    receiveCoinsAction->setChecked(true);
-    setCurrentWidget(receiveCoinsPage);
+    if (fExportOnly && receiveCoinsAction->isChecked() )
+    {
+        if (fExportFirstTime)
+            disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+        if (fExportConnect)
+           connect(gui->exportAction, SIGNAL(triggered()), receiveCoinsPage, SLOT(exportClicked()));
+    }
+    else if (fExportOnly && !receiveCoinsAction->isChecked())
+    {
+        return;
+    }
+    else
+    {
 
-    exportAction->setEnabled(true);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
-    connect(exportAction, SIGNAL(triggered()), receiveCoinsPage, SLOT(exportClicked()));
+       receiveCoinsAction->setChecked(true);
+       setCurrentWidget(receiveCoinsPage);
+       gui->exportAction->setEnabled(true);
+       if (fExportConnect)
+          connect(gui->exportAction, SIGNAL(triggered()), receiveCoinsPage, SLOT(exportClicked()));
+    }
 }
 
 void WalletView::gotoSendCoinsPage()
@@ -262,8 +304,8 @@ void WalletView::gotoSendCoinsPage()
     sendCoinsAction->setChecked(true);
     setCurrentWidget(sendCoinsPage);
 
-    exportAction->setEnabled(false);
-    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
+    gui->exportAction->setEnabled(false);
+    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
 
 void WalletView::gotoSignMessageTab(QString addr)

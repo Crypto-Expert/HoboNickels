@@ -1916,8 +1916,8 @@ Value unloadwallet(CWallet* pWallet, const Array& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ERROR, "Default wallet cannot be unloaded.");
     if (!pWalletManager->UnloadWallet(strWalletName))
         throw JSONRPCError(RPC_WALLET_ERROR, string("No wallet named ") + strWalletName + " is currently loaded.");
+    //Tranz send signal to gui
 
-    //walletStack->removeWalletView(strWalletName);
 
     return string("Wallet ") + strWalletName + " unloaded.";
 }

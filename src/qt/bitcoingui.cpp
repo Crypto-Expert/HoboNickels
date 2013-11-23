@@ -92,7 +92,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QFrame *walletFrame = new QFrame();
     QHBoxLayout *walletFrameLayout = new QHBoxLayout(walletFrame);
 
-    // Create wallet list contro, load and unload buttons
+    // Create wallet list control, load and unload buttons
     QFrame *listFrame = new QFrame();
     listFrame->setMinimumWidth(200);
     listFrame->setMaximumWidth(200);
@@ -174,6 +174,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     syncIconMovie = new QMovie(":/movies/update_spinner", "mng", this);
 
     rpcConsole = new RPCConsole(this);
+
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
@@ -496,23 +497,35 @@ void BitcoinGUI::gotoOverviewPage()
     if (walletStack) walletStack->gotoOverviewPage();
 }
 
-void BitcoinGUI::gotoHistoryPage()
+void BitcoinGUI::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     if (walletStack) walletStack->gotoHistoryPage();
 }
 
-void BitcoinGUI::gotoAddressBookPage()
+void BitcoinGUI::gotoAddressBookPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     if (walletStack) walletStack->gotoAddressBookPage();
 }
 
-void BitcoinGUI::gotoReceiveCoinsPage()
+void BitcoinGUI::gotoReceiveCoinsPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     if (walletStack) walletStack->gotoReceiveCoinsPage();
+}
+
+QString BitcoinGUI::getCurrentWallet()
+{
+
+  if (walletStack) return QString (walletStack->getCurrentWallet());
+  return QString();
+
 }
 
 void BitcoinGUI::gotoSendCoinsPage()
 {
+    disconnect(exportAction, SIGNAL(triggered()), 0, 0);
     if (walletStack) walletStack->gotoSendCoinsPage();
 }
 
@@ -903,6 +916,7 @@ void BitcoinGUI::unlockWallet()
 
 void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
 {
+
     // activateWindow() (sometimes) helps with keyboard focus on Windows
     if (isHidden())
     {

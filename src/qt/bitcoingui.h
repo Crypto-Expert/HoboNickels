@@ -56,7 +56,10 @@ public:
 
     void setWalletManager(CWalletManager *walletManager) { this->walletManager = walletManager; }
     bool addWallet(const QString& name, WalletModel *walletModel);
+    QString getCurrentWallet();
     bool setCurrentWallet(const QString& name);
+
+    QAction *exportAction;
 
 protected:
     void changeEvent(QEvent *e);
@@ -93,7 +96,6 @@ private:
     QAction *receiveCoinsAction;
     QAction *optionsAction;
     QAction *toggleHideAction;
-    QAction *exportAction;
     QAction *encryptWalletAction;
     QAction *backupWalletAction;
     QAction *changePassphraseAction;
@@ -124,11 +126,11 @@ public slots:
     /** Switch to overview (home) page */
     void gotoOverviewPage();
     /** Switch to history (transactions) page */
-    void gotoHistoryPage();
+    void gotoHistoryPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to address book page */
-    void gotoAddressBookPage();
+    void gotoAddressBookPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to receive coins page */
-    void gotoReceiveCoinsPage();
+    void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
 

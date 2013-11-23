@@ -131,7 +131,27 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
     }
 
     CKey key;
-    if (!pwalletMain->GetKey(keyID, key))
+    CKey tkey;
+    bool fwalletFound=false;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+
+      pwalletMain = pWalletManager->GetWallet(item.first.c_str()).get();
+
+      if (!pwalletMain->GetKey(keyID, tkey))
+          printf("Address Not Found For %s\n",pwalletMain->strWalletFile.c_str());
+      else
+      {
+          if (!pwalletMain->GetKey(keyID, key))
+          {
+              ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
+              ui->statusLabel_SM->setText(tr("Private key for the entered address is not available."));
+              return;
+          }
+          fwalletFound=true;
+      }
+    }
+    if (!fwalletFound)
     {
         ui->statusLabel_SM->setStyleSheet("QLabel { color: red; }");
         ui->statusLabel_SM->setText(tr("Private key for the entered address is not available."));

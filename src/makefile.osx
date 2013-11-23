@@ -99,8 +99,6 @@ OBJS= \
     obj/util.o \
     obj/wallet.o \
     obj/walletdb.o \
-    obj/walletstack.o \
-    obj/walletview.o \
     obj/noui.o \
     obj/pbkdf2.o \
     obj/kernel.o \
