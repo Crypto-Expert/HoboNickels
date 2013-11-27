@@ -74,6 +74,16 @@ void ClientModel::updateNumConnections(int numConnections)
     emit numConnectionsChanged(numConnections);
 }
 
+void ClientModel::updateWalletAdded(const QString &name)
+{
+    emit walletAdded(name);
+}
+
+void ClientModel::updateWalletRemoved(const QString &name)
+{
+    emit walletRemoved(name);
+}
+
 void ClientModel::updateAlert(const QString &hash, int status)
 {
     // Show error message notification for new alert
@@ -173,12 +183,32 @@ static void NotifyAlertChanged(ClientModel *clientmodel, const uint256 &hash, Ch
                               Q_ARG(int, status));
 }
 
+static void NotifyWalletAdded(ClientModel *clientmodel, const std::string &name)
+{
+    OutputDebugStringF("NotifyWalletAdded %s \n", name.c_str());
+    QMetaObject::invokeMethod(clientmodel, "updateWalletAdded", Qt::QueuedConnection,
+                              Q_ARG(QString, QString::fromStdString(name)));
+}
+
+static void NotifyWalletRemoved(ClientModel *clientmodel, const std::string &name)
+{
+    OutputDebugStringF("NotifyWalletRemoved %s \n", name.c_str());
+    QMetaObject::invokeMethod(clientmodel, "updateWalletRemoved", Qt::QueuedConnection,
+                              Q_ARG(QString, QString::fromStdString(name)));
+}
+
+
+
+
 void ClientModel::subscribeToCoreSignals()
 {
     // Connect signals to client
     uiInterface.NotifyBlocksChanged.connect(boost::bind(NotifyBlocksChanged, this));
     uiInterface.NotifyNumConnectionsChanged.connect(boost::bind(NotifyNumConnectionsChanged, this, _1));
     uiInterface.NotifyAlertChanged.connect(boost::bind(NotifyAlertChanged, this, _1, _2));
+    uiInterface.NotifyWalletAdded.connect(boost::bind(NotifyWalletAdded,this,_1));
+    uiInterface.NotifyWalletRemoved.connect(boost::bind(NotifyWalletRemoved,this,_1));
+
 }
 
 void ClientModel::unsubscribeFromCoreSignals()
@@ -187,4 +217,6 @@ void ClientModel::unsubscribeFromCoreSignals()
     uiInterface.NotifyBlocksChanged.disconnect(boost::bind(NotifyBlocksChanged, this));
     uiInterface.NotifyNumConnectionsChanged.disconnect(boost::bind(NotifyNumConnectionsChanged, this, _1));
     uiInterface.NotifyAlertChanged.disconnect(boost::bind(NotifyAlertChanged, this, _1, _2));
+    uiInterface.NotifyWalletAdded.disconnect(boost::bind(NotifyWalletAdded,this,_1));
+    uiInterface.NotifyWalletRemoved.disconnect(boost::bind(NotifyWalletRemoved,this,_1));
 }

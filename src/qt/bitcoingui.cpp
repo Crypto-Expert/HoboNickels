@@ -402,7 +402,18 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
 
         walletStack->setClientModel(clientModel);
         rpcConsole->setClientModel(clientModel);
+
+        //Watch for wallets being loaded or unloaded
+        connect(clientModel, SIGNAL(walletAdded(QString)), this, SLOT(addWallet(QString)));
+        connect(clientModel, SIGNAL(walletRemoved(QString)), this, SLOT(removeWallet(QString)));
     }
+}
+
+void BitcoinGUI::addWallet(const QString& name)
+{
+    WalletModel *walletModel = new WalletModel(walletManager->GetWallet(name.toStdString()).get(), clientModel->getOptionsModel());
+    addWallet(name, walletModel);
+    setCurrentWallet(name);
 }
 
 bool BitcoinGUI::addWallet(const QString& name, WalletModel *walletModel)
@@ -798,6 +809,21 @@ void BitcoinGUI::loadWallet()
     WalletModel *walletModel = new WalletModel(walletManager->GetWallet(walletName).get(), clientModel->getOptionsModel());
     addWallet(walletName.c_str(), walletModel);
     setCurrentWallet(walletName.c_str());
+}
+
+void BitcoinGUI::removeWallet(const QString& name)
+{
+    QList<QListWidgetItem*> walletItems = walletList->findItems(name, Qt::MatchExactly);
+    if (walletItems.count() == 0) return;
+    walletList->setCurrentItem(walletItems[0]);
+    int row = walletList->currentRow();
+    if (row <= 0) return;
+    QListWidgetItem* selectedItem = walletList->takeItem(row);
+    QString walletName = selectedItem->text();
+    walletStack->removeWalletView(walletName);
+    delete selectedItem;
+    WalletModel *walletModel = mapWalletModels.take(walletName);
+    delete walletModel;
 }
 
 void BitcoinGUI::unloadWallet()

@@ -195,6 +195,10 @@ private slots:
     void showNormalIfMinimized(bool fToggleHidden = false);
     /** Simply calls showNormalIfMinimized(true) for use in SLOT() macro */
     void toggleHidden();
+    /** Adds or removes wallets to the stack */
+    void addWallet(const QString& name);
+    void removeWallet(const QString& name);
+
 };
 
 #endif // BITCOINGUI_H
