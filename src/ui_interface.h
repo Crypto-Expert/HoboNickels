@@ -90,6 +90,13 @@ public:
     /** Number of network connections changed. */
     boost::signals2::signal<void (int newNumConnections)> NotifyNumConnectionsChanged;
 
+    /** A Wallet has been added */
+    boost::signals2::signal<void (const std::string &name)> NotifyWalletAdded;
+
+    /** A Wallet has been removed */
+    boost::signals2::signal<void (const std::string &name)> NotifyWalletRemoved;
+
+
     /**
      * New, updated or cancelled alert.
      * @note called with lock cs_mapAlerts held.

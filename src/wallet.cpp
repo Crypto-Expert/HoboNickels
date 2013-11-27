@@ -2415,6 +2415,9 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
         printf(" rescan %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
+    //Tell GUI a wallet was loaded so it can be added to the stack
+    uiInterface.NotifyWalletAdded(strName);
+
     return true;
 }
 
@@ -2550,9 +2553,6 @@ bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, 
         printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
-    //Start PoS Mining Thread.
-    //pWallet = spWallet.get();
-
     if (!NewThread(ThreadStakeMinter, pWallet))
        printf("Error: NewThread(ThreadStakeMinter) failed\n");
 
@@ -2563,15 +2563,14 @@ bool CWalletManager::UnloadWallet(const std::string& strName)
 {
 
     {
+        LOCK(cs_WalletManager);
+        if (!wallets.count(strName)) return false;
         if (!fShutdown)
         {
-          //Shut down mining on all wallets while we unload.
           printf ("Halting Stake Mining while we unload wallet(s)\n");
           fStopMining = true;
           Sleep(1000);
         }
-        LOCK(cs_WalletManager);
-        if (!wallets.count(strName)) return false;
         boost::shared_ptr<CWallet> spWallet(wallets[strName]);
         printf("Unloading wallet %s\n", strName.c_str());
         {

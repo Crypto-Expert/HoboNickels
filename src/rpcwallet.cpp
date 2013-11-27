@@ -1875,7 +1875,6 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     bool fRescan = (params.size() > 1) ? params[1].get_bool() : false;
     bool fUpgrade = (params.size() > 2) ? params[2].get_bool() : false;
     int nMaxVersion = (params.size() > 3) ? params[3].get_int() : 0;
-    //Tranz This should be changed to LoadWalletFromFile
     if (!pWalletManager->LoadWallet(strWalletName, strErrors, fRescan, fUpgrade, nMaxVersion))
         throw JSONRPCError(RPC_WALLET_ERROR, string("Load failed: ") + strErrors.str());
 
@@ -1916,8 +1915,9 @@ Value unloadwallet(CWallet* pWallet, const Array& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_ERROR, "Default wallet cannot be unloaded.");
     if (!pWalletManager->UnloadWallet(strWalletName))
         throw JSONRPCError(RPC_WALLET_ERROR, string("No wallet named ") + strWalletName + " is currently loaded.");
-    //Tranz send signal to gui
 
+    //Tell GUI a wallet was unloaded so it can be removed from stack
+     uiInterface.NotifyWalletRemoved(strWalletName);
 
     return string("Wallet ") + strWalletName + " unloaded.";
 }
