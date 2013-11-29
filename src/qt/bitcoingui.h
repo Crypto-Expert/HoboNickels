@@ -77,6 +77,8 @@ private:
     WalletView *walletView;
     QPushButton *loadWalletButton;
     QPushButton *unloadWalletButton;
+    QPushButton *newWalletButton;
+
 
     QLabel *labelEncryptionIcon;
     QLabel *labelConnectionsIcon;
@@ -103,6 +105,7 @@ private:
     QAction *openRPCConsoleAction;
     QAction *loadWalletAction;
     QAction *unloadWalletAction;
+    QAction *newWalletAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
@@ -172,6 +175,7 @@ public slots:
 
     void loadWallet();
     void unloadWallet();
+    void newWallet();
 
 private slots:
     /** Show configuration dialog */

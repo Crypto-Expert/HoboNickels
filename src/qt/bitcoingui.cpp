@@ -110,12 +110,25 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QFrame *loadButtonFrame = new QFrame();
     QHBoxLayout *loadButtonFrameLayout = new QHBoxLayout(loadButtonFrame);
 
-    loadWalletButton = new QPushButton("Load...");
+    newWalletButton = new QPushButton("New...");
+    loadWalletButton = new QPushButton("Load..");
     unloadWalletButton = new QPushButton("Unload");
+
+    loadButtonFrameLayout->addWidget(newWalletButton);
+    newWalletButton->setStatusTip(tr("Create a new Wallet. Must be called wallet-yourname.dat"));
+    newWalletButton->setToolTip(newWalletButton->statusTip());
+
     loadButtonFrameLayout->addWidget(loadWalletButton);
+    loadWalletButton->setStatusTip(tr("Load an existing Wallet"));
+    loadWalletButton->setToolTip(loadWalletButton->statusTip());
+
     loadButtonFrameLayout->addWidget(unloadWalletButton);
+    unloadWalletButton->setStatusTip(tr("Remove an open Wallet from memory"));
+    unloadWalletButton->setToolTip(unloadWalletButton->statusTip());
+
     listFrameLayout->addWidget(loadButtonFrame);
 
+    connect(newWalletButton, SIGNAL(clicked()), this, SLOT(newWallet()));
     connect(loadWalletButton, SIGNAL(clicked()), this, SLOT(loadWallet()));
     connect(unloadWalletButton, SIGNAL(clicked()), this, SLOT(unloadWallet()));
 
@@ -247,9 +260,11 @@ void BitcoinGUI::createActions()
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
 
+    newWalletAction = new QAction(tr("&New Wallet"), this);
     loadWalletAction = new QAction(tr("&Load Wallet..."), this);
     unloadWalletAction = new QAction(tr("&Unload Wallet"), this);
 
+    connect(newWalletAction, SIGNAL(triggered()), this, SLOT(newWallet()));
     connect(loadWalletAction, SIGNAL(triggered()), this, SLOT(loadWallet()));
     connect(unloadWalletAction, SIGNAL(triggered()), this, SLOT(unloadWallet()));
 
@@ -325,6 +340,7 @@ void BitcoinGUI::createMenuBar()
     file->addAction(backupWalletAction);
     file->addAction(loadWalletAction);
     file->addAction(unloadWalletAction);
+    file->addAction(newWalletAction);
     file->addAction(exportAction);
     file->addAction(signMessageAction);
     file->addAction(verifyMessageAction);
@@ -511,6 +527,7 @@ void BitcoinGUI::gotoOverviewPage()
 void BitcoinGUI::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
     disconnect(exportAction, SIGNAL(triggered()), 0, 0);
+    historyAction->setChecked(true);
     if (walletStack) walletStack->gotoHistoryPage();
 }
 
@@ -785,6 +802,33 @@ void BitcoinGUI::incomingTransaction(const QString& date, int unit, qint64 amoun
                  .arg(type)
                  .arg(address), CClientUIInterface::MSG_INFORMATION);
    }
+}
+
+void BitcoinGUI::newWallet()
+{
+
+  if (!clientModel || !walletManager) return;
+
+  QString dataDir = GetDataDir().string().c_str();
+
+  QString walletFile = QFileDialog::getSaveFileName(this,
+      tr("Create Wallet"), dataDir, tr("Wallet Files (*.dat)"));
+
+  if (walletFile == "") return;
+  std::ostringstream err;
+  std::string walletName;
+
+  if (!walletManager->LoadWalletFromFile(walletFile.toStdString(), walletName, err))
+  {
+      QMessageBox errBox;
+      errBox.setText(err.str().c_str());
+      errBox.exec();
+      return;
+  }
+  WalletModel *walletModel = new WalletModel(walletManager->GetWallet(walletName).get(), clientModel->getOptionsModel());
+  addWallet(walletName.c_str(), walletModel);
+  setCurrentWallet(walletName.c_str());
+
 }
 
 void BitcoinGUI::loadWallet()
