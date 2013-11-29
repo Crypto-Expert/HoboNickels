@@ -115,15 +115,15 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     unloadWalletButton = new QPushButton("Unload");
 
     loadButtonFrameLayout->addWidget(newWalletButton);
-    newWalletButton->setStatusTip(tr("Create a new Wallet. Must be called wallet-yourname.dat"));
+    newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-yourname.dat"));
     newWalletButton->setToolTip(newWalletButton->statusTip());
 
     loadButtonFrameLayout->addWidget(loadWalletButton);
-    loadWalletButton->setStatusTip(tr("Load an existing Wallet"));
+    loadWalletButton->setStatusTip(tr("Load an existing wallet"));
     loadWalletButton->setToolTip(loadWalletButton->statusTip());
 
     loadButtonFrameLayout->addWidget(unloadWalletButton);
-    unloadWalletButton->setStatusTip(tr("Remove an open Wallet from memory"));
+    unloadWalletButton->setStatusTip(tr("Remove an open wallet from memory"));
     unloadWalletButton->setToolTip(unloadWalletButton->statusTip());
 
     listFrameLayout->addWidget(loadButtonFrame);
