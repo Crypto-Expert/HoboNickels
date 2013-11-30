@@ -35,18 +35,19 @@ Q_IMPORT_PLUGIN(qtaccessiblewidgets)
 static BitcoinGUI *guiref;
 static QSplashScreen *splashref;
 
-static void ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
+static void ThreadSafeMessageBox(const std::string& message, const std::string& caption, unsigned int style)
 {
     // Message from network thread
     if(guiref)
     {
         bool modal = (style & CClientUIInterface::MODAL);
-        // in case of modal message, use blocking connection to wait for user to click OK
-        QMetaObject::invokeMethod(guiref, "error",
+        // In case of modal message, use blocking connection to wait for user to click a button
+        QMetaObject::invokeMethod(guiref, "message",
                                    modal ? GUIUtil::blockingGUIThreadConnection() : Qt::QueuedConnection,
                                    Q_ARG(QString, QString::fromStdString(caption)),
                                    Q_ARG(QString, QString::fromStdString(message)),
-                                   Q_ARG(bool, modal));
+                                   Q_ARG(unsigned int, style));
+
     }
     else
     {
@@ -113,6 +114,16 @@ static void handleRunawayException(std::exception *e)
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
+
+    // Command-line options take precedence:
+    ParseParameters(argc, argv);
+
+
+    if(GetBoolArg("-testnet")) // Separate message queue name for testnet
+        strBitcoinURIQueueName = BITCOINURI_QUEUE_NAME_TESTNET;
+    else
+        strBitcoinURIQueueName = BITCOINURI_QUEUE_NAME_MAINNET;
+
     // Do this early as we don't want to bother initializing if we are just calling IPC
     ipcScanRelay(argc, argv);
 
@@ -125,9 +136,6 @@ int main(int argc, char *argv[])
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
-
-    // Command-line options take precedence:
-    ParseParameters(argc, argv);
 
     // ... then bitcoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
@@ -228,10 +236,19 @@ int main(int argc, char *argv[])
                     splash.finish(&window);
 
                 ClientModel clientModel(&optionsModel);
-                WalletModel walletModel(pwalletMain, &optionsModel);
 
                 window.setClientModel(&clientModel);
-                window.setWalletModel(&walletModel);
+                window.setWalletManager(pWalletManager);
+
+                // Create wallet models for each wallet and add it.
+                BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+                {
+                    QString name(item.first.c_str());
+                    if (name == "") name = "~Default";
+                    WalletModel *walletModel = new WalletModel(item.second.get(), &optionsModel);
+                    window.addWallet(name, walletModel);
+                }
+                window.setCurrentWallet("~Default");
 
                 // If -min option passed, start window minimized.
                 if(GetBoolArg("-min"))
@@ -250,7 +267,6 @@ int main(int argc, char *argv[])
 
                 window.hide();
                 window.setClientModel(0);
-                window.setWalletModel(0);
                 guiref = 0;
             }
             // Shutdown the core and its threads, but don't exit Bitcoin-Qt here

@@ -147,7 +147,7 @@ extern bool fDebug;
 extern bool fDebugNet;
 extern bool fPrintToConsole;
 extern bool fPrintToDebugger;
-extern bool fRequestShutdown;
+extern volatile bool fRequestShutdown;
 extern bool fShutdown;
 extern bool fStopMining;
 extern bool fDaemon;
@@ -157,7 +157,7 @@ extern std::string strMiscWarning;
 extern bool fTestNet;
 extern bool fNoListen;
 extern bool fLogTimestamps;
-extern bool fReopenDebugLog;
+extern volatile bool fReopenDebugLog;
 
 void RandAddSeed();
 void RandAddSeedPerfmon();
@@ -616,7 +616,7 @@ inline void SetThreadPriority(int nPriority)
     setpriority(PRIO_PROCESS, 0, nPriority);
 #endif
 }
-//Tranz ExitThread
+
 inline void ExitThread(size_t nExitCode)
 {
     pthread_exit((void*)nExitCode);

@@ -20,7 +20,7 @@
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>1</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="tabSignMessage">
       <attribute name="title">
@@ -105,9 +105,18 @@
         </widget>
        </item>
        <item>
+        <widget class="QLabel" name="signatureLabel_SM">
+         <property name="text">
+          <string>Signature</string>
+         </property>
+         <property name="textFormat">
+          <enum>Qt::PlainText</enum>
+         </property>
+        </widget>
+       </item>
+       <item>
         <layout class="QHBoxLayout" name="horizontalLayout_2_SM">
          <property name="spacing">
-          <number>0</number>
          </property>
          <item>
           <widget class="QLineEdit" name="signatureOut_SM">

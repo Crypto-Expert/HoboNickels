@@ -49,7 +49,7 @@ LIBS += \
  -lboost_filesystem-mt \
  -lboost_program_options-mt \
  -lboost_thread-mt \
- -lboost_regex-mt \ 
+ -lboost_regex-mt \
  -lssl \
  -lcrypto \
  -lz

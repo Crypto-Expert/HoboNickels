@@ -351,7 +351,7 @@ void CWallet::WalletUpdateSpent(const CTransaction &tx)
                     printf("WalletUpdateSpent: bad wtx %s\n", wtx.GetHash().ToString().c_str());
                 else if (!wtx.IsSpent(txin.prevout.n) && IsMine(wtx.vout[txin.prevout.n]))
                 {
-                    printf("WalletUpdateSpent found spent coin %snvc %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
+                    printf("WalletUpdateSpent found spent coin %shbn %s\n", FormatMoney(wtx.GetCredit()).c_str(), wtx.GetHash().ToString().c_str());
                     wtx.MarkSpent(txin.prevout.n);
                     wtx.WriteToDisk();
                     NotifyTransactionChanged(this, txin.prevout.hash, CT_UPDATED);
@@ -2347,11 +2347,11 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
             InitWarning(msg);
         }
         else if (nLoadWalletRet == DB_TOO_NEW)
-            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of Bitcoin") << "\n";
+            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of HoboNickels") << "\n";
         else if (nLoadWalletRet == DB_NEED_REWRITE)
         {
             LEAVE_CRITICAL_SECTION(cs_WalletManager);
-            strErrors << _("Wallet needed to be rewritten: restart Bitcoin to complete") << "\n";
+            strErrors << _("Wallet needed to be rewritten: restart HoboNickels to complete") << "\n";
             printf("%s", strErrors.str().c_str());
             return InitError(strErrors.str());
         }
@@ -2415,21 +2415,162 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
         printf(" rescan %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
+    //Tell GUI a wallet was loaded so it can be added to the stack
+    uiInterface.NotifyWalletAdded(strName);
+
     return true;
 }
+
+bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, ostringstream& strErrors, bool fRescan, bool fUpgrade, int nMaxVersion)
+{
+    // Get wallet file name minus extension.
+    const boost::regex STRIP_DIR_AND_EXTENSION_REGEX(".*/wallet-([a-zA-Z0-9_]+)\\.dat");
+    boost::cmatch match;
+    if (!boost::regex_match(strFile.c_str(), match, STRIP_DIR_AND_EXTENSION_REGEX))
+    {
+        strErrors << _("CWalletManager::LoadWalletFromFile() - invalid filename ") << strFile;
+        return false;
+    }
+
+    strName = string(match[1].first, match[1].second);
+
+    ENTER_CRITICAL_SECTION(cs_WalletManager);
+
+    // Check that wallet is not already loaded
+    if (wallets.count(strName) > 0)
+    {
+        LEAVE_CRITICAL_SECTION(cs_WalletManager);
+        strErrors << _("A wallet with that name is already loaded.");
+        return false;
+    }
+
+    printf("Loading wallet \"%s\" from %s...\n", strName.c_str(), strFile.c_str());
+    int64 nStart = GetTimeMillis();
+    bool fFirstRun = true;
+    CWallet* pWallet;
+    DBErrors nLoadWalletRet;
+
+    try
+    {
+        pWallet = new CWallet(strFile);
+        nLoadWalletRet = pWallet->LoadWallet(fFirstRun);
+    }
+    catch (const exception& e)
+    {
+        LEAVE_CRITICAL_SECTION(cs_WalletManager);
+        strErrors << _("Critical error loading wallet \"") << strName << "\" " << _("from ") << strFile << ": " << e.what();
+        return false;
+    }
+    catch (...)
+    {
+        LEAVE_CRITICAL_SECTION(cs_WalletManager);
+        strErrors << _("Critical error loading wallet \"") << strName << "\" " << _("from ") << strFile;
+        return false;
+    }
+
+    if (nLoadWalletRet != DB_LOAD_OK)
+    {
+        if (nLoadWalletRet == DB_CORRUPT)
+        {
+            LEAVE_CRITICAL_SECTION(cs_WalletManager);
+            strErrors << _("Error loading ") << strFile << _(": Wallet corrupted") << "\n";
+            delete pWallet;
+            return false;
+        }
+        else if (nLoadWalletRet == DB_NONCRITICAL_ERROR)
+        {
+            string msg(_("Warning: error reading "));
+            msg += strFile + _("! All keys read correctly, but transaction data"
+                               " or address book entries might be missing or incorrect.");
+            InitWarning(msg);
+        }
+        else if (nLoadWalletRet == DB_TOO_NEW)
+            strErrors << _("Error loading ") << strFile << _(": Wallet requires newer version of HoboNickels") << "\n";
+        else if (nLoadWalletRet == DB_NEED_REWRITE)
+        {
+            LEAVE_CRITICAL_SECTION(cs_WalletManager);
+            strErrors << _("Wallet needed to be rewritten: restart HoboNickels to complete") << "\n";
+            printf("%s", strErrors.str().c_str());
+            return InitError(strErrors.str());
+        }
+        else
+            strErrors << _("Error loading ") << strFile << "\n";
+    }
+
+    if (fFirstRun || fUpgrade)
+    {
+        if (nMaxVersion == 0) // the -upgradewallet without argument case
+        {
+            printf("Performing wallet upgrade to %i\n", FEATURE_LATEST);
+            nMaxVersion = CLIENT_VERSION;
+            pWallet->SetMinVersion(FEATURE_LATEST); // permanently upgrade the wallet immediately
+        }
+        else
+            printf("Allowing wallet upgrade up to %i\n", nMaxVersion);
+        if (nMaxVersion < pWallet->GetVersion())
+            strErrors << _("Cannot downgrade wallet") << "\n";
+        pWallet->SetMaxVersion(nMaxVersion);
+    }
+
+    if (fFirstRun)
+    {
+        // Create new keyUser and set as default key
+        RandAddSeedPerfmon();
+
+        CPubKey newDefaultKey;
+        if (!pWallet->GetKeyFromPool(newDefaultKey, false))
+            strErrors << _("Cannot initialize keypool") << "\n";
+        pWallet->SetDefaultKey(newDefaultKey);
+        if (!pWallet->SetAddressBookName(pWallet->vchDefaultKey.GetID(), ""))
+            strErrors << _("Cannot write default address") << "\n";
+    }
+
+    printf("%s", strErrors.str().c_str());
+    printf(" wallet      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+
+    boost::shared_ptr<CWallet> spWallet(pWallet);
+    this->wallets[strName] = spWallet;
+    RegisterWallet(pWallet);
+
+    LEAVE_CRITICAL_SECTION(cs_WalletManager);
+
+    CBlockIndex *pindexRescan = pindexBest;
+    if (fRescan)
+        pindexRescan = pindexGenesisBlock;
+    else
+    {
+        CWalletDB walletdb(strFile);
+        CBlockLocator locator;
+        if (walletdb.ReadBestBlock(locator))
+            pindexRescan = locator.GetBlockIndex();
+    }
+    if (pindexBest && pindexBest != pindexRescan)
+    {
+        uiInterface.InitMessage(_("Rescanning..."));
+        printf("Rescanning last %i blocks (from block %i)...\n", pindexBest->nHeight - pindexRescan->nHeight, pindexRescan->nHeight);
+        nStart = GetTimeMillis();
+        pWallet->ScanForWalletTransactions(pindexRescan, true);
+        printf(" rescan      %15"PRI64d"ms\n", GetTimeMillis() - nStart);
+    }
+
+    if (!NewThread(ThreadStakeMinter, pWallet))
+       printf("Error: NewThread(ThreadStakeMinter) failed\n");
+
+    return true;
+}
+
 bool CWalletManager::UnloadWallet(const std::string& strName)
 {
 
     {
+        LOCK(cs_WalletManager);
+        if (!wallets.count(strName)) return false;
         if (!fShutdown)
         {
-          //Shut down mining on all wallets while we unload.
           printf ("Halting Stake Mining while we unload wallet(s)\n");
           fStopMining = true;
           Sleep(1000);
         }
-        LOCK(cs_WalletManager);
-        if (!wallets.count(strName)) return false;
         boost::shared_ptr<CWallet> spWallet(wallets[strName]);
         printf("Unloading wallet %s\n", strName.c_str());
         {

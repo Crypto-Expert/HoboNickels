@@ -13,6 +13,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "rpcuser=bitcoinrpc\n"
 "rpcpassword=%s\n"
 "(you do not need to remember this password)\n"
+"The username and password MUST NOT be the same.\n"
 "If the file does not exist, create it with owner-readable-only file "
 "permissions.\n"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
@@ -32,7 +33,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Error initializing database environment %s! To recover, BACKUP THAT "
 "DIRECTORY, then remove everything from it except for wallet.dat."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Error: The transaction was rejected.  This might happen if some of the coins "
+"Error: The transaction was rejected! This might happen if some of the coins "
 "in your wallet were already spent, such as if you used a copy of wallet.dat "
 "and coins were spent in the copy but not marked as spent here."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
@@ -44,7 +45,7 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Execute command when the best block changes (%s in cmd is replaced by block "
 "hash)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
-"Listen for JSON-RPC connections on <port> (default: 8344 or testnet: 18344)"),
+"Listen for JSON-RPC connections on <port> (default: 7372 or testnet: 7374)"),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Number of seconds to keep misbehaving peers from reconnecting (default: "
 "86400)"),
@@ -56,6 +57,9 @@ QT_TRANSLATE_NOOP("bitcoin-core", ""
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: -paytxfee is set very high! This is the transaction fee you will "
 "pay if you send a transaction."),
+QT_TRANSLATE_NOOP("bitcoin-core", ""
+"Warning: Displayed transactions may not be correct! You may need to upgrade, "
+"or other nodes may need to upgrade."),
 QT_TRANSLATE_NOOP("bitcoin-core", ""
 "Warning: Please check that your computer's date and time are correct! If "
 "your clock is wrong HoboNickels will not work properly."),

@@ -481,7 +481,6 @@ DBErrors CWalletDB::LoadWallet(CWallet* pwallet)
 
     return result;
 }
-
 void CWalletDB::UnloadWallet(CWallet* pwallet)
 {
     if (!pwallet || !pwallet->fFileBacked)

@@ -756,7 +756,7 @@ void ThreadRPCServer2(void* parg)
                 strWhatAmI.c_str(),
                 GetConfigFile().string().c_str(),
                 EncodeBase58(&rand_pwd[0],&rand_pwd[0]+32).c_str()),
-            _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+            _("Error"), CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return;
     }
@@ -847,7 +847,7 @@ void ThreadRPCServer2(void* parg)
     }
 
     if (!fListening) {
-        uiInterface.ThreadSafeMessageBox(strerr, _("Error"), CClientUIInterface::OK | CClientUIInterface::MODAL);
+        uiInterface.ThreadSafeMessageBox(strerr, _("Error"), CClientUIInterface::MSG_ERROR);
         StartShutdown();
         return;
     }
@@ -1221,6 +1221,11 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "signrawtransaction"     && n > 1) ConvertTo<Array>(params[1], true);
     if (strMethod == "signrawtransaction"     && n > 2) ConvertTo<Array>(params[2], true);
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
+    if (strMethod == "sendalert"              && n > 2) ConvertTo<boost::int64_t>(params[2]);
+    if (strMethod == "sendalert"              && n > 3) ConvertTo<boost::int64_t>(params[3]);
+    if (strMethod == "sendalert"              && n > 4) ConvertTo<boost::int64_t>(params[4]);
+    if (strMethod == "sendalert"              && n > 5) ConvertTo<boost::int64_t>(params[5]);
+    if (strMethod == "sendalert"              && n > 6) ConvertTo<boost::int64_t>(params[6]);
     if (strMethod == "loadwallet"             && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "loadwallet"             && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "loadwallet"             && n > 3) ConvertTo<boost::int64_t>(params[3]);
