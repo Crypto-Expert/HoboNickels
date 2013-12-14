@@ -1370,17 +1370,18 @@ void ThreadTopUpKeyPool(void* parg)
 
 Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
 {
-  if (fHelp || params.size() != 2)
+   if (fHelp || params.size() < 2 || params.size() > 3)
       throw runtime_error(
-          "walletpassphrase <passphrase> <timeout>\n"
-          "Stores the wallet decryption key in memory for <timeout> seconds.");
-  if (!pWallet->IsCrypted())
-      throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
+          "walletpassphrase <passphrase> <timeout> [mintonly]\n"
+          "Stores the wallet decryption key in memory for <timeout> seconds.\n"
+          "mintonly is optional true/false allowing only block minting." );
+    if (fHelp)
+        return true;
+    if (!pWallet->IsCrypted())
+        throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletpassphrase was called.");
 
-  if (!pWallet->IsLocked())
-      throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already unlocked.");
-
-
+    if (!pWallet->IsLocked())
+        throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already unlocked, use walletlock first if need to change unlock settings.");
     // Note that the walletpassphrase is stored in params[0] which is not mlock()ed
     SecureString strWalletPass;
     strWalletPass.reserve(100);
@@ -1398,12 +1399,12 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
             "walletpassphrase <passphrase> <timeout>\n"
             "Stores the wallet decryption key in memory for <timeout> seconds.");
 
-
     // ppcoin: if user OS account compromised prevent trivial sendmoney commands
     if (params.size() > 2)
         fWalletUnlockMintOnly = params[2].get_bool();
     else
         fWalletUnlockMintOnly = false;
+
 
     pWallet->TimedLock(params[1].get_int64());
 
