@@ -1054,11 +1054,13 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
                     else if (wtx.GetBlocksToMaturity() > 0)
                         entry.push_back(Pair("category", "immature"));
                     else
+                    {
                         entry.push_back(Pair("category", "generate"));
                     	if (wtx.IsCoinBase())
                     		entry.push_back(Pair("subcategory", "work"));
                     	else
                     		entry.push_back(Pair("subcategory", "stake"));
+                    }
                 }
                 else
                     entry.push_back(Pair("category", "receive"));
