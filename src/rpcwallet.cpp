@@ -1010,6 +1010,16 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
         else
         {
             entry.push_back(Pair("category", "generate"));
+
+        	if (wtx.IsCoinBase())
+        	{
+        		entry.push_back(Pair("subcategory", "work"));
+        	}
+        	else if (wtx.IsCoinStake())
+        	{
+        		entry.push_back(Pair("subcategory", "stake"));
+        	}
+
             entry.push_back(Pair("amount", ValueFromAmount(nGeneratedMature)));
         }
         if (fLong)
@@ -1057,9 +1067,13 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
                     {
                         entry.push_back(Pair("category", "generate"));
                     	if (wtx.IsCoinBase())
+                    	{
                     		entry.push_back(Pair("subcategory", "work"));
+                    	}
                     	else
+                    	{
                     		entry.push_back(Pair("subcategory", "stake"));
+                    	}
                     }
                 }
                 else
