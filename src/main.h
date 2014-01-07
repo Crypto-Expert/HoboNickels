@@ -38,6 +38,7 @@ static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
 static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; //Incorrect value Too small
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;//Incorrect value Too big
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; //Correct just right
+static const unsigned int LOCKS_SWITCH_TIME = 1394841600; // 15 Mar 2014 00:00:00
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
@@ -72,6 +73,7 @@ extern std::set<std::pair<COutPoint, unsigned int> > setStakeSeen;
 extern uint256 hashGenesisBlock;
 extern CBlockIndex* pindexGenesisBlock;
 extern unsigned int nStakeMinAge;
+extern unsigned int nNodeLifespan;
 extern int nCoinbaseMaturity;
 extern int nBestHeight;
 extern CBigNum bnBestChainTrust;
@@ -93,6 +95,7 @@ extern std::map<uint256, CBlock*> mapOrphanBlocks;
 
 // Settings
 extern int64 nTransactionFee;
+extern bool fUseFastIndex;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;
@@ -124,7 +127,7 @@ void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash
 bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 int64 GetProofOfWorkReward(unsigned int nBits);
-int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime);
+int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
 unsigned int ComputeMinStake(unsigned int nBase, int64 nTime, unsigned int nBlockTime);
 
@@ -603,7 +606,7 @@ public:
         return dPriority > COIN * 2880 / 250;
     }
 
-    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK) const;
+    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes = 0) const;
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
@@ -1113,11 +1116,11 @@ public:
     bool ReadFromDisk(const CBlockIndex* pindex, bool fReadTransactions=true);
     bool SetBestChain(CTxDB& txdb, CBlockIndex* pindexNew);
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos);
-    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true) const;
+    bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true, bool fCheckSig=true) const;
     bool AcceptBlock();
     bool GetCoinAge(uint64& nCoinAge) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(const CKeyStore& keystore);
-    bool CheckBlockSignature() const;
+    bool CheckBlockSignature(bool fProofOfStake) const;
 
 private:
     bool SetBestChainInner(CTxDB& txdb, CBlockIndex *pindexNew);
@@ -1366,6 +1369,9 @@ public:
 /** Used to marshal pointers into hashes for db storage. */
 class CDiskBlockIndex : public CBlockIndex
 {
+private:
+   uint256 blockHash;
+
 public:
     uint256 hashPrev;
     uint256 hashNext;
@@ -1374,6 +1380,7 @@ public:
     {
         hashPrev = 0;
         hashNext = 0;
+        blockHash = 0;
     }
 
     explicit CDiskBlockIndex(CBlockIndex* pindex) : CBlockIndex(*pindex)
@@ -1419,6 +1426,9 @@ public:
 
     uint256 GetBlockHash() const
     {
+       if (fUseFastIndex && (nTime < GetAdjustedTime() - 12 * nMaxClockDrift) && blockHash != 0)
+          return blockHash;
+
         CBlock block;
         block.nVersion        = nVersion;
         block.hashPrevBlock   = hashPrev;
@@ -1426,7 +1436,8 @@ public:
         block.nTime           = nTime;
         block.nBits           = nBits;
         block.nNonce          = nNonce;
-        return block.GetHash();
+        const_cast<CDiskBlockIndex*>(this)->blockHash = block.GetHash();
+        return blockHash;
     }
 
 
