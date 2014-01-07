@@ -77,7 +77,7 @@ void setupAmountWidget(QLineEdit *widget, QWidget *parent)
 
 bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 {
-    if(uri.scheme() != QString("bitcoin"))
+    if(uri.scheme() != QString("hobonickels"))
         return false;
 
     SendCoinsRecipient rv;
@@ -122,13 +122,13 @@ bool parseBitcoinURI(const QUrl &uri, SendCoinsRecipient *out)
 
 bool parseBitcoinURI(QString uri, SendCoinsRecipient *out)
 {
-    // Convert bitcoin:// to bitcoin:
+    // Convert hobonickels:// to hobonickels:
     //
-    //    Cannot handle this later, because bitcoin:// will cause Qt to see the part after // as host,
+    //    Cannot handle this later, because hobonickels:// will cause Qt to see the part after // as host,
     //    which will lower-case it (and thus invalidate the address).
-    if(uri.startsWith("bitcoin://"))
+    if(uri.startsWith("hobonickels://"))
     {
-        uri.replace(0, 10, "bitcoin:");
+        uri.replace(0, 11, "hobonickels:");
     }
     QUrl uriInstance(uri);
     return parseBitcoinURI(uriInstance, out);
@@ -160,6 +160,12 @@ void copyEntryData(QAbstractItemView *view, int column, int role)
         // Copy first item
         QApplication::clipboard()->setText(selection.at(0).data(role).toString());
     }
+}
+
+void setClipboard(const QString& str)
+{
+    QApplication::clipboard()->setText(str, QClipboard::Clipboard);
+    QApplication::clipboard()->setText(str, QClipboard::Selection);
 }
 
 QString getSaveFileName(QWidget *parent, const QString &caption,
@@ -257,11 +263,11 @@ bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt)
     {
         QWidget *widget = static_cast<QWidget*>(obj);
         QString tooltip = widget->toolTip();
-        if(tooltip.size() > size_threshold && !tooltip.startsWith("<qt/>") && !Qt::mightBeRichText(tooltip))
+        if(tooltip.size() > size_threshold && !tooltip.startsWith("<qt>") && !Qt::mightBeRichText(tooltip))
         {
             // Prefix <qt/> to make sure Qt detects this as rich text
             // Escape the current message as HTML and replace \n by <br>
-            tooltip = "<qt/>" + HtmlEscape(tooltip, true);
+            tooltip = "<qt>" + HtmlEscape(tooltip, true) + "<qt/>";
             widget->setToolTip(tooltip);
             return true;
         }
