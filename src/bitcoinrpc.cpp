@@ -204,6 +204,7 @@ static const CRPCCommand vRPCCommands[] =
     { "help",                   &help,                   true,   true,     false },
     { "stop",                   &stop,                   true,   true,     false },
     { "getblockcount",          &getblockcount,          true,   false,    false },
+    { "getbestblockhash",       &getbestblockhash,       true,   false,    false },
     { "getconnectioncount",     &getconnectioncount,     true,   false,    false },
     { "getpeerinfo",            &getpeerinfo,            true,   false,    false },
     { "addnode",                &addnode,                true,   true,     false },
@@ -213,7 +214,7 @@ static const CRPCCommand vRPCCommands[] =
     { "setgenerate",            &setgenerate,            true,   false,    false },
     { "gethashespersec",        &gethashespersec,        true,   false,    false },
     { "getinfo",                &getinfo,                true,   false,    false },
-    { "getmininginfo",          &getmininginfo,          true,   false,    false },
+    { "getmininginfo",          &getmininginfo,          true,   false,    true  },
     { "getnewaddress",          &getnewaddress,          true,   false,    true  },
     { "getaccountaddress",      &getaccountaddress,      true,   false,    true  },
     { "setaccount",             &setaccount,             true,   false,    true  },
@@ -251,6 +252,8 @@ static const CRPCCommand vRPCCommands[] =
     { "getblocktemplate",       &getblocktemplate,       true,   false,    false },
     { "submitblock",            &submitblock,            false,  false,    false },
     { "listsinceblock",         &listsinceblock,         false,  false,    true  },
+    { "dumpwallet",             &dumpwallet,             true,   false,    true  },
+    { "importwallet",           &importwallet,           false,  false,    true  },
     { "dumpprivkey",            &dumpprivkey,            false,  false,    true  },
     { "importprivkey",          &importprivkey,          false,  false,    true  },
     { "listunspent",            &listunspent,            false,  false,    true  },
@@ -399,7 +402,7 @@ int ReadHTTPStatus(std::basic_istream<char>& stream, int &proto)
 int ReadHTTPHeader(std::basic_istream<char>& stream, map<string, string>& mapHeadersRet)
 {
     int nLen = 0;
-    loop
+    while (true)
     {
         string str;
         std::getline(stream, str);
@@ -463,7 +466,7 @@ bool HTTPAuthorized(map<string, string>& mapHeaders)
         return false;
     string strUserPass64 = strAuth.substr(6); boost::trim(strUserPass64);
     string strUserPass = DecodeBase64(strUserPass64);
-    return strUserPass == strRPCUserColonPass;
+    return TimingResistantEqual(strUserPass, strRPCUserColonPass);
 }
 
 //
@@ -949,7 +952,7 @@ void ThreadRPCServer3(void* parg)
     AcceptedConnection *conn = (AcceptedConnection *) parg;
 
     bool fRun = true;
-    loop {
+    while (true) {
         if (fShutdown || !fRun)
         {
             conn->close();
@@ -1224,6 +1227,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "createrawtransaction"   && n > 1) ConvertTo<Object>(params[1]);
     if (strMethod == "signrawtransaction"     && n > 1) ConvertTo<Array>(params[1], true);
     if (strMethod == "signrawtransaction"     && n > 2) ConvertTo<Array>(params[2], true);
+    if (strMethod == "keypoolrefill"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "sendalert"              && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "sendalert"              && n > 3) ConvertTo<boost::int64_t>(params[3]);
