@@ -46,7 +46,7 @@ static bool ipcScanCmd(int argc, char *argv[], bool fRelay)
     bool fSent = false;
     for (int i = 1; i < argc; i++)
     {
-        if (boost::algorithm::istarts_with(argv[i], "bitcoin:"))
+        if (boost::algorithm::istarts_with(argv[i], "hobonickels:"))
         {
             const char *strURI = argv[i];
             try {
@@ -102,7 +102,7 @@ static void ipcThread2(void* pArg)
     size_t nSize = 0;
     unsigned int nPriority = 0;
 
-    loop
+    while (true)
     {
         ptime d = boost::posix_time::microsec_clock::universal_time() + millisec(100);
         if (mq->timed_receive(&buffer, sizeof(buffer), nSize, nPriority, d))
