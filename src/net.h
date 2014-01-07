@@ -148,6 +148,9 @@ public:
     int64 nReleaseTime;
     int nStartingHeight;
     int nMisbehavior;
+    uint64 nSendBytes;
+    uint64 nRecvBytes;
+    uint64 nBlocksRequested;
 };
 
 
@@ -169,6 +172,9 @@ public:
     int64 nLastRecv;
     int64 nLastSendEmpty;
     int64 nTimeConnected;
+    uint64 nBlocksRequested;
+    uint64 nRecvBytes;
+    uint64 nSendBytes;
     int nHeaderStart;
     unsigned int nMessageStart;
     CAddress addr;
@@ -222,6 +228,9 @@ public:
         nLastRecv = 0;
         nLastSendEmpty = GetTime();
         nTimeConnected = GetTime();
+        nSendBytes = 0;
+        nRecvBytes = 0;
+        nBlocksRequested = 0;
         nHeaderStart = -1;
         nMessageStart = -1;
         addr = addrIn;
@@ -246,7 +255,7 @@ public:
         setInventoryKnown.max_size(SendBufferSize() / 1000);
 
         // Be shy and don't send version until we hear
-        if (!fInbound)
+        if (hSocket != INVALID_SOCKET && !fInbound)
             PushVersion();
     }
 
@@ -664,35 +673,9 @@ inline void RelayInventory(const CInv& inv)
             pnode->PushInventory(inv);
     }
 }
-
-template<typename T>
-void RelayMessage(const CInv& inv, const T& a)
-{
-    CDataStream ss(SER_NETWORK, PROTOCOL_VERSION);
-    ss.reserve(10000);
-    ss << a;
-    RelayMessage(inv, ss);
-}
-
-template<>
-inline void RelayMessage<>(const CInv& inv, const CDataStream& ss)
-{
-    {
-        LOCK(cs_mapRelay);
-        // Expire old relay messages
-        while (!vRelayExpiration.empty() && vRelayExpiration.front().first < GetTime())
-        {
-            mapRelay.erase(vRelayExpiration.front().second);
-            vRelayExpiration.pop_front();
-        }
-
-        // Save original serialized message so newer versions are preserved
-        mapRelay.insert(std::make_pair(inv, ss));
-        vRelayExpiration.push_back(std::make_pair(GetTime() + 15 * 60, inv));
-    }
-
-    RelayInventory(inv);
-}
+class CTransaction;
+void RelayTransaction(const CTransaction& tx, const uint256& hash);
+void RelayTransaction(const CTransaction& tx, const uint256& hash, const CDataStream& ss);
 
 
 #endif
