@@ -104,6 +104,7 @@ xLDFLAGS=$(LDHARDENING) $(LDFLAGS)
 
 OBJS= \
     leveldb/libleveldb.a \
+    leveldb/libmemenv.a \
     obj/alert.o \
     obj/version.o \
     obj/checkpoints.o \
