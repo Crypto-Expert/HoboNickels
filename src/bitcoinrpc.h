@@ -130,6 +130,8 @@ extern int64 nWalletUnlockTime;
 extern int64 AmountFromValue(const json_spirit::Value& value);
 extern json_spirit::Value ValueFromAmount(int64 amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
+extern double GetPoWMHashPS();
+extern double GetPoSKernelPS();
 extern std::string HexBits(unsigned int nBits);
 extern std::string HelpRequiringPassphrase(CWallet* pWallet = NULL);
 extern void EnsureWalletIsUnlocked(CWallet* pWallet = NULL);
@@ -138,6 +140,8 @@ extern json_spirit::Value getconnectioncount(CWallet* pWallet, const json_spirit
 extern json_spirit::Value getpeerinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value addnode(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getaddednodeinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value dumpwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value importwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpprivkey(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendalert(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
@@ -205,6 +209,7 @@ extern json_spirit::Value signrawtransaction(CWallet* pWallet, const json_spirit
 extern json_spirit::Value sendrawtransaction(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 
 
+extern json_spirit::Value getbestblockhash(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
 extern json_spirit::Value getblockcount(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcblockchain.cpp
 extern json_spirit::Value getdifficulty(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value settxfee(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

@@ -63,7 +63,7 @@
           <cursorShape>IBeamCursor</cursorShape>
          </property>
          <property name="text">
-          <string notr="true">0.7.200-beta</string>
+          <string notr="true">0.7.500-beta</string>
          </property>
          <property name="textInteractionFlags">
           <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
@@ -91,7 +91,10 @@
         <cursorShape>IBeamCursor</cursorShape>
        </property>
        <property name="text">
-        <string>Copyright © 2009-2012 The HoboNickels Foundation</string>
+        <string>Copyright © 2009-2014 The Bitcoin Developer
+Copyright © 2012-2013 PPCoin Developers 
+Copyright © 2013-2014 NovaCoin Developers 
+Copyright © 2013-2014 HoboNickels Developers</string>
        </property>
        <property name="textInteractionFlags">
         <set>Qt::LinksAccessibleByMouse|Qt::TextSelectableByKeyboard|Qt::TextSelectableByMouse</set>
@@ -107,9 +110,13 @@
         <string>
 This is experimental software. By using this software you assume all liability for any loss that may occur. 
 
+Please visit http://hobonickels.info for more information.
+
 Distributed under the MIT/X11 software license, see the accompanying file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.</string>
+This product includes software developed by the OpenSSL Project for use in the OpenSSL Toolkit (http://www.openssl.org/) and cryptographic software written by Eric Young (eay@cryptsoft.com) and UPnP software written by Thomas Bernard.
+
+HBN Icon created by Jay Deboer. Please visit http://www.IRLab.com/hobo for more unique works of art.</string>
        </property>
        <property name="wordWrap">
         <bool>true</bool>

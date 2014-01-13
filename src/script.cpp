@@ -1257,7 +1257,7 @@ bool Solver(const CScript& scriptPubKey, txnouttype& typeRet, vector<vector<unsi
         // Compare
         CScript::const_iterator pc1 = script1.begin();
         CScript::const_iterator pc2 = script2.begin();
-        loop
+        while (true)
         {
             if (pc1 == script1.end() && pc2 == script2.end())
             {
@@ -1538,6 +1538,43 @@ bool ExtractDestination(const CScript& scriptPubKey, CTxDestination& addressRet)
     // Multisig txns have more than one address...
     return false;
 }
+class CAffectedKeysVisitor : public boost::static_visitor<void> {
+  private:
+      const CKeyStore &keystore;
+      std::vector<CKeyID> &vKeys;
+
+  public:
+      CAffectedKeysVisitor(const CKeyStore &keystoreIn, std::vector<CKeyID> &vKeysIn) : keystore(keystoreIn), vKeys(vKeysIn) {}
+
+      void Process(const CScript &script) {
+          txnouttype type;
+          std::vector<CTxDestination> vDest;
+          int nRequired;
+          if (ExtractDestinations(script, type, vDest, nRequired)) {
+              BOOST_FOREACH(const CTxDestination &dest, vDest)
+                  boost::apply_visitor(*this, dest);
+          }
+      }
+
+      void operator()(const CKeyID &keyId) {
+          if (keystore.HaveKey(keyId))
+              vKeys.push_back(keyId);
+      }
+
+      void operator()(const CScriptID &scriptId) {
+          CScript script;
+          if (keystore.GetCScript(scriptId, script))
+              Process(script);
+      }
+
+      void operator()(const CNoDestination &none) {}
+  };
+
+
+  void ExtractAffectedKeys(const CKeyStore &keystore, const CScript& scriptPubKey, std::vector<CKeyID> &vKeys) {
+      CAffectedKeysVisitor(keystore, vKeys).Process(scriptPubKey);
+  }
+
 
 bool ExtractDestinations(const CScript& scriptPubKey, txnouttype& typeRet, vector<CTxDestination>& addressRet, int& nRequiredRet)
 {

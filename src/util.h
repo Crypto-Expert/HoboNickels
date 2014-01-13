@@ -11,9 +11,8 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <sys/resource.h>
-#else
-typedef int pid_t; /* define for Windows compatibility */
 #endif
+
 #include <map>
 #include <vector>
 #include <string>
@@ -35,7 +34,6 @@ typedef unsigned long long  uint64;
 static const int64 COIN = 1000000;
 static const int64 CENT = 10000;
 
-#define loop                for (;;)
 #define BEGIN(a)            ((char*)&(a))
 #define END(a)              ((char*)&((&(a))[1]))
 #define UBEGIN(a)           ((unsigned char*)&(a))
@@ -229,6 +227,7 @@ uint256 GetRandHash();
 int64 GetTime();
 void SetMockTime(int64 nMockTimeIn);
 int64 GetAdjustedTime();
+int64 GetTimeOffset();
 std::string FormatFullVersion();
 std::string FormatSubVersion(const std::string& name, int nClientVersion, const std::vector<std::string>& comments);
 void AddTimeData(const CNetAddr& ip, int64 nTime);
@@ -293,6 +292,17 @@ inline int64 abs64(int64 n)
 {
     return (n >= 0 ? n : -n);
 }
+
+inline std::string leftTrim(std::string src, char chr)
+{
+    std::string::size_type pos = src.find_first_not_of(chr, 0);
+
+    if(pos > 0)
+        src.erase(0, pos);
+
+    return src;
+}
+
 
 template<typename T>
 std::string HexStr(const T itbegin, const T itend, bool fSpaces=false)
@@ -535,6 +545,20 @@ inline uint160 Hash160(const std::vector<unsigned char>& vch)
     return hash2;
 }
 
+/**
+ * Timing-attack-resistant comparison.
+ * Takes time proportional to length
+ * of first argument.
+ */
+template <typename T>
+bool TimingResistantEqual(const T& a, const T& b)
+{
+    if (b.size() == 0) return a.size() == 0;
+    size_t accumulator = a.size() ^ b.size();
+    for (size_t i = 0; i < a.size(); i++)
+        accumulator |= a[i] ^ b[i%b.size()];
+    return accumulator == 0;
+}
 
 /** Median filter over a stream of values.
  * Returns the median of the last N numbers

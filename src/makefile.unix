@@ -4,6 +4,7 @@
 
 USE_UPNP:=0
 USE_IPV6:=1
+USE_LEVELDB:=1
 
 LINK:=$(CXX)
 
@@ -102,6 +103,8 @@ xCXXFLAGS=-O2 -msse2 -pthread -Wall -Wextra -Wformat -Wformat-security -Wno-unus
 xLDFLAGS=$(LDHARDENING) $(LDFLAGS)
 
 OBJS= \
+    leveldb/libleveldb.a \
+    leveldb/libmemenv.a \
     obj/alert.o \
     obj/version.o \
     obj/checkpoints.o \
@@ -138,6 +141,22 @@ OBJS= \
 
 
 all: hobonickelsd
+
+#
+# LevelDB support
+#
+ifeq (${USE_LEVELDB}, 1)
+LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+DEFS += $(addprefix -I,$(CURDIR)/leveldb/include) -DUSE_LEVELDB
+DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
+OBJS += obj/txdb-leveldb.o
+leveldb/libleveldb.a:
+	@echo "Building LevelDB ..."; cd leveldb; make libleveldb.a libmemenv.a; cd ..;
+obj/txdb-leveldb.o: leveldb/libleveldb.a
+endif
+ifneq (${USE_LEVELDB}, 1)
+OBJS += obj/txdb-bdb.o
+endif
 
 test check: test_hobonickels FORCE
 	./test_hobonickels

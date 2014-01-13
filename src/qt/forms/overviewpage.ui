@@ -46,20 +46,6 @@
           <item>
            <layout class="QHBoxLayout" name="horizontalLayout_4">
             <item>
-             <widget class="QLabel" name="label_5">
-              <property name="font">
-               <font>
-                <pointsize>11</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>Wallet</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QLabel" name="labelWalletStatus">
               <property name="toolTip">
                <string>The displayed information may be out of date. Your wallet automatically synchronizes with the Bitcoin network after a connection is established, but this process has not completed yet.</string>

@@ -30,6 +30,7 @@ public:
         DisplayAddresses,  // bool
         DetachDatabases,   // bool
         Language,          // QString
+        CoinControlFeatures, // bool
         OptionIDRowCount,
     };
 
@@ -45,10 +46,11 @@ public:
 
     /* Explicit getters */
     qint64 getTransactionFee();
-    bool getMinimizeToTray() { return fMinimizeToTray; }
-    bool getMinimizeOnClose() { return fMinimizeOnClose; }
-    int getDisplayUnit() { return nDisplayUnit; }
-    bool getDisplayAddresses() { return bDisplayAddresses; }
+    bool getMinimizeToTray();
+    bool getMinimizeOnClose();
+    int getDisplayUnit();
+    bool getDisplayAddresses();
+    bool getCoinControlFeatures();
     QString getLanguage() { return language; }
 
 private:
@@ -56,10 +58,13 @@ private:
     bool bDisplayAddresses;
     bool fMinimizeToTray;
     bool fMinimizeOnClose;
+    bool fCoinControlFeatures;
     QString language;
 
 signals:
     void displayUnitChanged(int unit);
+    void transactionFeeChanged(qint64);
+    void coinControlFeaturesChanged(bool);
 };
 
 #endif // OPTIONSMODEL_H

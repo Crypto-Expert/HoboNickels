@@ -76,6 +76,7 @@ Value getinfo(CWallet* pWallet, const Array& params, bool fHelp)
     obj.push_back(Pair("version",       FormatFullVersion()));
     obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
     obj.push_back(Pair("blocks",        (int)nBestHeight));
+    obj.push_back(Pair("timeoffset",    (boost::int64_t)GetTimeOffset()));
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("wallets",       pWalletManager->GetWalletCount()));
@@ -549,12 +550,12 @@ Value getbalance(CWallet* pWallet, const Array& params, bool fHelp)
     if (params[0].get_str() == "*") {
         // Calculate total balance a different way from GetBalance()
         // (GetBalance() sums up all unspent TxOuts)
-        // getbalance and getbalance '*' should always return the same number.
+        // getbalance and getbalance '*' 0 should return the same number.
         int64 nBalance = 0;
         for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!wtx.IsFinal())
+            if (!wtx.IsConfirmed())
                 continue;
 
             int64 allGeneratedImmature, allGeneratedMature, allFee;
@@ -1362,17 +1363,25 @@ Value backupwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
 Value keypoolrefill(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() > 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "keypoolrefill\n"
+            "keypoolrefill [new-size] \n"
             "Fills the keypool."
             + HelpRequiringPassphrase(pWallet));
 
+    unsigned int nSize = max(GetArg("-keypool", 100), 0LL);
+    if (params.size() > 0) {
+        if (params[0].get_int() < 0)
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected valid size");
+        nSize = (unsigned int) params[0].get_int();
+    }
+
+
     EnsureWalletIsUnlocked(pWallet);
 
-    pWallet->TopUpKeyPool();
+    pWallet->TopUpKeyPool(nSize);
 
-    if (pWallet->GetKeyPoolSize() < GetArg("-keypool", 100))
+    if (pWallet->GetKeyPoolSize() < nSize)
         throw JSONRPCError(RPC_WALLET_ERROR, "Error refreshing keypool.");
 
     return Value::null;
@@ -1428,6 +1437,9 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
 
     pWallet->TimedLock(params[1].get_int64());
 
+    if (!NewThread(ThreadStakeMinter, pWallet))
+       printf("Error: NewThread(ThreadStakeMinter) failed\n");
+
     return Value::null;
 }
 
@@ -1473,7 +1485,42 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
     if (!pWallet->IsCrypted())
         throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletlock was called.");
 
-     pWallet->Lock();
+    pWallet->Lock();
+
+    if (!fShutdown)
+    {
+      printf ("Halting Stake Mining while we lock wallet(s)\n");
+      fStopMining = true;
+      Sleep(1000);
+    }
+
+    //Re-Start Stake for the remaining wallets
+    if (!fShutdown)
+    {
+      fStopMining = false;
+      Sleep(1000);
+
+      vector<string> vstrNames;
+      vector<boost::shared_ptr<CWallet> > vpWallets;
+
+      BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+      {
+         vstrNames.push_back(item.first);
+         vpWallets.push_back(item.second);
+      }
+      for (unsigned int i = 0; i < vstrNames.size(); i++)
+      {
+          if ( !vpWallets[i].get()->IsCrypted() || !vpWallets[i].get()->IsLocked() )
+           {
+              printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
+              if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
+                 printf("Error: NewThread(ThreadStakeMinter) failed\n");
+           }
+           else
+             printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", vstrNames[i].c_str());
+       }
+      }
+
 
     return Value::null;
 }
@@ -1830,7 +1877,7 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
             objWallet.push_back(Pair("unlocked_until_pretty", item.second->GetStringLockTime()));
         }
         objWallet.push_back(Pair("walletversion", item.second->GetVersion()));
-        objWallet.push_back(Pair("keypoolsize", item.second->GetKeyPoolSize()));
+        objWallet.push_back(Pair("keypoolsize",   (int)item.second->GetKeyPoolSize()));
         objWallet.push_back(Pair("keypoololdest", (boost::int64_t)item.second->GetOldestKeyPoolTime()));
         objWallet.push_back(Pair("newmint",       ValueFromAmount(item.second->GetNewMint())));
         objWallet.push_back(Pair("stake",       ValueFromAmount(item.second->GetStake())));
@@ -1917,8 +1964,13 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     }
     pWallet = spWallet.get();
 
-    if (!NewThread(ThreadStakeMinter, pWallet))
-       printf("Error: NewThread(ThreadStakeMinter) failed\n");
+    if ( !pWallet->IsCrypted() )
+    {
+       if (!NewThread(ThreadStakeMinter, pWallet))
+          printf("Error: NewThread(ThreadStakeMinter) failed\n");
+    }
+    else
+      printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", pWallet->strWalletFile.c_str());
 
     return string("Wallet ") + strWalletName + " loaded.";
 }

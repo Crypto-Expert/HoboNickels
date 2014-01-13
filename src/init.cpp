@@ -2,7 +2,7 @@
 // Copyright (c) 2009-2012 The Bitcoin developers
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
-#include "db.h"
+#include "txdb.h"
 #include "walletdb.h"
 #include "bitcoinrpc.h"
 #include "net.h"
@@ -28,6 +28,9 @@ using namespace boost;
 CWalletManager* pWalletManager;
 // TODO: get rid of pwalletMain
 CWallet* pwalletMain;
+unsigned int nNodeLifespan;
+enum Checkpoints::CPMode CheckpointsMode;
+bool fUseFastIndex;
 
 CClientUIInterface uiInterface;
 
@@ -77,6 +80,7 @@ void Shutdown(void* parg)
     {
         fShutdown = true;
         nTransactionsUpdated++;
+        //        CTxDB().Close();
         bitdb.Flush(false);
         StopNode();
         bitdb.Flush(true);
@@ -247,7 +251,7 @@ std::string HelpMessage()
         "  -listen                " + _("Accept connections from outside (default: 1 if no -proxy or -connect)") + "\n" +
         "  -bind=<addr>           " + _("Bind to given address. Use [host]:port notation for IPv6") + "\n" +
         "  -dnsseed               " + _("Find peers using DNS lookup (default: 0)") + "\n" +
-        "  -nosynccheckpoints     " + _("Disable sync checkpoints (default: 0)") + "\n" +
+        "  -cppolicy              " + _("Sync checkpoints policy (default: strict)") + "\n" +
         "  -banscore=<n>          " + _("Threshold for disconnecting misbehaving peers (default: 100)") + "\n" +
         "  -bantime=<n>           " + _("Number of seconds to keep misbehaving peers from reconnecting (default: 86400)") + "\n" +
         "  -maxreceivebuffer=<n>  " + _("Maximum per-connection receive buffer, <n>*1000 bytes (default: 5000)") + "\n" +
@@ -270,7 +274,7 @@ std::string HelpMessage()
         "  -testnet               " + _("Use the test network") + "\n" +
         "  -debug                 " + _("Output extra debugging information. Implies all other -debug* options") + "\n" +
         "  -debugnet              " + _("Output extra network debugging information") + "\n" +
-        "  -logtimestamps         " + _("Prepend debug output with timestamp") + "\n" +
+        "  -logtimestamps         " + _("Prepend debug output with timestamp (default: 1)") + "\n" +
         "  -shrinkdebugfile       " + _("Shrink debug.log file on client startup (default: 1 when no -debug)") + "\n" +
         "  -printtoconsole        " + _("Send trace/debug info to console instead of debug.log file") + "\n" +
 #ifdef WIN32
@@ -282,6 +286,7 @@ std::string HelpMessage()
         "  -rpcallowip=<ip>       " + _("Allow JSON-RPC connections from specified IP address") + "\n" +
         "  -rpcconnect=<ip>       " + _("Send commands to node running on <ip> (default: 127.0.0.1)") + "\n" +
         "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
+        "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n" +
         "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n" +
         "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n" +
         "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n" +
@@ -428,6 +433,21 @@ bool AppInit2()
 
     // ********************************************************* Step 2: parameter interactions
 
+    nNodeLifespan = GetArg("-addrlifespan", 7);
+    fUseFastIndex = GetBoolArg("-fastindex", true);
+
+    CheckpointsMode = Checkpoints::STRICT;
+    std::string strCpMode = GetArg("-cppolicy", "strict");
+
+    if(strCpMode == "strict")
+        CheckpointsMode = Checkpoints::STRICT;
+
+    if(strCpMode == "advisory")
+        CheckpointsMode = Checkpoints::ADVISORY;
+
+    if(strCpMode == "permissive")
+        CheckpointsMode = Checkpoints::PERMISSIVE;
+
     fTestNet = GetBoolArg("-testnet");
     if (fTestNet) {
         SoftSetBoolArg("-irc", true);
@@ -495,7 +515,7 @@ bool AppInit2()
 #endif
     fPrintToConsole = GetBoolArg("-printtoconsole");
     fPrintToDebugger = GetBoolArg("-printtodebugger");
-    fLogTimestamps = GetBoolArg("-logtimestamps");
+    fLogTimestamps = GetBoolArg("-logtimestamps",true);
 
     if (mapArgs.count("-timeout"))
     {
@@ -823,6 +843,7 @@ bool AppInit2()
             LoadExternalBlockFile(file);
             RenameOver(pathBootstrap, pathBootstrapOld);
         }
+        exit(0);
     }
 
     // ********************************************************* Step 10: load peers
