@@ -1279,13 +1279,16 @@ Value listsinceblock(CWallet* pWallet, const Array& params, bool fHelp)
 
 Value gettransaction(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 1)
+    if (fHelp || params.size() < 1 || params.size() > 2)
         throw runtime_error(
-            "gettransaction <txid>\n"
-            "Get detailed information about <txid>");
+            "gettransaction <txid> [walletonly]\n"
+            "Get detailed information about <txid>"
+            "walletonly is optional true/false returning only wallet info.");
 
     uint256 hash;
     hash.SetHex(params[0].get_str());
+
+    bool fWalletOnly = (params.size() > 1) ? params[1].get_bool() : false;
 
     Object entry;
 
@@ -1293,7 +1296,8 @@ Value gettransaction(CWallet* pWallet, const Array& params, bool fHelp)
     {
         const CWalletTx& wtx = pWallet->mapWallet[hash];
 
-        TxToJSON(wtx, 0, entry);
+        if (!fWalletOnly)
+           TxToJSON(wtx, 0, entry);
 
         int64 nCredit = wtx.GetCredit();
         int64 nDebit = wtx.GetDebit();
@@ -1311,13 +1315,14 @@ Value gettransaction(CWallet* pWallet, const Array& params, bool fHelp)
         entry.push_back(Pair("details", details));
     }
     else
-    {
+    {        
         CTransaction tx;
         uint256 hashBlock = 0;
         if (GetTransaction(hash, tx, hashBlock))
         {
             entry.push_back(Pair("txid", hash.GetHex()));
-            TxToJSON(tx, 0, entry);
+            if (!fWalletOnly)
+               TxToJSON(tx, 0, entry);
             if (hashBlock == 0)
                 entry.push_back(Pair("confirmations", 0));
             else
