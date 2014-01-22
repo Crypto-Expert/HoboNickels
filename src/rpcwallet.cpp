@@ -1869,12 +1869,16 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
         throw runtime_error(
             "listwallets\n"
             "Returns list of wallets.");
+    int64 totBalance = 0;
+    int64 totMint = 0;
+    int64 totStake = 0;
 
     Object obj;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
         Object objWallet;
         objWallet.push_back(Pair("balance", ValueFromAmount(item.second->GetBalance())));
+        totBalance+=item.second->GetBalance();
         objWallet.push_back(Pair("encrypted", item.second->IsCrypted()));
         if (item.second->IsCrypted())
         {
@@ -1885,9 +1889,14 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
         objWallet.push_back(Pair("keypoolsize",   (int)item.second->GetKeyPoolSize()));
         objWallet.push_back(Pair("keypoololdest", (boost::int64_t)item.second->GetOldestKeyPoolTime()));
         objWallet.push_back(Pair("newmint",       ValueFromAmount(item.second->GetNewMint())));
+        totMint+=item.second->GetNewMint();
         objWallet.push_back(Pair("stake",       ValueFromAmount(item.second->GetStake())));
+        totStake+=item.second->GetStake();
         obj.push_back(Pair(item.first, objWallet));
     }
+    obj.push_back(Pair("Combined_balance",ValueFromAmount(totBalance)));
+    obj.push_back(Pair("Combined_newmint", ValueFromAmount(totMint)));
+    obj.push_back(Pair("Combined_stake", ValueFromAmount(totStake)));
 
     return obj;
 }
