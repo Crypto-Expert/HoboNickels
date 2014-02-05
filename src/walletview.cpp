@@ -30,7 +30,11 @@
 #include <QActionGroup>
 #include <QAction>
 #include <QLabel>
+#if QT_VERSION < 0x050000
 #include <QDesktopServices>
+#else
+#include <QStandardPaths>
+#endif
 #include <QFileDialog>
 
 WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
@@ -363,7 +367,11 @@ void WalletView::encryptWallet(bool status)
 
 void WalletView::backupWallet()
 {
+#if QT_VERSION < 0x050000
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupWallet(filename)) {

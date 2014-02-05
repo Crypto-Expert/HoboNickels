@@ -47,7 +47,10 @@
 #include <QDesktopServices>
 #include <QTimer>
 #include <QDragEnterEvent>
+#if QT_VERSION < 0x050000
 #include <QUrl>
+#endif
+#include <QMimeData>
 #include <QStyle>
 #include <QListWidget>
 
