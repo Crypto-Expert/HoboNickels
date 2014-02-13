@@ -884,6 +884,7 @@ void BitcoinGUI::unloadWallet()
     WalletModel *walletModel = mapWalletModels.take(walletName);
     delete walletModel;
     walletManager->UnloadWallet(walletName.toStdString());
+    walletStack->setTotBalance();
 }
 
 void BitcoinGUI::dragEnterEvent(QDragEnterEvent *event)
