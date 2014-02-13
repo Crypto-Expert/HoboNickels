@@ -38,6 +38,8 @@ bool WalletStack::addWalletView(const QString& name, WalletModel *walletModel)
 
     // Ensure a walletView is able to show the main window
     connect(walletView, SIGNAL(showNormalIfMinimized()), gui, SLOT(showNormalIfMinimized()));
+    // Ensure a walletView will update when any balance is changed.
+    connect(walletView, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     return true;
 
 }
@@ -64,6 +66,13 @@ void WalletStack::showOutOfSyncWarning(bool fShow)
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
         i.value()->showOutOfSyncWarning(fShow);
+}
+
+void WalletStack::setTotBalance()
+{
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->setTotBalance(false);
 }
 
 void WalletStack::gotoOverviewPage()

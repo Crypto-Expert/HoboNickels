@@ -199,6 +199,10 @@ void WalletView::setWalletModel(WalletModel *walletModel)
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
+
+        //Set Total Balance for all loaded wallets.
+        overviewPage->setTotBalance(walletModel->getTotBalance());
+        connect(walletModel, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     }
 }
 
@@ -346,6 +350,14 @@ bool WalletView::handleURI(const QString& strURI)
 void WalletView::showOutOfSyncWarning(bool fShow)
 {
     overviewPage->showOutOfSyncWarning(fShow);
+}
+
+void WalletView::setTotBalance(bool fEmit)
+{
+    qint64 newTotBalance = walletModel->getTotBalance();
+    overviewPage->setTotBalance(newTotBalance);
+    if(fEmit)
+       emit totBalanceChanged(newTotBalance);
 }
 
 void WalletView::setEncryptionStatus()

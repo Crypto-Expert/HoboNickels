@@ -46,14 +46,14 @@ public:
     void setBitcoinGUI(BitcoinGUI *gui) { this->gui = gui; }
     
     void setClientModel(ClientModel *clientModel) { this->clientModel = clientModel; }
-    
+
     bool addWalletView(const QString& name, WalletModel *walletModel);
     bool removeWalletView(const QString& name);
 
     bool handleURI(const QString &uri);
     
     void showOutOfSyncWarning(bool fShow);
-    
+
 private:
     BitcoinGUI *gui;
     ClientModel *clientModel;
@@ -90,6 +90,7 @@ public slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    void setTotBalance();
     
     /** Set the encryption status as shown in the UI.
      @param[in] status            current encryption status

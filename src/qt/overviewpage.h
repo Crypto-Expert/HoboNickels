@@ -30,6 +30,7 @@ public:
 
 public slots:
     void setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance);
+    void setTotBalance(qint64 totBalance);
     void setNumTransactions(int count);
 
 signals:
@@ -40,6 +41,7 @@ private:
     ClientModel *clientModel;
     WalletModel *walletModel;
     qint64 currentBalance;
+    qint64 currentTotBalance;
     qint64 currentStake;
     qint64 currentUnconfirmedBalance;
     qint64 currentImmatureBalance;

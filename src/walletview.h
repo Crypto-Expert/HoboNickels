@@ -126,12 +126,13 @@ public slots:
     void unlockWallet();
 
     void setEncryptionStatus();
+    void setTotBalance(bool fEmit=true);
 
 
     signals:
     /** Signal that we want to show the main window */
     void showNormalIfMinimized();
-
+    void totBalanceChanged(qint64 totBalance);
 
 };
 

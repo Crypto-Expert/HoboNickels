@@ -104,6 +104,7 @@ OverviewPage::OverviewPage(QWidget *parent) :
     clientModel(0),
     walletModel(0),
     currentBalance(-1),
+    currentTotBalance(-1),
     currentStake(0),
     currentUnconfirmedBalance(-1),
     currentImmatureBalance(-1),
@@ -157,6 +158,13 @@ void OverviewPage::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBa
     ui->labelImmatureText->setVisible(showImmature);
 }
 
+void OverviewPage::setTotBalance(qint64 totBalance)
+{
+   currentTotBalance = totBalance;
+   int unit = walletModel->getOptionsModel()->getDisplayUnit();
+   ui->labelTotBalance->setText(BitcoinUnits::formatWithUnit(unit, totBalance));
+}
+
 void OverviewPage::setNumTransactions(int count)
 {
     ui->labelNumTransactions->setText(QLocale::system().toString(count));
@@ -205,7 +213,10 @@ void OverviewPage::updateDisplayUnit()
     if(walletModel && walletModel->getOptionsModel())
     {
         if(currentBalance != -1)
+        {
             setBalance(currentBalance, walletModel->getStake(), currentUnconfirmedBalance, currentImmatureBalance);
+            setTotBalance(currentTotBalance);
+        }
 
         // Update txdelegate->unit with the current unit
         txdelegate->unit = walletModel->getOptionsModel()->getDisplayUnit();

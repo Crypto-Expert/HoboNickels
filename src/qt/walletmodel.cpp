@@ -3,7 +3,7 @@
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
 #include "transactiontablemodel.h"
-
+#include "init.h"
 #include "ui_interface.h"
 #include "wallet.h"
 #include "walletdb.h" // for BackupWallet
@@ -49,6 +49,19 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
         return nBalance;
     }
     return wallet->GetBalance();
+}
+
+qint64 WalletModel::getTotBalance() const
+{
+    //This is display only, and we don't lock coins,
+    //so Coin Control is not neededfor now
+    int64 nTotBalance = 0;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+       nTotBalance+=pwallet->GetBalance();
+    }
+    return nTotBalance;
 }
 
 qint64 WalletModel::getUnconfirmedBalance() const
@@ -97,6 +110,7 @@ void WalletModel::pollBalanceChanged()
 void WalletModel::checkBalanceChanged()
 {
     qint64 newBalance = getBalance();
+    qint64 newTotBalance = getTotBalance();
     qint64 newStake = getStake();
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
@@ -108,6 +122,7 @@ void WalletModel::checkBalanceChanged()
         cachedUnconfirmedBalance = newUnconfirmedBalance;
         cachedImmatureBalance = newImmatureBalance;
         emit balanceChanged(newBalance, newStake, newUnconfirmedBalance, newImmatureBalance);
+        emit totBalanceChanged(newTotBalance);
     }
 }
 
