@@ -36,14 +36,14 @@ set<pair<COutPoint, unsigned int> > setStakeSeen;
 uint256 hashGenesisBlock = hashGenesisBlockOfficial;
 static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum bnProofOfStakeLimit(~uint256(0) >> 24);
-static CBigNum bnProofOfStakeHardLimit(~uint256(0) >> 30); // disabled temporarily, will be used in the future to fix minimum PoS difficulty at 0.25
+static CBigNum bnProofOfStakeHardLimit(~uint256(0) >> 30);
 
 
 static CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 16);
 static CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
-unsigned int nStakeMinAge = 60 * 60 * 24 * 10; // minimum age for coin age
-unsigned int nStakeMaxAge = 60 * 60 * 24 * 30; // stake age of full weight
+unsigned int nStakeMinAge = 60 * 60 * 24 * 10; // minimum age for coin age - 10 days
+unsigned int nStakeMaxAge = 60 * 60 * 24 * 30; // stake age of full weight - 30 days
 unsigned int nStakeTargetSpacing = 1 * 30; // 1-minute block spacing
 int64 nChainStartTime = 1371910049;
 int nCoinbaseMaturity = 5;
@@ -75,6 +75,7 @@ int64 nHPSTimerStart;
 
 // Settings
 int64 nTransactionFee = MIN_TX_FEE;
+int64 nMinimumInputValue = MIN_TX_FEE;
 extern enum Checkpoints::CPMode CheckpointsMode;
 
 
