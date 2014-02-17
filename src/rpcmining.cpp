@@ -80,7 +80,8 @@ Value getsubsidy(CWallet* pWallet, const Array& params, bool fHelp)
         nBits = GetNextTargetRequired(pindexBest, false);
     }
 
-    return (uint64_t)GetProofOfWorkReward(nBits);
+    return ValueFromAmount((uint64_t)GetProofOfWorkReward(nBits));
+
 }
 
 Value getmininginfo(CWallet* pWallet, const Array& params, bool fHelp)

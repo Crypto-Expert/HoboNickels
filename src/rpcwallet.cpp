@@ -64,10 +64,13 @@ string AccountFromValue(const Value& value)
 
 Value getinfo(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getinfo\n"
-            "Returns an object containing various state info.");
+            "getinfo [extended]\n"
+            "Returns an object containing various state info."
+            "extended is optional true/false returning extended info.");
+
+    bool fExtended = (params.size() > 0) ? params[0].get_bool() : false;
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
@@ -80,12 +83,20 @@ Value getinfo(CWallet* pWallet, const Array& params, bool fHelp)
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("wallets",       pWalletManager->GetWalletCount()));
+    obj.push_back(Pair("walletversion", pWallet->GetVersion()));
     obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
     obj.push_back(Pair("ip",            addrSeenByPeer.ToStringIP()));
 
-    diff.push_back(Pair("proof-of-work",  GetDifficulty()));
-    diff.push_back(Pair("proof-of-stake", GetDifficulty(GetLastBlockIndex(pindexBest, true))));
-    obj.push_back(Pair("difficulty",    diff));
+    if (fExtended)
+    {
+        diff.push_back(Pair("proof-of-work",  GetDifficulty()));
+        diff.push_back(Pair("proof-of-stake", GetDifficulty(GetLastBlockIndex(pindexBest, true))));
+        obj.push_back(Pair("difficulty",    diff));
+    }
+    else
+    {
+        obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
+    }
 
     obj.push_back(Pair("testnet",       fTestNet));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
@@ -1878,7 +1889,7 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
     int64 totMint = 0;
     int64 totStake = 0;
 
-    Object obj;
+    Object obj, comb;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
         Object objWallet;
@@ -1899,9 +1910,10 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
         totStake+=item.second->GetStake();
         obj.push_back(Pair(item.first, objWallet));
     }
-    obj.push_back(Pair("Combined_balance",ValueFromAmount(totBalance)));
-    obj.push_back(Pair("Combined_newmint", ValueFromAmount(totMint)));
-    obj.push_back(Pair("Combined_stake", ValueFromAmount(totStake)));
+    comb.push_back(Pair("balance",ValueFromAmount(totBalance)));
+    comb.push_back(Pair("newmint", ValueFromAmount(totMint)));
+    comb.push_back(Pair("stake", ValueFromAmount(totStake)));
+    obj.push_back(Pair("total",    comb));
 
     return obj;
 }
