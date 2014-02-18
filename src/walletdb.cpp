@@ -614,7 +614,7 @@ void ThreadFlushWalletDB(void* parg)
     }
 }
 
-bool BackupWallet(const CWallet& wallet, const string& strDest)
+bool BackupWallet(const CWallet& wallet, const string& strDest, bool fMulti)
 {
     if (!wallet.fFileBacked)
         return false;
@@ -634,6 +634,8 @@ bool BackupWallet(const CWallet& wallet, const string& strDest)
                 filesystem::path pathDest(strDest);
                 if (filesystem::is_directory(pathDest))
                     pathDest /= wallet.strWalletFile;
+                else if (fMulti)
+                    pathDest += wallet.strWalletFile;
 
                 try {
 #if BOOST_VERSION >= 104000

@@ -1375,8 +1375,36 @@ Value backupwallet(CWallet* pWallet, const Array& params, bool fHelp)
             "Safely copies wallet.dat to destination, which can be a directory or a path with filename.");
 
     string strDest = params[0].get_str();
-    if (!BackupWallet(*pWallet, strDest))
+    if (!BackupWallet(*pWallet, strDest, false))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet backup failed!");
+
+    return Value::null;
+}
+
+Value backupallwallets(CWallet* pWallet, const Array& params, bool fHelp)
+{
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "backupallwallets <destination>\n"
+            "Safely copies all wallets to destination, which can be a directory or a path with filename.");
+
+    string strDest = params[0].get_str();
+
+    vector<string> vstrNames;
+    vector<boost::shared_ptr<CWallet> > vpWallets;
+
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       vstrNames.push_back(item.first);
+       vpWallets.push_back(item.second);
+    }
+
+    for (unsigned int i = 0; i < vstrNames.size(); i++)
+    {
+        if (!BackupWallet(*vpWallets[i], strDest, true))
+          throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet backup failed!");
+    }
 
     return Value::null;
 }

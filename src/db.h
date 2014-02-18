@@ -27,7 +27,7 @@ class CWalletTx;
 extern unsigned int nWalletDBUpdated;
 
 void ThreadFlushWalletDB(void* parg);
-bool BackupWallet(const CWallet& wallet, const std::string& strDest);
+bool BackupWallet(const CWallet& wallet, const std::string& strDest, bool fMulti);
 
 
 class CDBEnv
