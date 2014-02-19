@@ -635,7 +635,15 @@ bool BackupWallet(const CWallet& wallet, const string& strDest, bool fMulti)
                 if (filesystem::is_directory(pathDest))
                     pathDest /= wallet.strWalletFile;
                 else if (fMulti)
+                {
+#if BOOST_VERSION >= 105000
                     pathDest += wallet.strWalletFile;
+#else
+                    filesystem::path pathBaseName = boost::filesystem::basename (pathDest) + wallet.strWalletFile;
+                    filesystem::path pathTemp = pathDest.parent_path();
+                    pathDest = pathTemp / pathBaseName;
+#endif
+                }
 
                 try {
 #if BOOST_VERSION >= 104000
