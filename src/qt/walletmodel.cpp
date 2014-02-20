@@ -328,8 +328,25 @@ bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureStri
 
 bool WalletModel::backupWallet(const QString &filename)
 {
-    return BackupWallet(*wallet, filename.toLocal8Bit().data());
+    return BackupWallet(*wallet, filename.toLocal8Bit().data(), false);
 }
+
+bool WalletModel::backupAllWallets(const QString &filename)
+{
+
+    bool mretval=true;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       bool retval;
+       CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+       retval = BackupWallet(*pwallet, filename.toLocal8Bit().data(), true);
+       if(retval != true)
+         mretval=false;
+
+    }
+    return mretval;
+}
+
 
 // Handlers for core signals
 static void NotifyKeyStoreStatusChanged(WalletModel *walletmodel, CCryptoKeyStore *wallet)

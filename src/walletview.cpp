@@ -140,6 +140,8 @@ void WalletView::createActions()
     encryptWalletAction->setCheckable(true);
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
+    backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
+    backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
     signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
@@ -153,6 +155,7 @@ void WalletView::createActions()
 
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
+    connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
@@ -392,6 +395,25 @@ QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLoca
         }
         else
             gui->message(tr("Backup Successful"), tr("The wallet data was successfully saved to the new location."),
+                      CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
+void WalletView::backupAllWallets()
+{
+#if QT_VERSION < 0x050000
+    QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Prefix for wallet Data (*)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->backupAllWallets(filename)) {
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+                      CClientUIInterface::MSG_ERROR);
+        }
+        else
+            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the new location."),
                       CClientUIInterface::MSG_INFORMATION);
     }
 }
