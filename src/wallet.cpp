@@ -2229,8 +2229,9 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
     return ret;
 }
 
-// ppcoin: check 'spent' consistency between wallet and txindex
-// ppcoin: fix wallet spent state according to txindex
+// check 'spent' consistency between wallet and txindex
+// fix wallet spent state according to txindex
+// remove orphan Coinbase and Coinstake
 void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool fCheckOnly)
 {
     nMismatchFound = 0;
@@ -2245,16 +2246,18 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool
     CTxDB txdb("r");
     BOOST_FOREACH(CWalletTx* pcoin, vCoins)
     {
+        uint256 hash = pcoin->GetHash();
         // Find the corresponding transaction index
         CTxIndex txindex;
-        if (!txdb.ReadTxIndex(pcoin->GetHash(), txindex))
+        if (!txdb.ReadTxIndex(hash, txindex) && !(pcoin->IsCoinBase() || pcoin->IsCoinStake()))
             continue;
+
         for (unsigned int n=0; n < pcoin->vout.size(); n++)
         {
             if (IsMine(pcoin->vout[n]) && pcoin->IsSpent(n) && (txindex.vSpent.size() <= n || txindex.vSpent[n].IsNull()))
             {
-                printf("FixSpentCoins found lost coin %sppc %s[%d], %s\n",
-                    FormatMoney(pcoin->vout[n].nValue).c_str(), pcoin->GetHash().ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
+                printf("FixSpentCoins found lost coin %shbn %s[%d], %s\n",
+                    FormatMoney(pcoin->vout[n].nValue).c_str(), hash.ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
                 nMismatchFound++;
                 nBalanceInQuestion += pcoin->vout[n].nValue;
                 if (!fCheckOnly)
@@ -2265,8 +2268,8 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool
             }
             else if (IsMine(pcoin->vout[n]) && !pcoin->IsSpent(n) && (txindex.vSpent.size() > n && !txindex.vSpent[n].IsNull()))
             {
-                printf("FixSpentCoins found spent coin %sppc %s[%d], %s\n",
-                    FormatMoney(pcoin->vout[n].nValue).c_str(), pcoin->GetHash().ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
+                printf("FixSpentCoins found spent coin %shbn %s[%d], %s\n",
+                    FormatMoney(pcoin->vout[n].nValue).c_str(), hash.ToString().c_str(), n, fCheckOnly? "repair not attempted" : "repairing");
                 nMismatchFound++;
                 nBalanceInQuestion += pcoin->vout[n].nValue;
                 if (!fCheckOnly)
@@ -2275,8 +2278,19 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool
                     pcoin->WriteToDisk();
                 }
             }
+            NotifyTransactionChanged(this, hash, CT_UPDATED);
         }
-    }
+
+        if((pcoin->IsCoinBase() || pcoin->IsCoinStake()) && pcoin->GetDepthInMainChain() == 0)
+        {
+           printf("FixSpentCoins %s orphaned generation tx %s\n", fCheckOnly ? "found" : "removed", hash.ToString().c_str());
+           if (!fCheckOnly)
+           {
+             EraseFromWallet(hash);
+             NotifyTransactionChanged(this, hash, CT_UPDATED);
+           }
+        }
+     }
 }
 
 // ppcoin: disable transaction (only for coinstake)
