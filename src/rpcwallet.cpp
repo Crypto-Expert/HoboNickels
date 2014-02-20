@@ -1483,8 +1483,15 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
     else
         fWalletUnlockMintOnly = false;
 
+    //HBN: Zero unlock time means forever, well 68 years, forever for crypto.
+    int64 nUnlockTime;
 
-    pWallet->TimedLock(params[1].get_int64());
+    if (params[1].get_int64() == 0 )
+      nUnlockTime=std::numeric_limits<int>::max();
+    else
+      nUnlockTime=params[1].get_int64();
+
+    pWallet->TimedLock(nUnlockTime);
 
     if (!NewThread(ThreadStakeMinter, pWallet))
        printf("Error: NewThread(ThreadStakeMinter) failed\n");
