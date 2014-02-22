@@ -3561,7 +3561,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         vRecv >> block;
         uint256 hashBlock = block.GetHash();
 
-        printf("received block %s\n", hashBlock.ToString().substr(0,20).c_str());
+        printf("received block %s sent from %s\n", hashBlock.ToString().substr(0,20).c_str(), pfrom->addr.ToString().c_str());
         // block.print();
 
         CInv inv(MSG_BLOCK, hashBlock);

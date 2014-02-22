@@ -405,8 +405,6 @@ bool CTxDB::LoadBlockIndex()
     // Load bnBestInvalidTrust, OK if it doesn't exist
     CBigNum bnBestInvalidTrust;
     ReadBestInvalidTrust(bnBestInvalidTrust);
-    //Tranz This maybenot be nessiasry
-    //bnBestInvalidTrust = bnBestInvalidTrust.getuint256();
 
     // Verify blocks in the best chain
     int nCheckLevel = GetArg("-checklevel", 1);
