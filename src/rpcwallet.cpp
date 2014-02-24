@@ -571,7 +571,7 @@ Value getbalance(CWallet* pWallet, const Array& params, bool fHelp)
         for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!wtx.IsConfirmed())
+            if (!wtx.IsTrusted())
                 continue;
 
             int64 allGeneratedImmature, allGeneratedMature, allFee;
