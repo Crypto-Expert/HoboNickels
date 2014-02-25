@@ -2366,8 +2366,8 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     // ppcoin: verify hash target and signature of coinstake tx
     if (pblock->IsProofOfStake())
     {
-        uint256 hashProofOfStake = 0;
-        if (!CheckProofOfStake(pblock->vtx[1], pblock->nBits, hashProofOfStake))
+        uint256 hashProofOfStake = 0, targetProofOfStake = 0;
+        if (!CheckProofOfStake(pblock->vtx[1], pblock->nBits, hashProofOfStake, targetProofOfStake))
         {
             printf("WARNING: ProcessBlock(): check proof-of-stake failed for block %s\n", hash.ToString().c_str());
             return false; // do not error here as we expect this during initial block download
@@ -4114,8 +4114,6 @@ public:
 //   fProofOfStake: try (best effort) to make a proof-of-stake block
 CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
 {
-    CReserveKey reservekey(pwallet);
-
     // Create new block
     auto_ptr<CBlock> pblock(new CBlock());
     if (!pblock.get())
@@ -4126,7 +4124,14 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     txNew.vin.resize(1);
     txNew.vin[0].prevout.SetNull();
     txNew.vout.resize(1);
-    txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+
+    if (!fProofOfStake)
+    {
+       CReserveKey reservekey(pwallet);
+       txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+    }
+    else
+       txNew.vout[0].SetEmpty();
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
@@ -4465,19 +4470,18 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     uint256 hashBlock = pblock->GetHash();
     uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
-    
-    if (hashBlock > hashTarget && pblock->IsProofOfWork())
-        return error("CPUMiner : proof-of-work not meeting target");
 
-    /*if(!pblock->IsProofOfWork())
+    //if (hashBlock > hashTarget && pblock->IsProofOfWork())
+    //     return error("CPUMiner : proof-of-work not meeting target");
+
+    if(!pblock->IsProofOfWork())
         return error("CheckWork() : %s is not a proof-of-work block", hashBlock.GetHex().c_str());
 
     if (hashBlock > hashTarget)
-        return error("CheckWork() : proof-of-work not meeting target");*/
+        return error("CheckWork() : proof-of-work not meeting target");
 
     //// debug print
-    printf("CPUMiner:\n");
-    printf("new block found  \n  hash: %s  \ntarget: %s\n", hashBlock.GetHex().c_str(), hashTarget.GetHex().c_str());
+    printf("CheckWork() : new proof-of-work block found  \n  hash: %s  \ntarget: %s\n", hashBlock.GetHex().c_str(), hashTarget.GetHex().c_str());
     pblock->print();
     printf("generated %s\n", FormatMoney(pblock->vtx[0].vout[0].nValue).c_str());
 
@@ -4485,7 +4489,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     {
         LOCK(cs_main);
         if (pblock->hashPrevBlock != hashBestChain)
-            return error("CPUMiner : generated block is stale");
+            return error("CheckWork() : generated block is stale");
 
         // Remove key from key pool
         reservekey.KeepKey();
@@ -4498,13 +4502,13 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 
         // Process this block the same as if we had received it from another node
         if (!ProcessBlock(NULL, pblock))
-            return error("CPUMiner : ProcessBlock, block not accepted");
+            return error("CheckWork() : ProcessBlock, block not accepted");
     }
 
     return true;
 }
 
-/* Tranz Place holder
+
 bool CheckStake(CBlock* pblock, CWallet& wallet)
 {
     uint256 proofHash = 0, hashTarget = 0;
@@ -4540,7 +4544,7 @@ bool CheckStake(CBlock* pblock, CWallet& wallet)
     }
 
     return true;
-}*/
+}
 
 void static ThreadBitcoinMiner(void* parg);
 
@@ -4606,7 +4610,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
                 strMintWarning = "";
                 printf("CPUMiner : proof-of-stake block found %s\n", pblock->GetHash().ToString().c_str()); 
                 SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                CheckWork(pblock.get(), *pwallet, reservekey);
+                CheckStake(pblock.get(), *pwallet);
                 SetThreadPriority(THREAD_PRIORITY_LOWEST);
             }
             Sleep(500);
