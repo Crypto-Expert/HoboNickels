@@ -4465,12 +4465,15 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
 {
     uint256 hashBlock = pblock->GetHash();
     uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+    
+    if (hash > hashTarget && pblock->IsProofOfWork())
+        return error("CPUMiner : proof-of-work not meeting target");
 
-    if(!pblock->IsProofOfWork())
+    /*if(!pblock->IsProofOfWork())
         return error("CheckWork() : %s is not a proof-of-work block", hashBlock.GetHex().c_str());
 
     if (hashBlock > hashTarget)
-        return error("CheckWork() : proof-of-work not meeting target");
+        return error("CheckWork() : proof-of-work not meeting target");*/
 
     //// debug print
     printf("CPUMiner:\n");
