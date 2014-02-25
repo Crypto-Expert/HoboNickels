@@ -4466,7 +4466,7 @@ bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey)
     uint256 hashBlock = pblock->GetHash();
     uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
     
-    if (hash > hashTarget && pblock->IsProofOfWork())
+    if (hashBlock > hashTarget && pblock->IsProofOfWork())
         return error("CPUMiner : proof-of-work not meeting target");
 
     /*if(!pblock->IsProofOfWork())
