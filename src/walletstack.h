@@ -91,6 +91,9 @@ public slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Ask for passphrase to unlock wallet for the session to mint */
+    void unlockWalletForMint();
+
     void setTotBalance();
     
     /** Set the encryption status as shown in the UI.

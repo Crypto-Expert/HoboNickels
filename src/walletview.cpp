@@ -43,6 +43,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     clientModel(0),
     walletModel(0),
     encryptWalletAction(0),
+    unlockWalletAction(0),
     changePassphraseAction(0)
 {
     // Create actions for the toolbar, menu bar and tray/dock icon
@@ -138,14 +139,23 @@ void WalletView::createActions()
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
     encryptWalletAction->setCheckable(true);
+
+    unlockWalletAction = new QAction(QIcon(":/icons/lock_open"), tr("&Unlock Wallet..."), this);
+    unlockWalletAction->setStatusTip(tr("Unlock the wallet for minting"));
+    unlockWalletAction->setCheckable(true);
+
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
+
     backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
     backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
+
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
+
     signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
     signMessageAction->setStatusTip(tr("Sign messages with your HoboNickels addresses to prove you own them"));
+
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
     verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified HoboNickels addresses"));
 
@@ -159,6 +169,7 @@ void WalletView::createActions()
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
+    connect(unlockWalletAction, SIGNAL(triggered(bool)), this, SLOT(unlockWalletForMint()));
 }
 
 void WalletView::setBitcoinGUI(BitcoinGUI *gui)
@@ -433,6 +444,19 @@ void WalletView::unlockWallet()
     if(walletModel->getEncryptionStatus() == WalletModel::Locked)
     {
         AskPassphraseDialog dlg(AskPassphraseDialog::Unlock, this);
+        dlg.setModel(walletModel);
+        dlg.exec();
+    }
+}
+
+void WalletView::unlockWalletForMint()
+{
+    if(!walletModel)
+        return;
+    // Unlock wallet when requested by wallet user
+    if(walletModel->getEncryptionStatus() == WalletModel::Locked)
+    {
+        AskPassphraseDialog dlg(AskPassphraseDialog::UnlockForMint, this);
         dlg.setModel(walletModel);
         dlg.exec();
     }

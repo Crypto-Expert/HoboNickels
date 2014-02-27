@@ -2366,32 +2366,7 @@ void CWalletLockJob::Run()
       Sleep(1000);
     }
 
-    //Re-Start Stake for the remaining wallets
-    if (!fShutdown)
-    {
-      fStopMining = false;
-      Sleep(1000);
-
-      vector<string> vstrNames;
-      vector<boost::shared_ptr<CWallet> > vpWallets;
-
-      BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-      {
-         vstrNames.push_back(item.first);
-         vpWallets.push_back(item.second);
-      }
-      for (unsigned int i = 0; i < vstrNames.size(); i++)
-      {
-          if ( !vpWallets[i].get()->IsCrypted() || !vpWallets[i].get()->IsLocked() )
-           {
-              printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
-              if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
-                 printf("Error: NewThread(ThreadStakeMinter) failed\n");
-           }
-           else
-             printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", vstrNames[i].c_str());
-      }
-    }
+    pWalletManager->RestartStakeMiner();
 
     pWallet->ResetLockTime();
 }
@@ -2842,6 +2817,43 @@ bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, 
     return true;
 }
 
+void CWalletManager::RestartStakeMiner()
+{
+    {
+       LOCK(cs_WalletManager);
+       if (!fShutdown)
+       {
+         fStopMining = true;
+         Sleep(1000);
+       }
+       //Re-Start Stake for the remaining wallets
+       if (!fShutdown)
+       {
+         fStopMining = false;
+         Sleep(1000);
+         vector<string> vstrNames;
+         vector<boost::shared_ptr<CWallet> > vpWallets;
+
+         BOOST_FOREACH(const wallet_map::value_type& item, wallets)
+         {
+            vstrNames.push_back(item.first);
+            vpWallets.push_back(item.second);
+         }
+         for (unsigned int i = 0; i < vstrNames.size(); i++)
+         {
+             if ( !vpWallets[i].get()->IsCrypted() || !vpWallets[i].get()->IsLocked() )
+              {
+                 printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
+                 if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
+                    printf("Error: NewThread(ThreadStakeMinter) failed\n");
+              }
+              else
+                printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", vstrNames[i].c_str());
+         }
+       }
+    }
+}
+
 bool CWalletManager::UnloadWallet(const std::string& strName)
 {
 
@@ -2862,34 +2874,7 @@ bool CWalletManager::UnloadWallet(const std::string& strName)
             wallets.erase(strName);
         }
 
-        //Re-Start Stake for the remaining wallets
-        if (!fShutdown)
-        {
-          fStopMining = false;
-          Sleep(1000);
-          LOCK(cs_WalletManager);
-          vector<string> vstrNames;
-          vector<boost::shared_ptr<CWallet> > vpWallets;
-
-          BOOST_FOREACH(const wallet_map::value_type& item, wallets)
-          {
-             vstrNames.push_back(item.first);
-             vpWallets.push_back(item.second);
-          }
-          for (unsigned int i = 0; i < vstrNames.size(); i++)
-          {
-              if ( !vpWallets[i].get()->IsCrypted() || !vpWallets[i].get()->IsLocked() )
-               {
-                  printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
-                  if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
-                     printf("Error: NewThread(ThreadStakeMinter) failed\n");
-               }
-               else
-                 printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", vstrNames[i].c_str());
-
-
-          }
-        }
+        CWalletManager::RestartStakeMiner();
      }
   return true;
 }

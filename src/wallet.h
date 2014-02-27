@@ -402,6 +402,7 @@ public:
     bool LoadWalletFromFile(const std::string& strFile, std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, int nMaxVersion = 0);
     bool UnloadWallet(const std::string& strName);
     void UnloadAllWallets();
+    void RestartStakeMiner();
 
     // GetWallet and GetDefaultWallet throw a CWalletManagerException if the wallet is not found.
     boost::shared_ptr<CWallet> GetWallet(const std::string& strName);

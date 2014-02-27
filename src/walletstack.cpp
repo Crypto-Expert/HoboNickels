@@ -167,6 +167,13 @@ void WalletStack::unlockWallet()
     if (walletView) walletView->unlockWallet();
 }
 
+void WalletStack::unlockWalletForMint()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->unlockWalletForMint();
+}
+
+
 void WalletStack::setEncryptionStatus()
 {
     WalletView *walletView = (WalletView*)currentWidget();

@@ -1896,19 +1896,8 @@ void StartNode(void* parg)
     // ppcoin: mint proof-of-stake blocks in the background
     //hbn: each wallet gets its own thread.
     //Todo: Need to add a method to choose not to run stake off wallet.
-    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-    {
-      printf("Starting MultiThreadStakeMinter\n");
-      CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
-      if ( !pwallet->IsCrypted() )
-      {
-         if (!NewThread(ThreadStakeMinter, pwallet))
-            printf("Error: NewThread(ThreadStakeMinter) failed\n");
-      }
-      else
-        printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", pwallet->strWalletFile.c_str());
 
-    }
+    pWalletManager->RestartStakeMiner();
 
     // Generate coins in the background
     GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain);

@@ -154,6 +154,9 @@ Value importwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     EnsureWalletIsUnlocked(pWallet);
 
+    if (fWalletUnlockMintOnly) // no importwallet in mint-only mode
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
+
     ifstream file;
     file.open(params[0].get_str().c_str());
     if (!file.is_open())
@@ -263,6 +266,9 @@ Value dumpwallet(CWallet* pWallet, const Array& params, bool fHelp)
             "Dumps all wallet keys in a human-readable format.");
 
     EnsureWalletIsUnlocked(pWallet);
+
+    if (fWalletUnlockMintOnly) // no dumpwallet in mint-only mode
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
 
     ofstream file;
     file.open(params[0].get_str().c_str());

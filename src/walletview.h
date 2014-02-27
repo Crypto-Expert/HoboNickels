@@ -83,6 +83,7 @@ private:
     QAction *toggleHideAction;
     QAction *exportAction;
     QAction *encryptWalletAction;
+    QAction *unlockWalletAction;
     QAction *backupWalletAction;
     QAction *backupAllWalletsAction;
     QAction *changePassphraseAction;
@@ -126,6 +127,8 @@ public slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Ask for passphrase to unlock wallet for the session to mint */
+    void unlockWalletForMint();
 
     void setEncryptionStatus();
     void setTotBalance(bool fEmit=true);

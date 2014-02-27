@@ -301,7 +301,7 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
     }
 }
 
-bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase)
+bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
     if(locked)
     {
@@ -311,7 +311,16 @@ bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase)
     else
     {
         // Unlock
-        return wallet->Unlock(passPhrase);
+        bool rc;
+        rc = wallet->Unlock(passPhrase);
+        if (rc && formint)
+        {
+            if (!NewThread(ThreadStakeMinter, wallet))
+               printf("Error: NewThread(ThreadStakeMinter) failed\n");
+            else
+              fWalletUnlockMintOnly=true;
+        }
+        return rc;
     }
 }
 
@@ -394,11 +403,19 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
 {
 
     bool was_locked = getEncryptionStatus() == Locked;
+    bool fWalletUnlockMintOnlyRelock=true;
+
+    //Tranz: Some other wallet is unlocked for minting, but not this one.
+    //We want to relock it in this case.
+    //fWalletUnlockMintOnly needs to be part of the model to fix this correctly
+    if(was_locked && fWalletUnlockMintOnly)
+       fWalletUnlockMintOnlyRelock=true;
 
     if ((!was_locked) && fWalletUnlockMintOnly)
     {
        setWalletLocked(true);
        was_locked = getEncryptionStatus() == Locked;
+       fWalletUnlockMintOnlyRelock=false;
 
     }
 
@@ -411,7 +428,16 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
     // If wallet is still locked, unlock was failed or cancelled, mark context as invalid
     bool valid = getEncryptionStatus() != Locked;
 
-    return UnlockContext(this, valid, was_locked && !fWalletUnlockMintOnly);
+    // We need to shut off PoS for encrypted/locked wallets. If the pass is not accecpted
+    // the wallet is locked.
+    if((!valid) && (!fWalletUnlockMintOnlyRelock && fWalletUnlockMintOnly) )
+    {
+       fStopMining=true;
+       Sleep(1000);
+       pWalletManager->RestartStakeMiner();
+    }
+
+     return UnlockContext(this, valid, was_locked && fWalletUnlockMintOnlyRelock);
 }
 
 WalletModel::UnlockContext::UnlockContext(WalletModel *wallet, bool valid, bool relock):
