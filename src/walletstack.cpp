@@ -167,6 +167,12 @@ void WalletStack::unlockWallet()
     if (walletView) walletView->unlockWallet();
 }
 
+void WalletStack::lockWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->lockWallet();
+}
+
 void WalletStack::unlockWalletForMint()
 {
     WalletView *walletView = (WalletView*)currentWidget();

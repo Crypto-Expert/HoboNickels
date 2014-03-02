@@ -44,6 +44,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     walletModel(0),
     encryptWalletAction(0),
     unlockWalletAction(0),
+    lockWalletAction(0),
     changePassphraseAction(0)
 {
     // Create actions for the toolbar, menu bar and tray/dock icon
@@ -144,6 +145,10 @@ void WalletView::createActions()
     unlockWalletAction->setStatusTip(tr("Unlock the wallet for minting"));
     unlockWalletAction->setCheckable(true);
 
+    lockWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Lock Wallet..."), this);
+    lockWalletAction->setStatusTip(tr("Lock the wallet"));
+    lockWalletAction->setCheckable(true);
+
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
 
@@ -170,6 +175,7 @@ void WalletView::createActions()
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
     connect(unlockWalletAction, SIGNAL(triggered(bool)), this, SLOT(unlockWalletForMint()));
+    connect(lockWalletAction, SIGNAL(triggered(bool)), this, SLOT(lockWallet()));
 }
 
 void WalletView::setBitcoinGUI(BitcoinGUI *gui)
@@ -434,6 +440,15 @@ void WalletView::changePassphrase()
     AskPassphraseDialog dlg(AskPassphraseDialog::ChangePass, this);
     dlg.setModel(walletModel);
     dlg.exec();
+}
+
+void WalletView::lockWallet()
+{
+    if(!walletModel)
+        return;
+    // Lock wallet when requested by user
+    if(walletModel->getEncryptionStatus() == WalletModel::Unlocked)
+        walletModel->setWalletLocked(true,"",true);
 }
 
 void WalletView::unlockWallet()

@@ -303,15 +303,25 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
 
 bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
+
+    bool rc;
     if(locked)
     {
-        // Lock
-        return wallet->Lock();
+        if(formint)
+        {
+           // Lock as Requested by user
+           rc = wallet->Lock();
+           fStopMining=true;
+           Sleep(1000);
+           pWalletManager->RestartStakeMiner();
+           return rc;
+        }
+        else
+          return  wallet->Lock(); // Lock
     }
     else
     {
         // Unlock
-        bool rc;
         rc = wallet->Unlock(passPhrase);
         if (rc && formint)
         {

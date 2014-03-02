@@ -100,6 +100,7 @@ private:
     QAction *toggleHideAction;
     QAction *encryptWalletAction;
     QAction *unlockWalletAction;
+    QAction *lockWalletAction;
     QAction *backupWalletAction;
     QAction *backupAllWalletsAction;
     QAction *changePassphraseAction;
@@ -197,6 +198,9 @@ private slots:
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Allow user to lock wallet */
+    void lockWallet();
+
     /** Ask for passphrase to unlock wallet during entire session */
     void unlockWalletForMint();
 
