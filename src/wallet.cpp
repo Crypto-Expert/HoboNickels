@@ -2301,10 +2301,10 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, int&
 
         if((pcoin->IsCoinBase() || pcoin->IsCoinStake()) && pcoin->GetDepthInMainChain() == 0)
         {
+           nOrphansFound++;
            printf("FixSpentCoins %s orphaned generation tx %s\n", fCheckOnly ? "found" : "removed", hash.ToString().c_str());
            if (!fCheckOnly)
            {
-             nOrphansFound++;
              EraseFromWallet(hash);
              NotifyTransactionChanged(this, hash, CT_UPDATED);
            }
