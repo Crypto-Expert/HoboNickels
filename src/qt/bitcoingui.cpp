@@ -305,6 +305,12 @@ void BitcoinGUI::createActions()
     lockWalletAction->setStatusTip(tr("Lock the wallet"));
     lockWalletAction->setCheckable(true);
 
+    checkWalletAction = new QAction(QIcon(":/icons/transaction_confirmed"), tr("&Check Wallet..."), this);
+    checkWalletAction->setStatusTip(tr("Check wallet integrity and report findings"));
+
+    repairWalletAction = new QAction(QIcon(":/icons/options"), tr("&Repair Wallet..."), this);
+    repairWalletAction->setStatusTip(tr("Fix wallet integrity and remove orphans"));
+
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
 
@@ -335,6 +341,8 @@ void BitcoinGUI::createActions()
     connect(optionsAction, SIGNAL(triggered()), this, SLOT(optionsClicked()));
     connect(toggleHideAction, SIGNAL(triggered()), this, SLOT(toggleHidden()));
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
+    connect(checkWalletAction, SIGNAL(triggered()), this, SLOT(checkWallet()));
+    connect(repairWalletAction, SIGNAL(triggered()), this, SLOT(repairWallet()));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
@@ -375,6 +383,10 @@ void BitcoinGUI::createMenuBar()
     wallet->addAction(changePassphraseAction);
     wallet->addAction(unlockWalletAction);
     wallet->addAction(lockWalletAction);
+    wallet->addSeparator();
+    wallet->addAction(checkWalletAction);
+    wallet->addAction(repairWalletAction);
+
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(openRPCConsoleAction);
@@ -1005,6 +1017,16 @@ void BitcoinGUI::setEncryptionStatus(int status)
 void BitcoinGUI::encryptWallet(bool status)
 {
     walletStack->encryptWallet(status);
+}
+
+void BitcoinGUI::checkWallet()
+{
+   walletStack->checkWallet();
+}
+
+void BitcoinGUI::repairWallet()
+{
+   walletStack->repairWallet();
 }
 
 void BitcoinGUI::backupWallet()

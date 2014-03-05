@@ -1745,14 +1745,17 @@ Value checkwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     int nMismatchSpent;
     int64 nBalanceInQuestion;
-    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, true);
+    int nOrphansFound;
+
+    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
     Object result;
-    if (nMismatchSpent == 0)
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
         result.push_back(Pair("wallet check passed", true));
     else
     {
         result.push_back(Pair("mismatched spent coins", nMismatchSpent));
         result.push_back(Pair("amount in question", ValueFromAmount(nBalanceInQuestion)));
+        result.push_back(Pair("orphan blocks found", nOrphansFound));
     }
     return result;
 }
@@ -1768,14 +1771,17 @@ Value repairwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     int nMismatchSpent;
     int64 nBalanceInQuestion;
-    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion);
+    int nOrphansFound;
+
+    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
     Object result;
-    if (nMismatchSpent == 0)
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
         result.push_back(Pair("wallet check passed", true));
     else
     {
         result.push_back(Pair("mismatched spent coins", nMismatchSpent));
         result.push_back(Pair("amount affected by repair", ValueFromAmount(nBalanceInQuestion)));
+        result.push_back(Pair("orphan blocks removed", nOrphansFound));
     }
     return result;
 }

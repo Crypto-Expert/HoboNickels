@@ -2249,10 +2249,11 @@ set< set<CTxDestination> > CWallet::GetAddressGroupings()
 // check 'spent' consistency between wallet and txindex
 // fix wallet spent state according to txindex
 // remove orphan Coinbase and Coinstake
-void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool fCheckOnly)
+void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, int& nOrphansFound, bool fCheckOnly)
 {
     nMismatchFound = 0;
     nBalanceInQuestion = 0;
+    nOrphansFound = 0;
 
     LOCK(cs_wallet);
     vector<CWalletTx*> vCoins;
@@ -2303,6 +2304,7 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, bool
            printf("FixSpentCoins %s orphaned generation tx %s\n", fCheckOnly ? "found" : "removed", hash.ToString().c_str());
            if (!fCheckOnly)
            {
+             nOrphansFound++;
              EraseFromWallet(hash);
              NotifyTransactionChanged(this, hash, CT_UPDATED);
            }

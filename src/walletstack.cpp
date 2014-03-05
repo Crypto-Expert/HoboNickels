@@ -143,6 +143,18 @@ void WalletStack::encryptWallet(bool status)
     if (walletView) walletView->encryptWallet(status);
 }
 
+void WalletStack::repairWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->repairWallet();
+}
+
+void WalletStack::checkWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->checkWallet();
+}
+
 void WalletStack::backupWallet()
 {
     WalletView *walletView = (WalletView*)currentWidget();

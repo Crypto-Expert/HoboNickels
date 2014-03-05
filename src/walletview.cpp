@@ -149,6 +149,12 @@ void WalletView::createActions()
     lockWalletAction->setStatusTip(tr("Lock the wallet"));
     lockWalletAction->setCheckable(true);
 
+    checkWalletAction = new QAction(QIcon(":/icons/transaction_confirmed"), tr("&Check Wallet..."), this);
+    checkWalletAction->setStatusTip(tr("Check wallet integrity and report findings"));
+
+    repairWalletAction = new QAction(QIcon(":/icons/options"), tr("&Repair Wallet..."), this);
+    repairWalletAction->setStatusTip(tr("Fix wallet integrity and remove orphans"));
+
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
 
@@ -169,6 +175,8 @@ void WalletView::createActions()
     exportAction->setToolTip(exportAction->statusTip());
 
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
+    connect(checkWalletAction, SIGNAL(triggered()), this, SLOT(checkWallet()));
+    connect(repairWalletAction, SIGNAL(triggered()), this, SLOT(repairWallet()));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
@@ -397,12 +405,77 @@ void WalletView::encryptWallet(bool status)
     setEncryptionStatus();
 }
 
+void WalletView::checkWallet()
+{
+
+    int nMismatchSpent;
+    int64 nBalanceInQuestion;
+    int nOrphansFound;
+
+    if(!walletModel)
+        return;
+
+    // Check the wallet as requested by user
+    walletModel->checkWallet(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
+       gui->message(tr("Check Wallet Information"),
+                    tr("Wallet %1 passed integrity test!\n"
+                       "Nothing found to fix.")
+                    .arg(gui->getCurrentWallet())
+                    ,CClientUIInterface::MSG_INFORMATION);
+    else
+       gui->message(tr("Check Wallet Information"),
+                    tr("Wallet %1 failed integrity test!\n\n"
+                       "Mismatched coin(s) found: %2.\n"
+                       "Amount in question: %3.\n"
+                       "Orphans found: %4.\n\n"
+                       "Please backup wallet and run repair wallet.\n")
+                          .arg(gui->getCurrentWallet())
+                          .arg(nMismatchSpent)
+                          .arg(BitcoinUnits::formatWithUnit(walletModel->getOptionsModel()->getDisplayUnit(), nBalanceInQuestion,true))
+                          .arg(nOrphansFound)
+                    ,CClientUIInterface::MSG_WARNING);
+}
+
+void WalletView::repairWallet()
+{
+
+    int nMismatchSpent;
+    int64 nBalanceInQuestion;
+    int nOrphansFound;
+
+    if(!walletModel)
+        return;
+
+    // Repair the wallet as requested by user
+    walletModel->repairWallet(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
+       gui->message(tr("Repair Wallet Information"),
+                    tr("Wallet %1 passed integrity test!\n"
+                       "Nothing found to fix.")
+                    .arg(gui->getCurrentWallet())
+                    ,CClientUIInterface::MSG_INFORMATION);
+    else
+       gui->message(tr("Repair Wallet Information"),
+                    tr("Wallet %1 failed integrity test and has been repaired!\n"
+                       "Mismatched coin(s) found: %2\n"
+                       "Amount affected by repair: %3\n"
+                       "Orphans removed: %4\n")
+                          .arg(gui->getCurrentWallet())
+                          .arg(nMismatchSpent)
+                          .arg(BitcoinUnits::formatWithUnit(walletModel->getOptionsModel()->getDisplayUnit(), nBalanceInQuestion,true))
+                          .arg(nOrphansFound)
+                    ,CClientUIInterface::MSG_WARNING);
+}
+
 void WalletView::backupWallet()
 {
 #if QT_VERSION < 0x050000
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #else
-QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 #endif
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if(!filename.isEmpty()) {
@@ -421,7 +494,7 @@ void WalletView::backupAllWallets()
 #if QT_VERSION < 0x050000
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
 #else
-QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 #endif
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Prefix for wallet Data (*)"));
     if(!filename.isEmpty()) {
@@ -449,6 +522,11 @@ void WalletView::lockWallet()
     // Lock wallet when requested by user
     if(walletModel->getEncryptionStatus() == WalletModel::Unlocked)
         walletModel->setWalletLocked(true,"",true);
+    gui->message(tr("Lock Wallet Information"),
+                 tr("Wallet %1 has been locked.\n"
+                    "Proof of Stake has stopped.\n")
+                 .arg(gui->getCurrentWallet())
+                 ,CClientUIInterface::MSG_INFORMATION);
 }
 
 void WalletView::unlockWallet()
@@ -462,7 +540,7 @@ void WalletView::unlockWallet()
         dlg.setModel(walletModel);
         dlg.exec();
     }
-}
+ }
 
 void WalletView::unlockWalletForMint()
 {
@@ -474,5 +552,12 @@ void WalletView::unlockWalletForMint()
         AskPassphraseDialog dlg(AskPassphraseDialog::UnlockForMint, this);
         dlg.setModel(walletModel);
         dlg.exec();
+        // Only show message if unlock is sucessfull.
+        if(walletModel->getEncryptionStatus() == WalletModel::Unlocked)
+           gui->message(tr("Unlock Wallet Information"),
+                     tr("Wallet %1 has been unlocked. \n"
+                        "Proof of Stake has started.\n")
+                     .arg(gui->getCurrentWallet())
+                     ,CClientUIInterface::MSG_INFORMATION);
     }
 }

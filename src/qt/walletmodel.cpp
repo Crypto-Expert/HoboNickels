@@ -54,7 +54,7 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 qint64 WalletModel::getTotBalance() const
 {
     //This is display only, and we don't lock coins,
-    //so Coin Control is not neededfor now
+    //so Coin Control is not needed for now
     int64 nTotBalance = 0;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
@@ -326,7 +326,7 @@ bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, b
         if (rc && formint)
         {
             if (!NewThread(ThreadStakeMinter, wallet))
-               printf("Error: NewThread(ThreadStakeMinter) failed\n");
+               OutputDebugStringF("Error: NewThread(ThreadStakeMinter) failed\n");
             else
               fWalletUnlockMintOnly=true;
         }
@@ -366,6 +366,15 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
+void WalletModel::checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+{
+  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
+}
+
+void WalletModel::repairWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+{
+  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+}
 
 // Handlers for core signals
 static void NotifyKeyStoreStatusChanged(WalletModel *walletmodel, CCryptoKeyStore *wallet)
