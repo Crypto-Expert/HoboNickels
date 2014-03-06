@@ -146,6 +146,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     setCentralWidget(walletFrame);
 
     connect(walletList, SIGNAL(currentTextChanged(const QString&)), walletStack, SLOT(setCurrentWalletView(const QString&)));
+    connect(walletList, SIGNAL(currentTextChanged(const QString&)), this, SLOT(updateStakingIcon()));
 
     // Create status bar
     statusBar();
@@ -154,15 +155,18 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QFrame *frameBlocks = new QFrame();
     frameBlocks->setContentsMargins(0,0,0,0);
     frameBlocks->setMinimumWidth(56);
-    frameBlocks->setMaximumWidth(56);
+    frameBlocks->setMaximumWidth(90);
     QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
     labelEncryptionIcon = new QLabel();
+    labelStakingIcon = new QLabel();
     labelConnectionsIcon = new QLabel();
     labelBlocksIcon = new QLabel();
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelEncryptionIcon);
+    frameBlocksLayout->addStretch();
+    frameBlocksLayout->addWidget(labelStakingIcon);
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelConnectionsIcon);
     frameBlocksLayout->addStretch();
@@ -449,6 +453,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
 
         setNumBlocks(clientModel->getNumBlocks(), clientModel->getNumBlocksOfPeers());
         connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
+        connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(updateStakingIcon()));
 
         // Receive and report messages from network/worker thread
         connect(clientModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
@@ -1012,51 +1017,53 @@ void BitcoinGUI::setEncryptionStatus(int status)
         lockWalletAction->setEnabled(false);
         break;
     }
+    updateStakingIcon();
+
 }
 
 void BitcoinGUI::encryptWallet(bool status)
 {
-    walletStack->encryptWallet(status);
+   if (walletStack) walletStack->encryptWallet(status);
 }
 
 void BitcoinGUI::checkWallet()
 {
-   walletStack->checkWallet();
+   if (walletStack) walletStack->checkWallet();
 }
 
 void BitcoinGUI::repairWallet()
 {
-   walletStack->repairWallet();
+   if (walletStack) walletStack->repairWallet();
 }
 
 void BitcoinGUI::backupWallet()
 {
-   walletStack->backupWallet();
+   if (walletStack) walletStack->backupWallet();
 }
 
 void BitcoinGUI::backupAllWallets()
 {
-   walletStack->backupAllWallets();
+   if (walletStack) walletStack->backupAllWallets();
 }
 
 void BitcoinGUI::changePassphrase()
 {
-   walletStack->changePassphrase();
+   if (walletStack) walletStack->changePassphrase();
 }
 
 void BitcoinGUI::unlockWallet()
 {
-   walletStack->unlockWallet();
+   if (walletStack) walletStack->unlockWallet();
 }
 
 void BitcoinGUI::lockWallet()
 {
-   walletStack->lockWallet();
+   if (walletStack) walletStack->lockWallet();
 }
 
 void BitcoinGUI::unlockWalletForMint()
 {
-   walletStack->unlockWalletForMint();
+   if (walletStack) walletStack->unlockWalletForMint();
 }
 
 void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
@@ -1085,4 +1092,45 @@ void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
 void BitcoinGUI::toggleHidden()
 {
     showNormalIfMinimized(true);
+}
+
+void BitcoinGUI::updateStakingIcon()
+{
+
+      if (!walletStack)
+         return;
+
+      uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+
+      labelStakingIcon->setPixmap(QIcon(":/icons/staking_off").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+
+      if (!clientModel->getNumConnections())
+         labelStakingIcon->setToolTip(tr("Not staking because wallet is offline"));
+      else if (clientModel->inInitialBlockDownload())
+         labelStakingIcon->setToolTip(tr("Not staking because wallet is syncing"));
+      else if (walletStack->isWalletLocked())
+         labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
+      else
+      {
+         walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+         if (!nWeight)
+            labelStakingIcon->setToolTip(tr("Not staking because you don't have mature coins"));
+          else
+          {
+            uint64 nNetworkWeight = clientModel->getPosKernalPS();
+            int nEstimateTime = clientModel->getStakeTargetSpacing() * nNetworkWeight / nWeight;
+            QString text;
+            if (nEstimateTime < 60)
+               text = tr("%n second(s)", "", nEstimateTime);
+            else if (nEstimateTime < 60*60)
+               text = tr("%n minute(s)", "", nEstimateTime/60);
+            else if (nEstimateTime < 24*60*60)
+               text = tr("%n hour(s)", "", nEstimateTime/(60*60));
+            else
+               text = tr("%n day(s)", "", nEstimateTime/(60*60*24));
+
+            labelStakingIcon->setPixmap(QIcon(":/icons/staking_on").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+            labelStakingIcon->setToolTip(tr("Staking.\n Your weight is %1\n Network weight is %2\nEstimate time to earn reward is %3").arg(nWeight).arg(nNetworkWeight).arg(text));
+          }
+       }
 }

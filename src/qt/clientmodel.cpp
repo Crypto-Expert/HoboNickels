@@ -12,6 +12,8 @@
 #include <QTimer>
 
 static const int64 nClientStartupTime = GetTime();
+double GetPoSKernelPS();
+extern unsigned int nStakeTargetSpacing;
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), optionsModel(optionsModel),
@@ -45,6 +47,16 @@ int ClientModel::getNumBlocksAtStartup()
 {
     if (numBlocksAtStartup == -1) numBlocksAtStartup = getNumBlocks();
     return numBlocksAtStartup;
+}
+
+double ClientModel::getPosKernalPS()
+{
+    return GetPoSKernelPS();
+}
+
+int ClientModel::getStakeTargetSpacing()
+{
+    return nStakeTargetSpacing;
 }
 
 QDateTime ClientModel::getLastBlockDate() const
@@ -116,11 +128,6 @@ bool ClientModel::inInitialBlockDownload() const
 
 enum BlockSource ClientModel::getBlockSource() const
 {
-    //Tranz Need to add -reindex.
-    //if (fReindex)
-    //    return BLOCK_SOURCE_REINDEX;
-    //if (fImporting)
-    //    return BLOCK_SOURCE_DISK;
     return BLOCK_SOURCE_NETWORK;
 }
 

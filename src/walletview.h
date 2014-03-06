@@ -66,6 +66,7 @@ private:
     SignVerifyMessageDialog *signVerifyMessageDialog;
 
     QLabel *labelEncryptionIcon;
+    QLabel *labelStakingIcon;
     QLabel *labelConnectionsIcon;
     QLabel *labelBlocksIcon;
     QLabel *progressBarLabel;
@@ -140,7 +141,12 @@ public slots:
     void unlockWalletForMint();
 
     void setEncryptionStatus();
+    /** Add up all loaded wallets and show total balance */
     void setTotBalance(bool fEmit=true);
+    /** Give user information about staking */
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    /** Report from View about Wallet Encryptions */
+    bool isWalletLocked();
 
 
     signals:

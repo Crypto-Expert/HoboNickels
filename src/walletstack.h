@@ -61,7 +61,7 @@ private:
     QMap<QString, ClientModel*> mapClientModels;
     
     bool bOutOfSync;
-    
+
 public slots:
     void setCurrentWalletView(const QString& name);
     QString getCurrentWallet();
@@ -99,8 +99,12 @@ public slots:
     void lockWallet();
     /** Ask for passphrase to unlock wallet for the session to mint */
     void unlockWalletForMint();
-
+    /** Add up all loaded wallets and show total balance */
     void setTotBalance();
+    /** Give user information about staking */
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    /** Report from Stack about Wallet Encryption */
+    bool isWalletLocked();
     
     /** Set the encryption status as shown in the UI.
      @param[in] status            current encryption status

@@ -366,6 +366,11 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
+void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight )
+{
+   wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
+}
+
 void WalletModel::checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
 {
   wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);

@@ -234,3 +234,16 @@ void WalletStack::setCurrentWalletView(const QString& name)
         }
      }
 }
+
+void WalletStack::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+bool WalletStack::isWalletLocked()
+{
+  WalletView *walletView = (WalletView*)currentWidget();
+  if (walletView) return walletView->isWalletLocked();
+  return false;
+}

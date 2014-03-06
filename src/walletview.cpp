@@ -409,7 +409,7 @@ void WalletView::checkWallet()
 {
 
     int nMismatchSpent;
-    int64 nBalanceInQuestion;
+    qint64 nBalanceInQuestion;
     int nOrphansFound;
 
     if(!walletModel)
@@ -560,4 +560,19 @@ void WalletView::unlockWalletForMint()
                      .arg(gui->getCurrentWallet())
                      ,CClientUIInterface::MSG_INFORMATION);
     }
+}
+
+void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+{
+    if(!walletModel)
+       return;
+    walletModel->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+bool WalletView::isWalletLocked()
+{
+  if(!walletModel)
+     return false;
+  return (walletModel->getEncryptionStatus() == WalletModel::Locked);
+
 }

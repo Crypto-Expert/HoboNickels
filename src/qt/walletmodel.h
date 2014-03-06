@@ -6,7 +6,6 @@
 #include <map>
 
 #include "allocators.h" /* for SecureString */
-#include "util.h" /* for int64 */
 
 class OptionsModel;
 class AddressTableModel;
@@ -100,8 +99,10 @@ public:
     bool backupWallet(const QString &filename);
     bool backupAllWallets(const QString &filename);
     // Wallet Repair
-    void checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound);
-    void repairWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound);
+    void checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
+    void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
+    //PoS Information
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
 
 
 
