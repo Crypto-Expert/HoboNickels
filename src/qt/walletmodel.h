@@ -103,6 +103,8 @@ public:
     void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
     //PoS Information
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    //PoS Information about value and time
+    void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
 
 
 

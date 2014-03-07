@@ -120,7 +120,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     unloadWalletButton = new QPushButton("Unload");
 
     loadButtonFrameLayout->addWidget(newWalletButton);
-    newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-yourname.dat"));
+    newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-[name].dat, (wallet-stake.dat) for example"));
     newWalletButton->setToolTip(newWalletButton->statusTip());
 
     loadButtonFrameLayout->addWidget(loadWalletButton);
@@ -146,7 +146,6 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     setCentralWidget(walletFrame);
 
     connect(walletList, SIGNAL(currentTextChanged(const QString&)), walletStack, SLOT(setCurrentWalletView(const QString&)));
-    connect(walletList, SIGNAL(currentTextChanged(const QString&)), this, SLOT(updateStakingIcon()));
 
     // Create status bar
     statusBar();
@@ -397,7 +396,6 @@ void BitcoinGUI::createMenuBar()
     help->addSeparator();
     help->addAction(aboutAction);
     help->addAction(aboutQtAction);
-
 
 }
 
@@ -682,26 +680,17 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     QString text;
 
     // Represent time from last generated block in human readable text
-    if(secs <= 0)
-    {
-        // Fully up to date. Leave text empty.
+    if(secs <= 0) {
+      // Fully up to date. Leave text empty.
     }
     else if(secs < 60)
-    {
-        text = tr("%n second(s) ago","",secs);
-    }
+       text = tr("%n second(s) ago","",secs);
     else if(secs < 60*60)
-    {
-        text = tr("%n minute(s) ago","",secs/60);
-    }
+       text = tr("%n minute(s) ago","",secs/60);
     else if(secs < 24*60*60)
-    {
-        text = tr("%n hour(s) ago","",secs/(60*60));
-    }
+       text = tr("%n hour(s) ago","",secs/(60*60));
     else
-    {
-        text = tr("%n day(s) ago","",secs/(60*60*24));
-    }
+       text = tr("%n day(s) ago","",secs/(60*60*24));
 
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60 && count >= nTotalBlocks)
@@ -1017,6 +1006,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
         lockWalletAction->setEnabled(false);
         break;
     }
+    //Put here as this function will be called on any wallet or lock status change.
     updateStakingIcon();
 
 }
@@ -1100,18 +1090,19 @@ void BitcoinGUI::updateStakingIcon()
       if (!walletStack)
          return;
 
-      uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
-
       labelStakingIcon->setPixmap(QIcon(":/icons/staking_off").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
 
       if (!clientModel->getNumConnections())
          labelStakingIcon->setToolTip(tr("Not staking because wallet is offline"));
-      else if (clientModel->inInitialBlockDownload())
+      else if (clientModel->inInitialBlockDownload() ||
+               clientModel->getNumBlocks() < clientModel->getNumBlocksOfPeers())
          labelStakingIcon->setToolTip(tr("Not staking because wallet is syncing"));
       else if (walletStack->isWalletLocked())
          labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
       else
       {
+         uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+
          walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
          if (!nWeight)
             labelStakingIcon->setToolTip(tr("Not staking because you don't have mature coins"));
