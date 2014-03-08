@@ -1473,7 +1473,14 @@ bool CWallet::CreateTransaction(const vector<pair<CScript, int64> >& vecSend, CW
 bool CWallet::GetStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight)
 {
 
+
+  //This is a negative value when there is no weight. But set it to zero
+  //so the user is not confused. Used in reporting in Coin Control.
+  // Descisions based on this function should be used with care.
   int64 nTimeWeight = GetWeight(nTime, (int64)GetTime());
+  if (nTimeWeight < 0 )
+    nTimeWeight=0;
+
   CBigNum bnCoinDayWeight = CBigNum(nValue) * nTimeWeight / COIN / (24 * 60 * 60);
   nWeight = bnCoinDayWeight.getuint64();
 
@@ -2306,7 +2313,6 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, int&
                     pcoin->WriteToDisk();
                 }
             }
-            NotifyTransactionChanged(this, hash, CT_UPDATED);
         }
 
         if((pcoin->IsCoinBase() || pcoin->IsCoinStake()) && pcoin->GetDepthInMainChain() == 0)
@@ -2316,9 +2322,10 @@ void CWallet::FixSpentCoins(int& nMismatchFound, int64& nBalanceInQuestion, int&
            if (!fCheckOnly)
            {
              EraseFromWallet(hash);
-             NotifyTransactionChanged(this, hash, CT_UPDATED);
            }
         }
+        if ((!fCheckOnly) && (nOrphansFound || nMismatchFound))
+           NotifyTransactionChanged(this, hash, CT_UPDATED)  ;
      }
 }
 
