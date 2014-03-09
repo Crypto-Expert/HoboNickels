@@ -115,21 +115,20 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QFrame *loadButtonFrame = new QFrame();
     QHBoxLayout *loadButtonFrameLayout = new QHBoxLayout(loadButtonFrame);
 
-    newWalletButton = new QPushButton("New...");
-    loadWalletButton = new QPushButton("Load..");
-    unloadWalletButton = new QPushButton("Unload");
-
+    newWalletButton = new QPushButton(QIcon(":/icons/add"),tr("New"));
     loadButtonFrameLayout->addWidget(newWalletButton);
+    newWalletButton->setMinimumWidth(50);
     newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-[name].dat, (wallet-stake.dat) for example"));
-    newWalletButton->setToolTip(newWalletButton->statusTip());
 
+    loadWalletButton = new QPushButton(QIcon(":/icons/load_wallet"),tr("Load"));
     loadButtonFrameLayout->addWidget(loadWalletButton);
+    loadWalletButton->setMinimumWidth(50);
     loadWalletButton->setStatusTip(tr("Load an existing wallet"));
-    loadWalletButton->setToolTip(loadWalletButton->statusTip());
 
+    unloadWalletButton = new QPushButton(QIcon(":/icons/unload_wallet"),tr("Unload"));
     loadButtonFrameLayout->addWidget(unloadWalletButton);
+    unloadWalletButton->setMinimumWidth(59);
     unloadWalletButton->setStatusTip(tr("Remove an open wallet from memory"));
-    unloadWalletButton->setToolTip(unloadWalletButton->statusTip());
 
     listFrameLayout->addWidget(loadButtonFrame);
 
@@ -268,9 +267,17 @@ void BitcoinGUI::createActions()
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
 
-    newWalletAction = new QAction(tr("&New Wallet"), this);
-    loadWalletAction = new QAction(tr("&Load Wallet..."), this);
-    unloadWalletAction = new QAction(tr("&Unload Wallet"), this);
+    newWalletAction = new QAction(QIcon(":/icons/add"),tr("&New Wallet..."), this);
+    newWalletAction->setStatusTip(tr("Create a new wallet. Must be called wallet-[name].dat, (wallet-stake.dat) for example"));
+    newWalletAction->setToolTip(newWalletAction->statusTip());
+
+    loadWalletAction = new QAction(QIcon(":/icons/load_wallet"), tr("&Load Wallet..."), this);
+    loadWalletAction->setStatusTip(tr("Load an existing wallet"));
+    loadWalletAction->setToolTip(newWalletAction->statusTip());
+
+    unloadWalletAction = new QAction(QIcon(":/icons/unload_wallet"), tr("&Unload Wallet..."), this);
+    unloadWalletAction->setStatusTip(tr("Remove an open wallet from memory"));
+    unloadWalletAction->setToolTip(unloadWalletAction->statusTip());
 
     connect(newWalletAction, SIGNAL(triggered()), this, SLOT(newWallet()));
     connect(loadWalletAction, SIGNAL(triggered()), this, SLOT(loadWallet()));
@@ -297,7 +304,7 @@ void BitcoinGUI::createActions()
     toggleHideAction->setStatusTip(tr("Show or hide the main Window"));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
-    encryptWalletAction->setStatusTip(tr("Encrypt he private keys that belong to your wallet"));
+    encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
     encryptWalletAction->setCheckable(true);
 
     unlockWalletAction = new QAction(QIcon(":/icons/lock_open"), tr("&Unlock Wallet For PoS..."), this);
@@ -308,10 +315,10 @@ void BitcoinGUI::createActions()
     lockWalletAction->setStatusTip(tr("Lock the wallet"));
     lockWalletAction->setCheckable(true);
 
-    checkWalletAction = new QAction(QIcon(":/icons/transaction_confirmed"), tr("&Check Wallet..."), this);
+    checkWalletAction = new QAction(QIcon(":/icons/inspect"), tr("&Check Wallet..."), this);
     checkWalletAction->setStatusTip(tr("Check wallet integrity and report findings"));
 
-    repairWalletAction = new QAction(QIcon(":/icons/options"), tr("&Repair Wallet..."), this);
+    repairWalletAction = new QAction(QIcon(":/icons/repair"), tr("&Repair Wallet..."), this);
     repairWalletAction->setStatusTip(tr("Fix wallet integrity and remove orphans"));
 
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
@@ -319,6 +326,12 @@ void BitcoinGUI::createActions()
 
     backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
     backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
+
+    dumpWalletAction = new QAction(QIcon(":/icons/export2"), tr("&Export Wallet..."), this);
+    dumpWalletAction->setStatusTip(tr("Export wallet's keys to a text file"));
+
+    importWalletAction = new QAction(QIcon(":/icons/import"), tr("&Import Wallet..."), this);
+    importWalletAction->setStatusTip(tr("Import a file's keys into a wallet"));
 
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
@@ -328,7 +341,6 @@ void BitcoinGUI::createActions()
 
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
     verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified HoboNickels addresses"));
-
 
     exportAction = new QAction(QIcon(":/icons/export"), tr("&Export..."), this);
     exportAction->setStatusTip(tr("Export the data in the current tab to a file"));
@@ -348,6 +360,8 @@ void BitcoinGUI::createActions()
     connect(repairWalletAction, SIGNAL(triggered()), this, SLOT(repairWallet()));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
     connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
+    connect(dumpWalletAction, SIGNAL(triggered()), this, SLOT(dumpWallet()));
+    connect(importWalletAction, SIGNAL(triggered()), this, SLOT(importWallet()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
@@ -369,12 +383,13 @@ void BitcoinGUI::createMenuBar()
     QMenu *file = appMenuBar->addMenu(tr("&File"));
     file->addAction(backupWalletAction);
     file->addAction(backupAllWalletsAction);
+    file->addSeparator();
+    file->addAction(dumpWalletAction);
+    file->addAction(importWalletAction);
+    file->addSeparator();
+    file->addAction(newWalletAction);
     file->addAction(loadWalletAction);
     file->addAction(unloadWalletAction);
-    file->addAction(newWalletAction);
-    file->addAction(exportAction);
-    file->addAction(signMessageAction);
-    file->addAction(verifyMessageAction);
     file->addSeparator();
     file->addAction(quitAction);
 
@@ -389,6 +404,10 @@ void BitcoinGUI::createMenuBar()
     wallet->addSeparator();
     wallet->addAction(checkWalletAction);
     wallet->addAction(repairWalletAction);
+    wallet->addSeparator();
+    wallet->addAction(signMessageAction);
+    wallet->addAction(verifyMessageAction);
+
 
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
@@ -1036,6 +1055,16 @@ void BitcoinGUI::backupAllWallets()
    if (walletStack) walletStack->backupAllWallets();
 }
 
+void BitcoinGUI::dumpWallet()
+{
+   if (walletStack) walletStack->dumpWallet();
+}
+
+void BitcoinGUI::importWallet()
+{
+   if (walletStack) walletStack->importWallet();
+}
+
 void BitcoinGUI::changePassphrase()
 {
    if (walletStack) walletStack->changePassphrase();
@@ -1121,7 +1150,7 @@ void BitcoinGUI::updateStakingIcon()
                text = tr("%n day(s)", "", nEstimateTime/(60*60*24));
 
             labelStakingIcon->setPixmap(QIcon(":/icons/staking_on").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-            labelStakingIcon->setToolTip(tr("Staking.\n Your weight is %1\n Network weight is %2\nEstimate time to earn reward is %3").arg(nWeight).arg(nNetworkWeight).arg(text));
+            labelStakingIcon->setToolTip(tr("Staking.\n Your weight is %1\n Network weight is %2\n You have 50\% chance of producing a stake within %3").arg(nWeight).arg(nNetworkWeight).arg(text));
           }
        }
 }

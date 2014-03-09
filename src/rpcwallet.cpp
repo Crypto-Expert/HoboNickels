@@ -361,7 +361,8 @@ Value signmessage(CWallet* pWallet, const Array& params, bool fHelp)
     if (fHelp || params.size() != 2)
         throw runtime_error(
             "signmessage <HoboNickelsaddress> <message>\n"
-            "Sign a message with the private key of an address");
+            "Sign a message with the private key of an address"
+            + HelpRequiringPassphrase(pWallet));
 
     EnsureWalletIsUnlocked(pWallet);
 

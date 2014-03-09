@@ -366,6 +366,16 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
+bool WalletModel::dumpWallet(const QString &filename)
+{
+  return DumpWallet(wallet, filename.toLocal8Bit().data());
+}
+
+bool WalletModel::importWallet(const QString &filename)
+{
+  return ImportWallet(wallet, filename.toLocal8Bit().data());
+}
+
 void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
 {
    wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
@@ -557,4 +567,3 @@ void WalletModel::listLockedCoins(std::vector<COutPoint>& vOutpts)
 {
     return;
 }
-

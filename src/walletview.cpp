@@ -149,14 +149,20 @@ void WalletView::createActions()
     lockWalletAction->setStatusTip(tr("Lock the wallet"));
     lockWalletAction->setCheckable(true);
 
-    checkWalletAction = new QAction(QIcon(":/icons/transaction_confirmed"), tr("&Check Wallet..."), this);
+    checkWalletAction = new QAction(QIcon(":/icons/inspect"), tr("&Check Wallet..."), this);
     checkWalletAction->setStatusTip(tr("Check wallet integrity and report findings"));
 
-    repairWalletAction = new QAction(QIcon(":/icons/options"), tr("&Repair Wallet..."), this);
+    repairWalletAction = new QAction(QIcon(":/icons/repair"), tr("&Repair Wallet..."), this);
     repairWalletAction->setStatusTip(tr("Fix wallet integrity and remove orphans"));
 
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
+
+    dumpWalletAction = new QAction(QIcon(":/icons/export"), tr("&Export Wallet..."), this);
+    dumpWalletAction->setStatusTip(tr("Export a wallet's keys to a text file"));
+
+    importWalletAction = new QAction(QIcon(":/icons/import"), tr("&Import Wallet..."), this);
+    importWalletAction->setStatusTip(tr("Import keys from text file into wallet"));
 
     backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
     backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
@@ -178,6 +184,8 @@ void WalletView::createActions()
     connect(checkWalletAction, SIGNAL(triggered()), this, SLOT(checkWallet()));
     connect(repairWalletAction, SIGNAL(triggered()), this, SLOT(repairWallet()));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
+    connect(dumpWalletAction, SIGNAL(triggered()), this, SLOT(dumpWallet()));
+    connect(importWalletAction, SIGNAL(triggered()), this, SLOT(importWallet()));
     connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
@@ -488,6 +496,82 @@ void WalletView::backupWallet()
                       CClientUIInterface::MSG_INFORMATION);
     }
 }
+
+void WalletView::dumpWallet()
+{
+
+   if(!walletModel)
+      return;
+
+
+   WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+   if(!ctx.isValid())
+   {
+       // Unlock wallet failed or was cancelled
+       return;
+   }
+
+#if QT_VERSION < 0x050000
+    QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getSaveFileName(this, tr("Export Wallet"), saveDir, tr("Wallet Text (*.txt)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->dumpWallet(filename)) {
+            gui->message(tr("Export Failed"),
+                         tr("There was an error trying to save the wallet's keys to your location.\n"
+                            "Keys from wallet: %1, were not saved")
+                         .arg(gui->getCurrentWallet())
+                      ,CClientUIInterface::MSG_ERROR);
+        }
+        else
+          gui->message(tr("Export Successful"),
+                       tr("Keys from wallet:%1,\n were saved to:\n %2")
+                       .arg(gui->getCurrentWallet())
+                       .arg(filename)
+                      ,CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
+void WalletView::importWallet()
+{
+
+   if(!walletModel)
+      return;
+
+
+   WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+   if(!ctx.isValid())
+   {
+       // Unlock wallet failed or was cancelled
+       return;
+   }
+
+#if QT_VERSION < 0x050000
+    QString openDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString openDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getOpenFileName(this, tr("Import Wallet"), openDir, tr("Wallet Text (*.txt)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->importWallet(filename)) {
+            gui->message(tr("Import Failed"),
+                         tr("There was an error trying to import the file's keys into your wallet.\n"
+                            "Some or all keys from:\n %2,\n were not imported into wallet: %1")
+                         .arg(gui->getCurrentWallet())
+                         .arg(filename)
+                      ,CClientUIInterface::MSG_ERROR);
+        }
+        else
+          gui->message(tr("Import Successful"),
+                       tr("Keys from:\n %2,\n were imported into wallet: %1.")
+                       .arg(gui->getCurrentWallet())
+                       .arg(filename)
+                      ,CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
 
 void WalletView::backupAllWallets()
 {

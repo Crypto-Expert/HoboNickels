@@ -91,6 +91,9 @@ public slots:
     /** Backup the wallet(s) */
     void backupWallet();
     void backupAllWallets();
+    /** Import/Export the wallet's keys */
+    void dumpWallet();
+    void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
