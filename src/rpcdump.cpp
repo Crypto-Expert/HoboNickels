@@ -2,9 +2,6 @@
 // Distributed under the MIT/X11 software license, see the accompanying
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
-#include <iostream>
-#include <fstream>
-
 #include "bitcoinrpc.h"
 #include "ui_interface.h"
 #include "base58.h"
