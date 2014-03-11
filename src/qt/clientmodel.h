@@ -32,6 +32,12 @@ public:
 
     int getNumConnections() const;
     int getNumBlocks() const;
+    int getProtocolVersion() const;
+    qint64 getMoneySupply();
+    double getPoWDifficulty();
+    double getPoWMHashPS();
+
+
     int getNumBlocksAtStartup();
     double getPosKernalPS();
     int getStakeTargetSpacing();

@@ -13,7 +13,10 @@
 
 static const int64 nClientStartupTime = GetTime();
 double GetPoSKernelPS();
+double GetDifficulty(const CBlockIndex* blockindex);
+double GetPoWMHashPS();
 extern unsigned int nStakeTargetSpacing;
+
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), optionsModel(optionsModel),
@@ -41,6 +44,26 @@ int ClientModel::getNumConnections() const
 int ClientModel::getNumBlocks() const
 {
     return nBestHeight;
+}
+
+int ClientModel::getProtocolVersion() const
+{
+    return PROTOCOL_VERSION;
+}
+
+double ClientModel::getPoWDifficulty()
+{
+    return GetDifficulty(pindexBest);
+}
+
+int64 ClientModel::getMoneySupply()
+{
+   return pindexBest->nMoneySupply;
+}
+
+double ClientModel::getPoWMHashPS()
+{
+   return GetPoWMHashPS();
 }
 
 int ClientModel::getNumBlocksAtStartup()

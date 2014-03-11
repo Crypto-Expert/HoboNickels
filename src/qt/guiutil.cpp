@@ -476,5 +476,23 @@ void HelpMessageBox::showOrPrint()
 #endif
 }
 
+ClickableLabel::ClickableLabel( const QString& text, QWidget * parent ) :
+    QLabel(parent)
+
+  {
+      this->setText(text);
+  }
+
+  ClickableLabel::~ClickableLabel()
+  {
+  }
+
+  void ClickableLabel::mouseReleaseEvent ( QMouseEvent * event )
+
+  {
+      emit clicked();
+  }
+
+
 } // namespace GUIUtil
 

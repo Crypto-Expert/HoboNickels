@@ -158,9 +158,13 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
     labelEncryptionIcon = new QLabel();
-    labelStakingIcon = new QLabel();
-    labelConnectionsIcon = new QLabel();
-    labelBlocksIcon = new QLabel();
+    labelStakingIcon = new GUIUtil::ClickableLabel();
+    labelConnectionsIcon = new GUIUtil::ClickableLabel();
+    connect(labelConnectionsIcon, SIGNAL(clicked()),this,SLOT(connectionIconClicked()));
+    connect(labelStakingIcon, SIGNAL(clicked()), this, SLOT(stakingIconClicked()));
+
+    labelBlocksIcon = new GUIUtil::ClickableLabel();
+    connect(labelBlocksIcon, SIGNAL(clicked()),this,SLOT(blocksIconClicked()));
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelEncryptionIcon);
     frameBlocksLayout->addStretch();
@@ -576,6 +580,42 @@ void BitcoinGUI::aboutClicked()
     AboutDialog dlg;
     dlg.setModel(clientModel);
     dlg.exec();
+}
+
+void BitcoinGUI::blocksIconClicked()
+{
+
+   int unit = clientModel->getOptionsModel()->getDisplayUnit();
+
+   message(tr("Block Chain Information"),
+       tr("Wallet Version: %1\n"
+          "Protocol Version: %2\n\n"
+          "Last Block Number: %3\n"
+          "Last Block Time: %4\n\n"
+          "Current PoW Difficulty: %7\n"
+          "Current PoW mh/s: %8\n"
+          "Current PoW Reward: %9\n\n"
+          "Current Money Supply: %10\n\n")
+       .arg(clientModel->formatFullVersion())
+       .arg(clientModel->getProtocolVersion())
+       .arg(clientModel->getNumBlocks())
+       .arg(clientModel->getLastBlockDate().toString())
+       .arg(clientModel->getPoWDifficulty())
+       .arg(clientModel->getPoWMHashPS())
+       .arg(tr("5.0000000")) //Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
+       .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
+       ,CClientUIInterface::MODAL);
+
+}
+
+void BitcoinGUI::connectionIconClicked()
+{
+   // Extended peer information here
+}
+
+void BitcoinGUI::stakingIconClicked()
+{
+   // Extended PoS information here
 }
 
 void BitcoinGUI::gotoOverviewPage()
