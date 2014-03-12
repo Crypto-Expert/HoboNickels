@@ -51,9 +51,22 @@ int ClientModel::getProtocolVersion() const
     return PROTOCOL_VERSION;
 }
 
-double ClientModel::getPoWDifficulty()
+double ClientModel::getDifficulty(bool fProofofStake)
 {
-    return GetDifficulty(pindexBest);
+    if (fProofofStake)
+       return GetDifficulty(GetLastBlockIndex(pindexBest,true));
+    else
+       return GetDifficulty(GetLastBlockIndex(pindexBest,false));
+}
+
+double ClientModel::getProofOfStakeReward()
+{
+    return GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true)/10000;
+}
+
+int ClientModel::getLastPoSBlock()
+{
+    return GetLastBlockIndex(pindexBest,true)->nHeight;
 }
 
 int64 ClientModel::getMoneySupply()
@@ -82,10 +95,12 @@ int ClientModel::getStakeTargetSpacing()
     return nStakeTargetSpacing;
 }
 
-QDateTime ClientModel::getLastBlockDate() const
+QDateTime ClientModel::getLastBlockDate(bool fProofofStake) const
 {
-    if (pindexBest)
+    if (pindexBest && !fProofofStake)
       return QDateTime::fromTime_t(pindexBest->GetBlockTime());
+    else if (pindexBest && fProofofStake)
+       return QDateTime::fromTime_t(GetLastBlockIndex(pindexBest,true)->GetBlockTime());
     else
       return QDateTime::fromTime_t(1374635824); // Genesis block's time
 }

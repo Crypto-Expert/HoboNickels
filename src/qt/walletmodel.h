@@ -70,6 +70,7 @@ public:
     qint64 getUnconfirmedBalance() const;
     qint64 getImmatureBalance() const;
     int getNumTransactions() const;
+    int getWalletVersion() const;
     EncryptionStatus getEncryptionStatus() const;
 
     // Check address for validity
@@ -106,6 +107,7 @@ public:
     void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
     //PoS Information
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    quint64 getTotStakeWeight();
     //PoS Information about value and time
     void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
 

@@ -34,8 +34,10 @@ public:
     int getNumBlocks() const;
     int getProtocolVersion() const;
     qint64 getMoneySupply();
-    double getPoWDifficulty();
+    double getDifficulty(bool fProofofStake=false);
     double getPoWMHashPS();
+    double getProofOfStakeReward();
+    int getLastPoSBlock();
 
 
     int getNumBlocksAtStartup();
@@ -43,7 +45,7 @@ public:
     int getStakeTargetSpacing();
 
 
-    QDateTime getLastBlockDate() const;
+    QDateTime getLastBlockDate(bool fProofofStake=false) const;
 
     //! Return true if client connected to testnet
     bool isTestNet() const;

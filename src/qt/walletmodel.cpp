@@ -89,6 +89,11 @@ int WalletModel::getNumTransactions() const
     return numTransactions;
 }
 
+int WalletModel::getWalletVersion() const
+{
+    return wallet->GetVersion();
+}
+
 void WalletModel::updateStatus()
 {
     EncryptionStatus newEncryptionStatus = getEncryptionStatus();
@@ -379,6 +384,21 @@ bool WalletModel::importWallet(const QString &filename)
 void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
 {
    wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
+}
+
+uint64 WalletModel::getTotStakeWeight()
+{
+
+   uint64 nTotWeight = 0;
+   BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+   {
+      CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+      uint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
+      pwallet->GetStakeWeight(*pwallet, nMinWeight,nMaxWeight,nWeight);
+
+      nTotWeight+=nWeight;
+   }
+   return nTotWeight;
 }
 
 void WalletModel::getStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight)

@@ -150,6 +150,9 @@ public slots:
     void setTotBalance(bool fEmit=true);
     /** Give user information about staking */
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    quint64 getTotStakeWeight();
+    /** Report Current Wallet Version */
+    int getWalletVersion() const;
     /** Report from View about Wallet Encryptions */
     bool isWalletLocked();
 

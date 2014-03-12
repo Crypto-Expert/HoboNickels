@@ -587,25 +587,30 @@ void BitcoinGUI::blocksIconClicked()
 
    int unit = clientModel->getOptionsModel()->getDisplayUnit();
 
-   message(tr("Block Chain Information"),
-       tr("Wallet Version: %1\n"
+   message(tr("Extended Block Chain Information"),
+       tr("Client Version: %1\n"
           "Protocol Version: %2\n\n"
           "Last Block Number: %3\n"
           "Last Block Time: %4\n\n"
-          "Current PoW Difficulty: %7\n"
-          "Current PoW mh/s: %8\n"
-          "Current PoW Reward: %9\n\n"
-          "Current Money Supply: %10\n\n")
-       .arg(clientModel->formatFullVersion())
-       .arg(clientModel->getProtocolVersion())
-       .arg(clientModel->getNumBlocks())
-       .arg(clientModel->getLastBlockDate().toString())
-       .arg(clientModel->getPoWDifficulty())
-       .arg(clientModel->getPoWMHashPS())
-       .arg(tr("5.0000000")) //Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
-       .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
+          "Current PoW Difficulty: %5\n"
+          "Current PoW Mh/s: %6\n"
+          "Current PoW Reward: %7\n\n"
+          "Current Wallet Viewed: %8\n"
+          "Current Wallet Version: %9\n"
+          "Total Wallets Loaded: %10\n\n"
+          "Network Money Supply: %11\n")
+          .arg(clientModel->formatFullVersion())
+          .arg(clientModel->getProtocolVersion())
+          .arg(clientModel->getNumBlocks())
+          .arg(clientModel->getLastBlockDate().toString())
+          .arg(clientModel->getDifficulty())
+          .arg(clientModel->getPoWMHashPS())
+          .arg(tr("5.0000000")) //Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
+          .arg(walletStack->getCurrentWallet())
+          .arg(walletStack->getWalletVersion())
+          .arg(walletManager->GetWalletCount())
+          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
        ,CClientUIInterface::MODAL);
-
 }
 
 void BitcoinGUI::connectionIconClicked()
@@ -615,7 +620,42 @@ void BitcoinGUI::connectionIconClicked()
 
 void BitcoinGUI::stakingIconClicked()
 {
-   // Extended PoS information here
+
+   uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+   walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+
+   int unit = clientModel->getOptionsModel()->getDisplayUnit();
+
+
+   message(tr("Extended Staking Information"),
+      tr("Client Version: %1\n"
+         "Protocol Version: %2\n\n"
+         "Last PoS Block Number: %3\n"
+         "Last PoS Block Time: %4\n\n"
+         "Current PoS Difficulty: %5\n"
+         "Current PoS Netweight: %6\n"
+         "Current PoS Yearly Interest: %7\%\n\n"
+         "Current Wallet Viewed: %8\n"
+         "Current Wallet Version: %9\n"
+         "Current Wallet PoS Weight: %10\n\n"
+         "Total Wallets Loaded: %11\n"
+         "Total Wallets PoS Weight: %12\n\n"
+         "Network Money Supply: %13\n")
+         .arg(clientModel->formatFullVersion())
+         .arg(clientModel->getProtocolVersion())
+         .arg(clientModel->getLastPoSBlock())
+         .arg(clientModel->getLastBlockDate(true).toString())
+         .arg(clientModel->getDifficulty(true))
+         .arg(clientModel->getPosKernalPS())
+         .arg(clientModel->getProofOfStakeReward())
+         .arg(walletStack->getCurrentWallet())
+         .arg(walletStack->getWalletVersion())
+         .arg(nWeight)
+         .arg(walletManager->GetWalletCount())
+         .arg(walletStack->getTotStakeWeight())
+         .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
+      ,CClientUIInterface::MODAL);
+
 }
 
 void BitcoinGUI::gotoOverviewPage()
@@ -789,6 +829,7 @@ void BitcoinGUI::message(const QString &title, const QString &message, unsigned 
     // Default to information icon
     int nMBoxIcon = QMessageBox::Information;
     int nNotifyIcon = Notificator::Information;
+
 
     // Check for usage of predefined title
     switch (style) {
