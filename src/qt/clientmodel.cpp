@@ -8,6 +8,7 @@
 #include "main.h"
 #include "ui_interface.h"
 
+#include <QVector>
 #include <QDateTime>
 #include <QTimer>
 
@@ -39,6 +40,27 @@ ClientModel::~ClientModel()
 int ClientModel::getNumConnections() const
 {
     return vNodes.size();
+
+}
+
+QVector<CNodeStats> ClientModel::getPeerStats()
+{
+
+   QVector<CNodeStats> qvNodeStats;
+   CNode *pnode;
+
+   {
+
+      LOCK(cs_vNodes);
+      qvNodeStats.reserve(vNodes.size());
+      BOOST_FOREACH(pnode, vNodes) {
+          CNodeStats stats;
+          pnode->copyStats(stats);
+          qvNodeStats.push_back(stats);
+      }
+    }
+
+    return qvNodeStats;
 }
 
 int ClientModel::getNumBlocks() const

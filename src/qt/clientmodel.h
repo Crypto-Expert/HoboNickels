@@ -7,6 +7,8 @@ class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
+class CNodeStats;
+
 
 QT_BEGIN_NAMESPACE
 class QDateTime;
@@ -38,6 +40,8 @@ public:
     double getPoWMHashPS();
     double getProofOfStakeReward();
     int getLastPoSBlock();
+
+    QVector<CNodeStats> getPeerStats();
 
 
     int getNumBlocksAtStartup();
