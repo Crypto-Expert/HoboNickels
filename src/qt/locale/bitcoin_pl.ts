@@ -795,7 +795,7 @@ Address: %4
     <message>
         <location line="+6"/>
         <source>Optional transaction fee per kB that helps make sure your transactions are processed quickly. Most transactions are 1 kB. Fee 0.01 recommended.</source>
-        <translation>Opcjonalny podatek od transakcji od kB pomaga upewnić się, że płatności przebiegająszybko. Większość transakcji to 1 kB. Podatek 0.01 zalecany.</translation>
+        <translation>Opcjonalny podatek od transakcji od kB pomaga upewnić się, że płatności przebiegają szybko. Większość transakcji to 1 kB. Podatek 0.01 zalecany.</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -1052,7 +1052,7 @@ Address: %4
         <location filename="../overviewpage.cpp" line="+112"/>
         <location line="+1"/>
         <source>out of sync</source>
-        <translation>brack synchronizacji</translation>
+        <translation>brak synchronizacji</translation>
     </message>
 </context>
 <context>
