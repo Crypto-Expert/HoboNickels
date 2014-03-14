@@ -1005,6 +1005,15 @@ Value listreceivedbyaccount(CWallet* pWallet, const Array& params, bool fHelp)
     return ListReceived(pWallet, params, true);
 }
 
+static void MaybePushAddress(CWallet* pWallet, Object & entry, const CTxDestination &dest)
+{
+
+    CBitcoinAddress addr;
+    if (addr.Set(dest))
+       entry.push_back(Pair("address", addr.ToString()));
+
+}
+
 void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
 {
     int64 nGeneratedImmature, nGeneratedMature, nFee;
@@ -1052,8 +1061,14 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
         {
             Object entry;
             entry.push_back(Pair("account", strSentAccount));
-            entry.push_back(Pair("address", CBitcoinAddress(s.first).ToString()));
-            entry.push_back(Pair("category", "send"));
+            MaybePushAddress(pWallet, entry, s.first);
+
+            if (wtx.GetDepthInMainChain() < 0) {
+               entry.push_back(Pair("category", "conflicted"));
+            } else {
+               entry.push_back(Pair("category", "send"));
+            }
+
             entry.push_back(Pair("amount", ValueFromAmount(-s.second)));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
             if (fLong)
@@ -1074,7 +1089,7 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
             {
                 Object entry;
                 entry.push_back(Pair("account", account));
-                entry.push_back(Pair("address", CBitcoinAddress(r.first).ToString()));
+                MaybePushAddress(pWallet, entry, r.first);
                 if (wtx.IsCoinBase() || wtx.IsCoinStake())
                 {
                     if (wtx.GetDepthInMainChain() < 1)
