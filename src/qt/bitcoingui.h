@@ -194,6 +194,8 @@ private slots:
     void aboutClicked();
     /** Show information about network */
     void blocksIconClicked();
+    /** Allow user to lock/unlock wallet from click */
+    void lockIconClicked();
     /** Show information about peers */
     void connectionIconClicked();
     /** Show information about stakes */

@@ -157,7 +157,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
-    labelEncryptionIcon = new QLabel();
+    labelEncryptionIcon = new GUIUtil::ClickableLabel();
     labelStakingIcon = new GUIUtil::ClickableLabel();
     labelConnectionsIcon = new GUIUtil::ClickableLabel();
     connect(labelConnectionsIcon, SIGNAL(clicked()),this,SLOT(connectionIconClicked()));
@@ -611,6 +611,18 @@ void BitcoinGUI::blocksIconClicked()
           .arg(walletManager->GetWalletCount())
           .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
        ,CClientUIInterface::MODAL);
+}
+
+void BitcoinGUI::lockIconClicked()
+{
+
+  if(walletStack->isWalletLocked())
+    unlockWalletForMint();
+  else
+    lockWallet();
+
+
+
 }
 
 void BitcoinGUI::connectionIconClicked()
@@ -1126,11 +1138,12 @@ void BitcoinGUI::setEncryptionStatus(int status)
         unlockWalletAction->setEnabled(false);
         lockWalletAction->setEnabled(false);
         encryptWalletAction->setEnabled(true);
+        disconnect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
         break;
     case WalletModel::Unlocked:
         labelEncryptionIcon->show();
         labelEncryptionIcon->setPixmap(QIcon(":/icons/lock_open").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
+        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>. Click to lock!"));
         encryptWalletAction->setChecked(true);
         unlockWalletAction->setChecked(true);
         lockWalletAction->setChecked(true);
@@ -1138,11 +1151,13 @@ void BitcoinGUI::setEncryptionStatus(int status)
         encryptWalletAction->setEnabled(false); // TODO: decrypt currently not supported
         unlockWalletAction->setEnabled(false);
         lockWalletAction->setEnabled(true);
+        disconnect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
+        connect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
         break;
     case WalletModel::Locked:
         labelEncryptionIcon->show();
         labelEncryptionIcon->setPixmap(QIcon(":/icons/lock_closed").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>locked</b>"));
+        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>locked</b>. Click to unlock!"));
         encryptWalletAction->setChecked(true);
         unlockWalletAction->setChecked(true);
         lockWalletAction->setChecked(true);
@@ -1150,6 +1165,8 @@ void BitcoinGUI::setEncryptionStatus(int status)
         encryptWalletAction->setEnabled(false); // TODO: decrypt currently not supported
         unlockWalletAction->setEnabled(true);
         lockWalletAction->setEnabled(false);
+        disconnect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
+        connect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
         break;
     }
     //Put here as this function will be called on any wallet or lock status change.
