@@ -124,13 +124,9 @@ void SendCoinsDialog::on_sendButton_clicked()
         if(entry)
         {
             if(entry->validate())
-            {
                 recipients.append(entry->getValue());
-            }
             else
-            {
                 valid = false;
-            }
         }
     }
 
@@ -141,8 +137,10 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     // Format confirmation message
     QStringList formatted;
+    quint64 total = 0;
     foreach(const SendCoinsRecipient &rcp, recipients)
     {
+        total += rcp.amount;
 #if QT_VERSION < 0x050000
         formatted.append(tr("<b>%1</b> to %2 (%3)").arg(BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, rcp.amount), Qt::escape(rcp.label), rcp.address));
 #else
@@ -153,7 +151,9 @@ void SendCoinsDialog::on_sendButton_clicked()
     fNewRecipientAllowed = false;
 
     QMessageBox::StandardButton retval = QMessageBox::question(this, tr("Confirm send coins"),
-                          tr("Are you sure you want to send %1?").arg(formatted.join(tr(" and "))),
+                          ( recipients.count() > 1 ?
+                              tr("Are you sure you want to send %1<br/>(total: <b>%2</b>)?").arg(formatted.join(tr(" and ")), BitcoinUnits::formatWithUnit(BitcoinUnits::BTC, total)) :
+                              tr("Are you sure you want to send %1?").arg(formatted.join(tr(" and ")))),
           QMessageBox::Yes|QMessageBox::Cancel,
           QMessageBox::Cancel);
 

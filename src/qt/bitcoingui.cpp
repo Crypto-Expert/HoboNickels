@@ -616,13 +616,10 @@ void BitcoinGUI::blocksIconClicked()
 void BitcoinGUI::lockIconClicked()
 {
 
-  if(walletStack->isWalletLocked())
-    unlockWalletForMint();
-  else
-    lockWallet();
-
-
-
+   if(walletStack->isWalletLocked())
+     unlockWalletForMint();
+   else
+     lockWallet();
 }
 
 void BitcoinGUI::connectionIconClicked()
