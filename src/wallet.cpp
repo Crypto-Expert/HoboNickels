@@ -526,14 +526,28 @@ bool CWallet::AddToWallet(const CWalletTx& wtxIn)
         // Notify UI of new or updated transaction
         NotifyTransactionChanged(this, hash, fInsertedNew ? CT_NEW : CT_UPDATED);
 
-        //Tranz needs tested with multi-wallet
         // notify an external script when a wallet transaction comes in or is updated
         std::string strCmd = GetArg("-walletnotify", "");
-
         if ( !strCmd.empty())
         {
             boost::replace_all(strCmd, "%s", wtxIn.GetHash().GetHex());
             boost::thread t(runCommand, strCmd); // thread runs free
+        }
+
+        // notify an external script when a wallet transaction is received
+        std::string strCmdNewNotify = GetArg("-newtxnotify", "");
+        if ( !strCmdNewNotify.empty() && fInsertedNew)
+        {
+             boost::replace_all(strCmdNewNotify, "%s", wtxIn.GetHash().GetHex());
+             boost::thread t(runCommand, strCmdNewNotify); // thread runs free
+        }
+
+        // notify an external script when a wallet transaction is confirmed
+        std::string strCmdConfNotify = GetArg("-confirmnotify", "");
+        if ( !strCmdConfNotify.empty() && fUpdated)
+        {
+            boost::replace_all(strCmdConfNotify, "%s", wtxIn.GetHash().GetHex());
+            boost::thread t(runCommand, strCmdConfNotify); // thread runs free
         }
     }
     return true;
