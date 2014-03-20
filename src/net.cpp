@@ -1305,8 +1305,6 @@ void static ProcessOneShot()
     }
 }
 
-// ppcoin: stake minter thread
-//hbn: added multi-wallets
 void ThreadStakeMinter(void* parg)
 {
     CWallet* pwallet = (CWallet*)parg;
@@ -1314,7 +1312,7 @@ void ThreadStakeMinter(void* parg)
     try
     {
         vnThreadsRunning[THREAD_MINTER]++;
-        BitcoinMiner(pwallet, true);
+        StakeMiner(pwallet);
         vnThreadsRunning[THREAD_MINTER]--;
     }
     catch (std::exception& e) {
