@@ -3,7 +3,7 @@
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
 #include "transactiontablemodel.h"
-
+#include "init.h"
 #include "ui_interface.h"
 #include "wallet.h"
 #include "walletdb.h" // for BackupWallet
@@ -51,6 +51,19 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
     return wallet->GetBalance();
 }
 
+qint64 WalletModel::getTotBalance() const
+{
+    //This is display only, and we don't lock coins,
+    //so Coin Control is not needed for now
+    int64 nTotBalance = 0;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+       nTotBalance+=pwallet->GetBalance();
+    }
+    return nTotBalance;
+}
+
 qint64 WalletModel::getUnconfirmedBalance() const
 {
     return wallet->GetUnconfirmedBalance();
@@ -76,6 +89,11 @@ int WalletModel::getNumTransactions() const
     return numTransactions;
 }
 
+int WalletModel::getWalletVersion() const
+{
+    return wallet->GetVersion();
+}
+
 void WalletModel::updateStatus()
 {
     EncryptionStatus newEncryptionStatus = getEncryptionStatus();
@@ -97,6 +115,7 @@ void WalletModel::pollBalanceChanged()
 void WalletModel::checkBalanceChanged()
 {
     qint64 newBalance = getBalance();
+    qint64 newTotBalance = getTotBalance();
     qint64 newStake = getStake();
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
@@ -108,6 +127,7 @@ void WalletModel::checkBalanceChanged()
         cachedUnconfirmedBalance = newUnconfirmedBalance;
         cachedImmatureBalance = newImmatureBalance;
         emit balanceChanged(newBalance, newStake, newUnconfirmedBalance, newImmatureBalance);
+        emit totBalanceChanged(newTotBalance);
     }
 }
 
@@ -286,17 +306,36 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
     }
 }
 
-bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase)
+bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
+
+    bool rc;
     if(locked)
     {
-        // Lock
-        return wallet->Lock();
+        if(formint)
+        {
+           // Lock as Requested by user
+           rc = wallet->Lock();
+           fStopMining=true;
+           Sleep(1000);
+           pWalletManager->RestartStakeMiner();
+           return rc;
+        }
+        else
+          return  wallet->Lock(); // Lock
     }
     else
     {
         // Unlock
-        return wallet->Unlock(passPhrase);
+        rc = wallet->Unlock(passPhrase);
+        if (rc && formint)
+        {
+            if (!NewThread(ThreadStakeMinter, wallet))
+               OutputDebugStringF("Error: NewThread(ThreadStakeMinter) failed\n");
+            else
+              fWalletUnlockMintOnly=true;
+        }
+        return rc;
     }
 }
 
@@ -313,7 +352,68 @@ bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureStri
 
 bool WalletModel::backupWallet(const QString &filename)
 {
-    return BackupWallet(*wallet, filename.toLocal8Bit().data());
+    return BackupWallet(*wallet, filename.toLocal8Bit().data(), false);
+}
+
+bool WalletModel::backupAllWallets(const QString &filename)
+{
+
+    bool mretval=true;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       bool retval;
+       CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+       retval = BackupWallet(*pwallet, filename.toLocal8Bit().data(), true);
+       if(retval != true)
+         mretval=false;
+
+    }
+    return mretval;
+}
+
+bool WalletModel::dumpWallet(const QString &filename)
+{
+  return DumpWallet(wallet, filename.toLocal8Bit().data());
+}
+
+bool WalletModel::importWallet(const QString &filename)
+{
+  return ImportWallet(wallet, filename.toLocal8Bit().data());
+}
+
+void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+{
+   wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
+}
+
+uint64 WalletModel::getTotStakeWeight()
+{
+
+   uint64 nTotWeight = 0;
+   BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+   {
+      CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+      uint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
+      pwallet->GetStakeWeight(*pwallet, nMinWeight,nMaxWeight,nWeight);
+
+      nTotWeight+=nWeight;
+   }
+   return nTotWeight;
+}
+
+void WalletModel::getStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight)
+{
+   wallet->GetStakeWeightFromValue(nTime, nValue, nWeight);
+}
+
+void WalletModel::checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+{
+  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
+}
+
+void WalletModel::repairWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+{
+  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
 }
 
 // Handlers for core signals
@@ -360,16 +460,43 @@ void WalletModel::unsubscribeFromCoreSignals()
 // WalletModel::UnlockContext implementation
 WalletModel::UnlockContext WalletModel::requestUnlock()
 {
+
     bool was_locked = getEncryptionStatus() == Locked;
+    bool fWalletUnlockMintOnlyRelock=true;
+
+    //Tranz: Some other wallet is unlocked for minting, but not this one.
+    //We want to relock it in this case.
+    //fWalletUnlockMintOnly needs to be part of the model to fix this correctly
+    if(was_locked && fWalletUnlockMintOnly)
+       fWalletUnlockMintOnlyRelock=true;
+
+    if ((!was_locked) && fWalletUnlockMintOnly)
+    {
+       setWalletLocked(true);
+       was_locked = getEncryptionStatus() == Locked;
+       fWalletUnlockMintOnlyRelock=false;
+
+    }
+
     if(was_locked)
     {
         // Request UI to unlock wallet
         emit requireUnlock();
     }
+
     // If wallet is still locked, unlock was failed or cancelled, mark context as invalid
     bool valid = getEncryptionStatus() != Locked;
 
-    return UnlockContext(this, valid, was_locked);
+    // We need to shut off PoS for encrypted/locked wallets. If the pass is not accecpted
+    // the wallet is locked.
+    if((!valid) && (!fWalletUnlockMintOnlyRelock && fWalletUnlockMintOnly) )
+    {
+       fStopMining=true;
+       Sleep(1000);
+       pWalletManager->RestartStakeMiner();
+    }
+
+     return UnlockContext(this, valid, was_locked && fWalletUnlockMintOnlyRelock);
 }
 
 WalletModel::UnlockContext::UnlockContext(WalletModel *wallet, bool valid, bool relock):
@@ -460,4 +587,3 @@ void WalletModel::listLockedCoins(std::vector<COutPoint>& vOutpts)
 {
     return;
 }
-

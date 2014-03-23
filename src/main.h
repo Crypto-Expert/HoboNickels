@@ -61,8 +61,8 @@ static const int fHaveUPnP = false;
 static const uint256 hashGenesisBlockOfficial("0x000009ea5ef5019446b315e7e581fc2ea184315ed46c9ddeadc8aa9442deedc9");
 static const uint256 hashGenesisBlockTestNet("0x0000f9e0292f278190e4d58cd1e1e9a32b7466c8092bd2371ffc80b06f8eca4a");
 
-
-static const int64 nMaxClockDrift = 2 * 60 * 60;        // two hours
+inline int64 PastDrift(int64 nTime)   { return nTime - 2 * 60 * 60; } // up to 2 hours from the past
+inline int64 FutureDrift(int64 nTime) { return nTime + 2 * 60 * 60; } // up to 2 hours from the future
 
 extern CScript COINBASE_FLAGS;
 
@@ -95,6 +95,7 @@ extern std::map<uint256, CBlock*> mapOrphanBlocks;
 
 // Settings
 extern int64 nTransactionFee;
+extern int64 nMinimumInputValue;
 extern bool fUseFastIndex;
 
 // Minimum disk space required - used in CheckDiskSpace()
@@ -121,11 +122,8 @@ bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
-CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake=false);
-void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce);
-void FormatHashBuffers(CBlock* pblock, char* pmidstate, char* pdata, char* phash1);
-bool CheckWork(CBlock* pblock, CWallet& wallet, CReserveKey& reservekey);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
+unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
 int64 GetProofOfWorkReward(unsigned int nBits);
 int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
@@ -866,6 +864,7 @@ public:
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
+    uint256 hashBlock;
 
     // Denial-of-service detection:
     mutable int nDoS;
@@ -911,6 +910,7 @@ public:
         vchBlockSig.clear();
         vMerkleTree.clear();
         nDoS = 0;
+        hashBlock = 0;
     }
 
     bool IsNull() const
@@ -1426,7 +1426,7 @@ public:
 
     uint256 GetBlockHash() const
     {
-       if (fUseFastIndex && (nTime < GetAdjustedTime() - 12 * nMaxClockDrift) && blockHash != 0)
+       if (fUseFastIndex && (nTime < GetAdjustedTime() - 24 * 60 * 60) && blockHash != 0)
           return blockHash;
 
         CBlock block;

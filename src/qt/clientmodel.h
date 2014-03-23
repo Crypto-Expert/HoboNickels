@@ -7,6 +7,8 @@ class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
+class CNodeStats;
+
 
 QT_BEGIN_NAMESPACE
 class QDateTime;
@@ -32,9 +34,22 @@ public:
 
     int getNumConnections() const;
     int getNumBlocks() const;
-    int getNumBlocksAtStartup();
+    int getProtocolVersion() const;
+    qint64 getMoneySupply();
+    double getDifficulty(bool fProofofStake=false);
+    double getPoWMHashPS();
+    double getProofOfStakeReward();
+    int getLastPoSBlock();
 
-    QDateTime getLastBlockDate() const;
+    QVector<CNodeStats> getPeerStats();
+
+
+    int getNumBlocksAtStartup();
+    double getPosKernalPS();
+    int getStakeTargetSpacing();
+
+
+    QDateTime getLastBlockDate(bool fProofofStake=false) const;
 
     //! Return true if client connected to testnet
     bool isTestNet() const;

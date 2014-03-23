@@ -8,10 +8,16 @@
 #include "main.h"
 #include "ui_interface.h"
 
+#include <QVector>
 #include <QDateTime>
 #include <QTimer>
 
 static const int64 nClientStartupTime = GetTime();
+double GetPoSKernelPS();
+double GetDifficulty(const CBlockIndex* blockindex);
+double GetPoWMHashPS();
+extern unsigned int nStakeTargetSpacing;
+
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), optionsModel(optionsModel),
@@ -34,11 +40,65 @@ ClientModel::~ClientModel()
 int ClientModel::getNumConnections() const
 {
     return vNodes.size();
+
+}
+
+QVector<CNodeStats> ClientModel::getPeerStats()
+{
+
+   QVector<CNodeStats> qvNodeStats;
+   CNode *pnode;
+
+   {
+
+      LOCK(cs_vNodes);
+      qvNodeStats.reserve(vNodes.size());
+      BOOST_FOREACH(pnode, vNodes) {
+          CNodeStats stats;
+          pnode->copyStats(stats);
+          qvNodeStats.push_back(stats);
+      }
+    }
+
+    return qvNodeStats;
 }
 
 int ClientModel::getNumBlocks() const
 {
     return nBestHeight;
+}
+
+int ClientModel::getProtocolVersion() const
+{
+    return PROTOCOL_VERSION;
+}
+
+double ClientModel::getDifficulty(bool fProofofStake)
+{
+    if (fProofofStake)
+       return GetDifficulty(GetLastBlockIndex(pindexBest,true));
+    else
+       return GetDifficulty(GetLastBlockIndex(pindexBest,false));
+}
+
+double ClientModel::getProofOfStakeReward()
+{
+    return GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true)/10000;
+}
+
+int ClientModel::getLastPoSBlock()
+{
+    return GetLastBlockIndex(pindexBest,true)->nHeight;
+}
+
+int64 ClientModel::getMoneySupply()
+{
+   return pindexBest->nMoneySupply;
+}
+
+double ClientModel::getPoWMHashPS()
+{
+   return GetPoWMHashPS();
 }
 
 int ClientModel::getNumBlocksAtStartup()
@@ -47,10 +107,22 @@ int ClientModel::getNumBlocksAtStartup()
     return numBlocksAtStartup;
 }
 
-QDateTime ClientModel::getLastBlockDate() const
+double ClientModel::getPosKernalPS()
 {
-    if (pindexBest)
+    return GetPoSKernelPS();
+}
+
+int ClientModel::getStakeTargetSpacing()
+{
+    return nStakeTargetSpacing;
+}
+
+QDateTime ClientModel::getLastBlockDate(bool fProofofStake) const
+{
+    if (pindexBest && !fProofofStake)
       return QDateTime::fromTime_t(pindexBest->GetBlockTime());
+    else if (pindexBest && fProofofStake)
+       return QDateTime::fromTime_t(GetLastBlockIndex(pindexBest,true)->GetBlockTime());
     else
       return QDateTime::fromTime_t(1374635824); // Genesis block's time
 }
@@ -116,11 +188,6 @@ bool ClientModel::inInitialBlockDownload() const
 
 enum BlockSource ClientModel::getBlockSource() const
 {
-    //Tranz Need to add -reindex.
-    //if (fReindex)
-    //    return BLOCK_SOURCE_REINDEX;
-    //if (fImporting)
-    //    return BLOCK_SOURCE_DISK;
     return BLOCK_SOURCE_NETWORK;
 }
 

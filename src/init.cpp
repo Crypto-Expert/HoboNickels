@@ -31,6 +31,7 @@ CWallet* pwalletMain;
 unsigned int nNodeLifespan;
 enum Checkpoints::CPMode CheckpointsMode;
 bool fUseFastIndex;
+bool fConfChange;
 
 CClientUIInterface uiInterface;
 
@@ -265,6 +266,7 @@ std::string HelpMessage()
 #endif
         "  -detachdb              " + _("Detach block and address databases. Increases shutdown time (default: 0)") + "\n" +
         "  -paytxfee=<amt>        " + _("Fee per KB to add to transactions you send") + "\n" +
+        "  -mininput=<amt>        " + _("When creating transactions, ignore inputs with value less than this (default: 0.001)") + "\n" +
 #ifdef QT_GUI
         "  -server                " + _("Accept command line and JSON-RPC commands") + "\n" +
 #endif
@@ -287,6 +289,10 @@ std::string HelpMessage()
         "  -rpcconnect=<ip>       " + _("Send commands to node running on <ip> (default: 127.0.0.1)") + "\n" +
         "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
         "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n" +
+        "  -confchange=<n>        " + _("Require a confirmations for change (default: 0)") + "\n" +
+        "  -newtxnotify=<cmd>     " + _("Execute command when a new wallet transaction occurs (%s in cmd is replaced by TxID)") + "\n" +
+        "  -confirmnotify=<cmd>   " + _("Execute command when a wallet transaction is confirmed (%s in cmd is replaced by TxID)") + "\n" +
+        "  -blockfoundnotify=<cmd>" + _("Execute command when a block is found (%s in cmd is replaced by block hash)") + "\n" +
         "  -upgradewallet         " + _("Upgrade wallet to latest format") + "\n" +
         "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n" +
         "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n" +
@@ -537,6 +543,14 @@ bool AppInit2()
             return InitError(strprintf(_("Invalid amount for -paytxfee=<amount>: '%s'"), mapArgs["-paytxfee"].c_str()));
         if (nTransactionFee > 0.25 * COIN)
             InitWarning(_("Warning: -paytxfee is set very high! This is the transaction fee you will pay if you send a transaction."));
+    }
+
+    fConfChange = GetBoolArg("-confchange", false);
+
+    if (mapArgs.count("-mininput"))
+    {
+       if (!ParseMoney(mapArgs["-mininput"], nMinimumInputValue))
+       return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
     }
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log

@@ -30,7 +30,11 @@
 #include <QActionGroup>
 #include <QAction>
 #include <QLabel>
+#if QT_VERSION < 0x050000
 #include <QDesktopServices>
+#else
+#include <QStandardPaths>
+#endif
 #include <QFileDialog>
 
 WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
@@ -39,6 +43,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     clientModel(0),
     walletModel(0),
     encryptWalletAction(0),
+    unlockWalletAction(0),
+    lockWalletAction(0),
     changePassphraseAction(0)
 {
     // Create actions for the toolbar, menu bar and tray/dock icon
@@ -134,12 +140,39 @@ void WalletView::createActions()
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
     encryptWalletAction->setCheckable(true);
+
+    unlockWalletAction = new QAction(QIcon(":/icons/lock_open"), tr("&Unlock Wallet..."), this);
+    unlockWalletAction->setStatusTip(tr("Unlock the wallet for minting"));
+    unlockWalletAction->setCheckable(true);
+
+    lockWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Lock Wallet..."), this);
+    lockWalletAction->setStatusTip(tr("Lock the wallet"));
+    lockWalletAction->setCheckable(true);
+
+    checkWalletAction = new QAction(QIcon(":/icons/inspect"), tr("&Check Wallet..."), this);
+    checkWalletAction->setStatusTip(tr("Check wallet integrity and report findings"));
+
+    repairWalletAction = new QAction(QIcon(":/icons/repair"), tr("&Repair Wallet..."), this);
+    repairWalletAction->setStatusTip(tr("Fix wallet integrity and remove orphans"));
+
     backupWalletAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup Wallet..."), this);
     backupWalletAction->setStatusTip(tr("Backup wallet to another location"));
+
+    dumpWalletAction = new QAction(QIcon(":/icons/export"), tr("&Export Wallet..."), this);
+    dumpWalletAction->setStatusTip(tr("Export a wallet's keys to a text file"));
+
+    importWalletAction = new QAction(QIcon(":/icons/import"), tr("&Import Wallet..."), this);
+    importWalletAction->setStatusTip(tr("Import keys from text file into wallet"));
+
+    backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
+    backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
+
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
+
     signMessageAction = new QAction(QIcon(":/icons/edit"), tr("Sign &message..."), this);
     signMessageAction->setStatusTip(tr("Sign messages with your HoboNickels addresses to prove you own them"));
+
     verifyMessageAction = new QAction(QIcon(":/icons/transaction_0"), tr("&Verify message..."), this);
     verifyMessageAction->setStatusTip(tr("Verify messages to ensure they were signed with specified HoboNickels addresses"));
 
@@ -148,10 +181,17 @@ void WalletView::createActions()
     exportAction->setToolTip(exportAction->statusTip());
 
     connect(encryptWalletAction, SIGNAL(triggered(bool)), this, SLOT(encryptWallet(bool)));
+    connect(checkWalletAction, SIGNAL(triggered()), this, SLOT(checkWallet()));
+    connect(repairWalletAction, SIGNAL(triggered()), this, SLOT(repairWallet()));
     connect(backupWalletAction, SIGNAL(triggered()), this, SLOT(backupWallet()));
+    connect(dumpWalletAction, SIGNAL(triggered()), this, SLOT(dumpWallet()));
+    connect(importWalletAction, SIGNAL(triggered()), this, SLOT(importWallet()));
+    connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
+    connect(unlockWalletAction, SIGNAL(triggered(bool)), this, SLOT(unlockWalletForMint()));
+    connect(lockWalletAction, SIGNAL(triggered(bool)), this, SLOT(lockWallet()));
 }
 
 void WalletView::setBitcoinGUI(BitcoinGUI *gui)
@@ -195,6 +235,10 @@ void WalletView::setWalletModel(WalletModel *walletModel)
 
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
+
+        //Set Total Balance for all loaded wallets.
+        overviewPage->setTotBalance(walletModel->getTotBalance());
+        connect(walletModel, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     }
 }
 
@@ -344,6 +388,14 @@ void WalletView::showOutOfSyncWarning(bool fShow)
     overviewPage->showOutOfSyncWarning(fShow);
 }
 
+void WalletView::setTotBalance(bool fEmit)
+{
+    qint64 newTotBalance = walletModel->getTotBalance();
+    overviewPage->setTotBalance(newTotBalance);
+    if(fEmit)
+       emit totBalanceChanged(newTotBalance);
+}
+
 void WalletView::setEncryptionStatus()
 {
     gui->setEncryptionStatus(walletModel->getEncryptionStatus());
@@ -361,9 +413,78 @@ void WalletView::encryptWallet(bool status)
     setEncryptionStatus();
 }
 
+void WalletView::checkWallet()
+{
+
+    int nMismatchSpent;
+    qint64 nBalanceInQuestion;
+    int nOrphansFound;
+
+    if(!walletModel)
+        return;
+
+    // Check the wallet as requested by user
+    walletModel->checkWallet(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
+       gui->message(tr("Check Wallet Information"),
+                    tr("Wallet %1 passed integrity test!\n"
+                       "Nothing found to fix.")
+                    .arg(gui->getCurrentWallet())
+                    ,CClientUIInterface::MSG_INFORMATION);
+    else
+       gui->message(tr("Check Wallet Information"),
+                    tr("Wallet %1 failed integrity test!\n\n"
+                       "Mismatched coin(s) found: %2.\n"
+                       "Amount in question: %3.\n"
+                       "Orphans found: %4.\n\n"
+                       "Please backup wallet and run repair wallet.\n")
+                          .arg(gui->getCurrentWallet())
+                          .arg(nMismatchSpent)
+                          .arg(BitcoinUnits::formatWithUnit(walletModel->getOptionsModel()->getDisplayUnit(), nBalanceInQuestion,true))
+                          .arg(nOrphansFound)
+                    ,CClientUIInterface::MSG_WARNING);
+}
+
+void WalletView::repairWallet()
+{
+
+    int nMismatchSpent;
+    int64 nBalanceInQuestion;
+    int nOrphansFound;
+
+    if(!walletModel)
+        return;
+
+    // Repair the wallet as requested by user
+    walletModel->repairWallet(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
+       gui->message(tr("Repair Wallet Information"),
+                    tr("Wallet %1 passed integrity test!\n"
+                       "Nothing found to fix.")
+                    .arg(gui->getCurrentWallet())
+                    ,CClientUIInterface::MSG_INFORMATION);
+    else
+       gui->message(tr("Repair Wallet Information"),
+                    tr("Wallet %1 failed integrity test and has been repaired!\n"
+                       "Mismatched coin(s) found: %2\n"
+                       "Amount affected by repair: %3\n"
+                       "Orphans removed: %4\n")
+                          .arg(gui->getCurrentWallet())
+                          .arg(nMismatchSpent)
+                          .arg(BitcoinUnits::formatWithUnit(walletModel->getOptionsModel()->getDisplayUnit(), nBalanceInQuestion,true))
+                          .arg(nOrphansFound)
+                    ,CClientUIInterface::MSG_WARNING);
+}
+
 void WalletView::backupWallet()
 {
+#if QT_VERSION < 0x050000
     QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupWallet(filename)) {
@@ -376,11 +497,120 @@ void WalletView::backupWallet()
     }
 }
 
+void WalletView::dumpWallet()
+{
+
+   if(!walletModel)
+      return;
+
+
+   WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+   if(!ctx.isValid())
+   {
+       // Unlock wallet failed or was cancelled
+       return;
+   }
+
+#if QT_VERSION < 0x050000
+    QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getSaveFileName(this, tr("Export Wallet"), saveDir, tr("Wallet Text (*.txt)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->dumpWallet(filename)) {
+            gui->message(tr("Export Failed"),
+                         tr("There was an error trying to save the wallet's keys to your location.\n"
+                            "Keys from wallet: %1, were not saved")
+                         .arg(gui->getCurrentWallet())
+                      ,CClientUIInterface::MSG_ERROR);
+        }
+        else
+          gui->message(tr("Export Successful"),
+                       tr("Keys from wallet:%1,\n were saved to:\n %2")
+                       .arg(gui->getCurrentWallet())
+                       .arg(filename)
+                      ,CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
+void WalletView::importWallet()
+{
+
+   if(!walletModel)
+      return;
+
+
+   WalletModel::UnlockContext ctx(walletModel->requestUnlock());
+   if(!ctx.isValid())
+   {
+       // Unlock wallet failed or was cancelled
+       return;
+   }
+
+#if QT_VERSION < 0x050000
+    QString openDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString openDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getOpenFileName(this, tr("Import Wallet"), openDir, tr("Wallet Text (*.txt)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->importWallet(filename)) {
+            gui->message(tr("Import Failed"),
+                         tr("There was an error trying to import the file's keys into your wallet.\n"
+                            "Some or all keys from:\n %2,\n were not imported into wallet: %1")
+                         .arg(gui->getCurrentWallet())
+                         .arg(filename)
+                      ,CClientUIInterface::MSG_ERROR);
+        }
+        else
+          gui->message(tr("Import Successful"),
+                       tr("Keys from:\n %2,\n were imported into wallet: %1.")
+                       .arg(gui->getCurrentWallet())
+                       .arg(filename)
+                      ,CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
+
+void WalletView::backupAllWallets()
+{
+#if QT_VERSION < 0x050000
+    QString saveDir = QDesktopServices::storageLocation(QDesktopServices::DocumentsLocation);
+#else
+    QString saveDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+#endif
+    QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Prefix for wallet Data (*)"));
+    if(!filename.isEmpty()) {
+        if(!walletModel->backupAllWallets(filename)) {
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+                      CClientUIInterface::MSG_ERROR);
+        }
+        else
+            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the new location."),
+                      CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
 void WalletView::changePassphrase()
 {
     AskPassphraseDialog dlg(AskPassphraseDialog::ChangePass, this);
     dlg.setModel(walletModel);
     dlg.exec();
+}
+
+void WalletView::lockWallet()
+{
+    if(!walletModel)
+        return;
+    // Lock wallet when requested by user
+    if(walletModel->getEncryptionStatus() == WalletModel::Unlocked)
+        walletModel->setWalletLocked(true,"",true);
+    gui->message(tr("Lock Wallet Information"),
+                 tr("Wallet %1 has been locked.\n"
+                    "Proof of Stake has stopped.\n")
+                 .arg(gui->getCurrentWallet())
+                 ,CClientUIInterface::MSG_INFORMATION);
 }
 
 void WalletView::unlockWallet()
@@ -394,4 +624,54 @@ void WalletView::unlockWallet()
         dlg.setModel(walletModel);
         dlg.exec();
     }
+ }
+
+void WalletView::unlockWalletForMint()
+{
+    if(!walletModel)
+        return;
+    // Unlock wallet when requested by wallet user
+    if(walletModel->getEncryptionStatus() == WalletModel::Locked)
+    {
+        AskPassphraseDialog dlg(AskPassphraseDialog::UnlockForMint, this);
+        dlg.setModel(walletModel);
+        dlg.exec();
+        // Only show message if unlock is sucessfull.
+        if(walletModel->getEncryptionStatus() == WalletModel::Unlocked)
+           gui->message(tr("Unlock Wallet Information"),
+                     tr("Wallet %1 has been unlocked. \n"
+                        "Proof of Stake has started.\n")
+                     .arg(gui->getCurrentWallet())
+                     ,CClientUIInterface::MSG_INFORMATION);
+    }
+}
+
+void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+{
+    if(!walletModel)
+       return;
+    walletModel->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+quint64 WalletView::getTotStakeWeight()
+{
+    if(!walletModel)
+       return 0;
+    return walletModel->getTotStakeWeight();
+}
+
+
+int WalletView::getWalletVersion() const
+{
+    if(!walletModel)
+       return 0;
+    return walletModel->getWalletVersion();
+}
+
+bool WalletView::isWalletLocked()
+{
+  if(!walletModel)
+     return false;
+  return (walletModel->getEncryptionStatus() == WalletModel::Locked);
+
 }

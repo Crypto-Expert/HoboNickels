@@ -38,6 +38,8 @@ bool WalletStack::addWalletView(const QString& name, WalletModel *walletModel)
 
     // Ensure a walletView is able to show the main window
     connect(walletView, SIGNAL(showNormalIfMinimized()), gui, SLOT(showNormalIfMinimized()));
+    // Ensure a walletView will update when any balance is changed.
+    connect(walletView, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     return true;
 
 }
@@ -64,6 +66,13 @@ void WalletStack::showOutOfSyncWarning(bool fShow)
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
         i.value()->showOutOfSyncWarning(fShow);
+}
+
+void WalletStack::setTotBalance()
+{
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->setTotBalance(false);
 }
 
 void WalletStack::gotoOverviewPage()
@@ -134,10 +143,40 @@ void WalletStack::encryptWallet(bool status)
     if (walletView) walletView->encryptWallet(status);
 }
 
+void WalletStack::repairWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->repairWallet();
+}
+
+void WalletStack::checkWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->checkWallet();
+}
+
 void WalletStack::backupWallet()
 {
     WalletView *walletView = (WalletView*)currentWidget();
     if (walletView) walletView->backupWallet();
+}
+
+void WalletStack::backupAllWallets()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->backupAllWallets();
+}
+
+void WalletStack::dumpWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->dumpWallet();
+}
+
+void WalletStack::importWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->importWallet();
 }
 
 void WalletStack::changePassphrase()
@@ -151,6 +190,19 @@ void WalletStack::unlockWallet()
     WalletView *walletView = (WalletView*)currentWidget();
     if (walletView) walletView->unlockWallet();
 }
+
+void WalletStack::lockWallet()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->lockWallet();
+}
+
+void WalletStack::unlockWalletForMint()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->unlockWalletForMint();
+}
+
 
 void WalletStack::setEncryptionStatus()
 {
@@ -193,4 +245,31 @@ void WalletStack::setCurrentWalletView(const QString& name)
           i.value()->gotoAddressBookPage(true, false, x );
         }
      }
+}
+
+void WalletStack::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+quint64 WalletStack::getTotStakeWeight()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getTotStakeWeight();
+    return 0;
+}
+
+int WalletStack::getWalletVersion() const
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getWalletVersion();
+    return 0;
+}
+
+bool WalletStack::isWalletLocked()
+{
+  WalletView *walletView = (WalletView*)currentWidget();
+  if (walletView) return walletView->isWalletLocked();
+  return false;
 }

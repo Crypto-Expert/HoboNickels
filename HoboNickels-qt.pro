@@ -1,9 +1,13 @@
 TEMPLATE = app
 TARGET = HoboNickels-qt
 VERSION = 0.7.5
+QT += core gui network
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN __NO_SYSTEM_INCLUDES
 CONFIG += no_include_pwd
+CONFIG += thread
+CONFIG += static
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
 # UNCOMMENT THIS SECTION TO BUILD ON WINDOWS
 ##################################################################################
@@ -12,17 +16,17 @@ CONFIG += no_include_pwd
 #LIBS += -lssl -lcrypto -ldb_cxx$$BDB_LIB_SUFFIX
 #windows:LIBS += -lws2_32 -lole32 -loleaut32 -luuid -lgdi32
 #LIBS += -lboost_system-mgw46-mt-sd-1_54 -lboost_filesystem-mgw46-mt-sd-1_54 -lboost_program_options-mgw46-mt-sd-1_54 -lboost_thread-mgw46-mt-sd-1_54 -lboost_regex-mgw46-mt-sd-1_54
-#BOOST_LIB_SUFFIX=-mgw46-mt-sd-1_54
-#BOOST_INCLUDE_PATH=C:/deps/boost_1_54_0
-#BOOST_LIB_PATH=C:/deps/boost_1_54_0/stage/lib
+#BOOST_LIB_SUFFIX=-mgw48-mt-s-1_55
+#BOOST_INCLUDE_PATH=C:/deps/boost_1_55_0
+#BOOST_LIB_PATH=C:/deps/boost_1_55_0/stage/lib
 #BDB_INCLUDE_PATH=C:/deps/db-4.8.30.NC/build_unix
 #BDB_LIB_PATH=C:/deps/db-4.8.30.NC/build_unix
 #OPENSSL_INCLUDE_PATH=C:/deps/openssl-1.0.1e/include
 #OPENSSL_LIB_PATH=C:/deps/openssl-1.0.1e
-#QRENCODE_INCLUDE_PATH=C:/deps/libqrencode-master/libqrencode-master
-#QRENCODE_LIB_PATH=C:/deps/libqrencode-master/libqrencode-master
-#MINIUPNPC_INCLUDE_PATH=C:/deps/miniupnpc-1.8.2013120
-#MINIUPNPC_LIB_PATH=C:/deps/miniupnpc-1.8.2013120/miniupnpc
+#MINIUPNPC_INCLUDE_PATH=C:/deps/
+#MINIUPNPC_LIB_PATH=C:/deps/miniupnpc
+#QRENCODE_INCLUDE_PATH=C:/deps/qrencode-3.4.3
+#QRENCODE_LIB_PATH=C:/deps/qrencode-3.4.3/.libs
 ###################################################################################
 
 OBJECTS_DIR = build
@@ -49,6 +53,8 @@ QMAKE_LFLAGS *= -fstack-protector-all --param ssp-buffer-size=1
 }
 # for extra security on Windows: enable ASLR and DEP via GCC linker flags
 win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat
+ # on Windows: enable GCC large address aware linker flag
+win32:QMAKE_LFLAGS *= -Wl,--large-address-aware -static
 
 # use: qmake "USE_QRCODE=1"
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
@@ -181,6 +187,7 @@ HEADERS += src/qt/bitcoingui.h \
     src/pbkdf2.h \
     src/serialize.h \
     src/strlcpy.h \
+    src/miner.h \
     src/main.h \
     src/net.h \
     src/key.h \
@@ -256,6 +263,7 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/key.cpp \
     src/script.cpp \
     src/main.cpp \
+    src/miner.cpp \
     src/init.cpp \
     src/net.cpp \
     src/irc.cpp \

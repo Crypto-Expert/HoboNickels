@@ -8,6 +8,7 @@
 #include "txdb.h"
 #include "init.h"
 #include "bitcoinrpc.h"
+#include "miner.h"
 
 using namespace json_spirit;
 using namespace std;
@@ -61,6 +62,28 @@ Value gethashespersec(CWallet* pWallet, const Array& params, bool fHelp)
     return (boost::int64_t)dHashesPerSec;
 }
 
+Value getsubsidy(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "getsubsidy [nTarget]\n"
+            "Returns proof-of-work subsidy value for the specified value of target.");
+
+    unsigned int nBits = 0;
+
+    if (params.size() != 0)
+    {
+        CBigNum bnTarget(uint256(params[0].get_str()));
+        nBits = bnTarget.GetCompact();
+    }
+    else
+    {
+        nBits = GetNextTargetRequired(pindexBest, false);
+    }
+
+    return ValueFromAmount((uint64_t)GetProofOfWorkReward(nBits));
+
+}
 
 Value getmininginfo(CWallet* pWallet, const Array& params, bool fHelp)
 {
@@ -69,21 +92,33 @@ Value getmininginfo(CWallet* pWallet, const Array& params, bool fHelp)
             "getmininginfo\n"
             "Returns an object containing mining-related information.");
 
-    Object obj;
+    uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+    pWallet->GetStakeWeight(*pWallet, nMinWeight, nMaxWeight, nWeight);
+
+    Object obj, diff, weight;
     obj.push_back(Pair("blocks",        (int)nBestHeight));
     obj.push_back(Pair("currentblocksize",(uint64_t)nLastBlockSize));
     obj.push_back(Pair("currentblocktx",(uint64_t)nLastBlockTx));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
+
+    diff.push_back(Pair("proof-of-work",        GetDifficulty()));
+    diff.push_back(Pair("proof-of-stake",       GetDifficulty(GetLastBlockIndex(pindexBest, true))));
+    diff.push_back(Pair("search-interval",      (int)nLastCoinStakeSearchInterval));
+    obj.push_back(Pair("difficulty",    diff));
+
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     obj.push_back(Pair("netmhashps",     GetPoWMHashPS()));
     obj.push_back(Pair("netstakeweight", GetPoSKernelPS()));
     obj.push_back(Pair("generate",      GetBoolArg("-gen")));
     obj.push_back(Pair("genproclimit",  (int)GetArg("-genproclimit", -1)));
     obj.push_back(Pair("hashespersec",  gethashespersec(NULL, params, false)));
-    obj.push_back(Pair("stakeweight",    (uint64_t)pWallet->GetStakeWeight(*pWallet, STAKE_NORMAL)));
-    obj.push_back(Pair("minweight",    (uint64_t)pWallet->GetStakeWeight(*pWallet, STAKE_MINWEIGHT)));
-    obj.push_back(Pair("maxweight",    (uint64_t)pWallet->GetStakeWeight(*pWallet, STAKE_MAXWEIGHT)));
+
+    weight.push_back(Pair("minimum",    (uint64_t)nMinWeight));
+    weight.push_back(Pair("maximum",    (uint64_t)nMaxWeight));
+    weight.push_back(Pair("combined",  (uint64_t)nWeight));
+    obj.push_back(Pair("stakeweight", weight));
     obj.push_back(Pair("stakeinterest",    (uint64_t)GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true)));
+
+
     obj.push_back(Pair("pooledtx",      (uint64_t)mempool.size()));
     obj.push_back(Pair("testnet",       fTestNet));
     return obj;

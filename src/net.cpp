@@ -1147,18 +1147,15 @@ void MapPort()
 
 
 
-
-
-
-
-
-
 // DNS seeds
 // Each pair gives a source name and a seed name.
 // The first name is used as information source for addrman.
 // The second name should resolve to a list of seed addresses.
 static const char *strDNSSeed[][2] = {
-    {"", ""},
+    {"scryptseed", "seed.scrypt.io"},
+    {"hoboseed", "seed.hobonickels.info"},
+
+
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1221,15 +1218,11 @@ void ThreadDNSAddressSeed2(void* parg)
 
 
 
-
-
-
-
-
-
 unsigned int pnSeed[] =
 {
-	0x58099DD9
+
+  0x1e98f905,0x6ab7c936,0xfa6921b2,0xb5b1795b, 0x8267b07b,
+
 };
 
 void DumpAddresses()
@@ -1865,18 +1858,12 @@ void StartNode(void* parg)
     // Start threads
     //
 
-/*
+
     if (!GetBoolArg("-dnsseed", true))
         printf("DNS seeding disabled\n");
     else
         if (!NewThread(ThreadDNSAddressSeed, NULL))
             printf("Error: NewThread(ThreadDNSAddressSeed) failed\n");
-*/
-
-    if (!GetBoolArg("-dnsseed", false))
-        printf("DNS seeding disabled\n");
-    if (GetBoolArg("-dnsseed", false))
-        printf("DNS seeding NYI\n");
 
     // Map ports with UPnP
     if (fUseUPnP)
@@ -1909,19 +1896,8 @@ void StartNode(void* parg)
     // ppcoin: mint proof-of-stake blocks in the background
     //hbn: each wallet gets its own thread.
     //Todo: Need to add a method to choose not to run stake off wallet.
-    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-    {
-      printf("Starting MultiThreadStakeMinter\n");
-      CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
-      if ( !pwallet->IsCrypted() )
-      {
-         if (!NewThread(ThreadStakeMinter, pwallet))
-            printf("Error: NewThread(ThreadStakeMinter) failed\n");
-      }
-      else
-        printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", pwallet->strWalletFile.c_str());
 
-    }
+    pWalletManager->RestartStakeMiner();
 
     // Generate coins in the background
     GenerateBitcoins(GetBoolArg("-gen", false), pwalletMain);

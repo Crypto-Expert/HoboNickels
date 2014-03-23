@@ -26,6 +26,7 @@
 #include <boost/thread.hpp>
 
 extern bool fWalletUnlockMintOnly;
+extern bool fConfChange;
 class CWallet;
 class CAccountingEntry;
 class CWalletTx;
@@ -42,15 +43,6 @@ enum WalletFeature
     FEATURE_COMPRPUBKEY = 60000, // compressed public keys
 
     FEATURE_LATEST = 60000
-};
-
-/** Stake weight calculation mode */
-enum StakeWeightMode
-{
-    STAKE_NORMAL = 0, // all 10+ days old inputs
-    STAKE_MAXWEIGHT = 1, // only 30+ days old inputs
-    STAKE_MINWEIGHT = 3, // only [10-30] days old inputs
-    STAKE_BELOWMIN = 4 // only less than 10 days old inputs
 };
 
 class CWalletLockJob : public CTimerJob
@@ -98,6 +90,7 @@ class CWallet : public CCryptoKeyStore
 {
 private:
     bool SelectCoins(int64 nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, const CCoinControl *coinControl=NULL) const;
+    bool SelectCoinsSimple(int64 nTargetValue, unsigned int nSpendTime, int nMinConf, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
 
     CWalletDB *pwalletdbEncryption;
 
@@ -170,6 +163,7 @@ public:
     bool CanSupportFeature(enum WalletFeature wf) { return nWalletMaxVersion >= wf; }
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
+    void AvailableCoinsMinConf(std::vector<COutput>& vCoins, int nConf) const;
     bool SelectCoinsMinConf(int64 nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -219,7 +213,7 @@ public:
     bool AddToWallet(const CWalletTx& wtxIn);
     bool AddToWalletIfInvolvingMe(const CTransaction& tx, const CBlock* pblock, bool fUpdate = false, bool fFindBlock = false);
     bool EraseFromWallet(uint256 hash);
-    void WalletUpdateSpent(const CTransaction& prevout);
+    void WalletUpdateSpent(const CTransaction& prevout, bool fBlock = false);
     int ScanForWalletTransactions(CBlockIndex* pindexStart, bool fUpdate = false);
     int ScanForWalletTransaction(const uint256& hashTx);
     void ReacceptWalletTransactions();
@@ -232,7 +226,8 @@ public:
     bool CreateTransaction(const std::vector<std::pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, const CCoinControl *coinControl=NULL);
     bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, const CCoinControl *coinControl=NULL);
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);
-    uint64 GetStakeWeight(const CKeyStore& keystore, enum StakeWeightMode mode=STAKE_NORMAL);
+    bool GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight);
+    bool GetStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight);
     bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64 nSearchInterval, CTransaction& txNew);
     std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
     std::string SendMoneyToDestination(const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
@@ -272,7 +267,7 @@ public:
     bool IsMine(const CTransaction& tx) const
     {
         BOOST_FOREACH(const CTxOut& txout, tx.vout)
-            if (IsMine(txout))
+            if (IsMine(txout) && txout.nValue >= nMinimumInputValue)
                 return true;
         return false;
     }
@@ -353,7 +348,7 @@ public:
     // get the current wallet format (the oldest client version guaranteed to understand this wallet)
     int GetVersion() { return nWalletVersion; }
 
-    void FixSpentCoins(int& nMismatchSpent, int64& nBalanceInQuestion, bool fCheckOnly = false);
+    void FixSpentCoins(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound, bool fCheckOnly = false);
     void DisableTransaction(const CTransaction &tx);
 
     /** Address book entry changed.
@@ -408,6 +403,7 @@ public:
     bool LoadWalletFromFile(const std::string& strFile, std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, int nMaxVersion = 0);
     bool UnloadWallet(const std::string& strName);
     void UnloadAllWallets();
+    void RestartStakeMiner();
 
     // GetWallet and GetDefaultWallet throw a CWalletManagerException if the wallet is not found.
     boost::shared_ptr<CWallet> GetWallet(const std::string& strName);
@@ -741,14 +737,14 @@ public:
         return (GetDebit() > 0);
     }
 
-    bool IsConfirmed() const
+    bool IsTrusted() const
     {
         // Quick answer in most cases
         if (!IsFinal())
             return false;
         if (GetDepthInMainChain() >= 1)
             return true;
-        if (!IsFromMe()) // using wtx's cached debit
+        if (fConfChange || !IsFromMe()) // using wtx's cached debit
             return false;
 
         // If no confirmations but it's from us, we can still

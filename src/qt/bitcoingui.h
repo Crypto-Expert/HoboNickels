@@ -81,6 +81,7 @@ private:
 
 
     QLabel *labelEncryptionIcon;
+    QLabel *labelStakingIcon;
     QLabel *labelConnectionsIcon;
     QLabel *labelBlocksIcon;
     QLabel *progressBarLabel;
@@ -99,7 +100,14 @@ private:
     QAction *optionsAction;
     QAction *toggleHideAction;
     QAction *encryptWalletAction;
+    QAction *unlockWalletAction;
+    QAction *lockWalletAction;
+    QAction *checkWalletAction;
+    QAction *repairWalletAction;
     QAction *backupWalletAction;
+    QAction *backupAllWalletsAction;
+    QAction *dumpWalletAction;
+    QAction *importWalletAction;
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
@@ -157,8 +165,10 @@ public slots:
        @param[in] message   the displayed text
        @param[in] style     modality and style definitions (icon and used buttons - buttons only for message boxes)
                             @see CClientUIInterface::MessageBoxFlags
+       @param[in] detail    optional detail text
     */
-    void message(const QString &title, const QString &message, unsigned int style);
+
+    void message(const QString &title, const QString &message, unsigned int style, const QString &detail=QString());
     /** Asks the user whether to pay the transaction fee or to cancel the transaction.
        It is currently not possible to pass a return value to another thread through
        BlockingQueuedConnection, so an indirected pointer is used.
@@ -182,18 +192,41 @@ private slots:
     void optionsClicked();
     /** Show about dialog */
     void aboutClicked();
+    /** Show information about network */
+    void blocksIconClicked();
+    /** Allow user to lock/unlock wallet from click */
+    void lockIconClicked();
+    /** Show information about peers */
+    void connectionIconClicked();
+    /** Show information about stakes */
+    void stakingIconClicked();
 #ifndef Q_OS_MAC
     /** Handle tray icon clicked */
     void trayIconActivated(QSystemTrayIcon::ActivationReason reason);
 #endif
     /** Encrypt the wallet */
     void encryptWallet(bool status);
-    /** Backup the wallet */
+    /** Check the wallet */
+    void checkWallet();
+    /** Repair the wallet */
+    void repairWallet();
+    /** Backup the wallet(s) */
     void backupWallet();
+    void backupAllWallets();
+    /** Import/Export the wallet's keys */
+    void dumpWallet();
+    void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Allow user to lock wallet */
+    void lockWallet();
+
+    /** Ask for passphrase to unlock wallet during entire session */
+    void unlockWalletForMint();
+    /** Give user information about staking */
+    void updateStakingIcon();
 
     /** Show window if hidden, unminimize when minimized, rise when obscured or show if hidden and fToggleHidden is true */
     void showNormalIfMinimized(bool fToggleHidden = false);

@@ -46,14 +46,14 @@ public:
     void setBitcoinGUI(BitcoinGUI *gui) { this->gui = gui; }
     
     void setClientModel(ClientModel *clientModel) { this->clientModel = clientModel; }
-    
+
     bool addWalletView(const QString& name, WalletModel *walletModel);
     bool removeWalletView(const QString& name);
 
     bool handleURI(const QString &uri);
     
     void showOutOfSyncWarning(bool fShow);
-    
+
 private:
     BitcoinGUI *gui;
     ClientModel *clientModel;
@@ -61,7 +61,7 @@ private:
     QMap<QString, ClientModel*> mapClientModels;
     
     bool bOutOfSync;
-    
+
 public slots:
     void setCurrentWalletView(const QString& name);
     QString getCurrentWallet();
@@ -84,12 +84,33 @@ public slots:
     
     /** Encrypt the wallet */
     void encryptWallet(bool status);
-    /** Backup the wallet */
+    /** Check the wallet */
+    void checkWallet();
+    /** Repair the wallet */
+    void repairWallet();
+    /** Backup the wallet(s) */
     void backupWallet();
+    void backupAllWallets();
+    /** Import/Export the wallet's keys */
+    void dumpWallet();
+    void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Allow user to lock wallet */
+    void lockWallet();
+    /** Ask for passphrase to unlock wallet for the session to mint */
+    void unlockWalletForMint();
+    /** Add up all loaded wallets and show total balance */
+    void setTotBalance();
+    /** Give user information about staking */
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    quint64 getTotStakeWeight();
+    /** Report Current Wallet Version */
+    int getWalletVersion() const;
+    /** Report from Stack about Wallet Encryption */
+    bool isWalletLocked();
     
     /** Set the encryption status as shown in the UI.
      @param[in] status            current encryption status

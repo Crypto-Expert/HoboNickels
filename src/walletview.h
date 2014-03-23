@@ -66,6 +66,7 @@ private:
     SignVerifyMessageDialog *signVerifyMessageDialog;
 
     QLabel *labelEncryptionIcon;
+    QLabel *labelStakingIcon;
     QLabel *labelConnectionsIcon;
     QLabel *labelBlocksIcon;
     QLabel *progressBarLabel;
@@ -83,7 +84,14 @@ private:
     QAction *toggleHideAction;
     QAction *exportAction;
     QAction *encryptWalletAction;
+    QAction *unlockWalletAction;
+    QAction *lockWalletAction;
+    QAction *checkWalletAction;
+    QAction *repairWalletAction;
     QAction *backupWalletAction;
+    QAction *dumpWalletAction;
+    QAction *importWalletAction;
+    QAction *backupAllWalletsAction;
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
@@ -118,20 +126,41 @@ public slots:
     void incomingTransaction(const QModelIndex& parent, int start, int /*end*/);
     /** Encrypt the wallet */
     void encryptWallet(bool status);
-    /** Backup the wallet */
+    /** Check the wallet */
+    void checkWallet();
+    /** Repair the wallet */
+    void repairWallet();
+    /** Backup the wallet(s) */
     void backupWallet();
+    void backupAllWallets();
+    /** Import/Export the wallet's keys */
+    void dumpWallet();
+    void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
+    /** Allow user to lock wallet */
+    void lockWallet();
+    /** Ask for passphrase to unlock wallet for the session to mint */
+    void unlockWalletForMint();
 
     void setEncryptionStatus();
+    /** Add up all loaded wallets and show total balance */
+    void setTotBalance(bool fEmit=true);
+    /** Give user information about staking */
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    quint64 getTotStakeWeight();
+    /** Report Current Wallet Version */
+    int getWalletVersion() const;
+    /** Report from View about Wallet Encryptions */
+    bool isWalletLocked();
 
 
     signals:
     /** Signal that we want to show the main window */
     void showNormalIfMinimized();
-
+    void totBalanceChanged(qint64 totBalance);
 
 };
 

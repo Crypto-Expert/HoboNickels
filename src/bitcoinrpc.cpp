@@ -213,6 +213,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getgenerate",            &getgenerate,            true,   false,    false },
     { "setgenerate",            &setgenerate,            true,   false,    false },
     { "gethashespersec",        &gethashespersec,        true,   false,    false },
+    { "getsubsidy",             &getsubsidy,             true,   false,    false },
     { "getinfo",                &getinfo,                true,   false,    false },
     { "getmininginfo",          &getmininginfo,          true,   false,    true  },
     { "getnewaddress",          &getnewaddress,          true,   false,    true  },
@@ -226,6 +227,7 @@ static const CRPCCommand vRPCCommands[] =
     { "listreceivedbyaddress",  &listreceivedbyaddress,  false,  false,    true  },
     { "listreceivedbyaccount",  &listreceivedbyaccount,  false,  false,    true  },
     { "backupwallet",           &backupwallet,           true,   false,    true  },
+    { "backupallwallets",       &backupallwallets,       true,   false,    false },
     { "keypoolrefill",          &keypoolrefill,          true,   false,    true  },
     { "walletpassphrase",       &walletpassphrase,       true,   false,    true  },
     { "walletpassphrasechange", &walletpassphrasechange, false,  false,    true  },
@@ -754,7 +756,7 @@ void ThreadRPCServer2(void* parg)
         uiInterface.ThreadSafeMessageBox(strprintf(
             _("%s, you must set a rpcpassword in the configuration file:\n %s\n"
               "It is recommended you use the following random password:\n"
-              "rpcuser=bitcoinrpc\n"
+              "rpcuser=hobonickelsrpc\n"
               "rpcpassword=%s\n"
               "(you do not need to remember this password)\n"
               "If the file does not exist, create it with owner-readable-only file permissions.\n"),
@@ -1201,6 +1203,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "getblockbynumber"       && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "getblockhash"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "gettransaction"         && n > 1) ConvertTo<bool>(params[1]);
+    if (strMethod == "getinfo"                && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "move"                   && n > 2) ConvertTo<double>(params[2]);
     if (strMethod == "move"                   && n > 3) ConvertTo<boost::int64_t>(params[3]);
     if (strMethod == "sendfrom"               && n > 2) ConvertTo<double>(params[2]);

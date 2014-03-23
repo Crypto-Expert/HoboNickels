@@ -180,6 +180,7 @@ extern json_spirit::Value listaccounts(CWallet* pWallet, const json_spirit::Arra
 extern json_spirit::Value listsinceblock(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value gettransaction(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value backupwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value backupallwallets(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value keypoolrefill(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value listwallets(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value usewallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
@@ -190,6 +191,7 @@ extern json_spirit::Value walletpassphrasechange(CWallet* pWallet, const json_sp
 extern json_spirit::Value walletlock(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value encryptwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value validateaddress(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value getsubsidy(CWallet* pWallet,const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value reservebalance(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value checkwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

@@ -64,15 +64,18 @@ string AccountFromValue(const Value& value)
 
 Value getinfo(CWallet* pWallet, const Array& params, bool fHelp)
 {
-    if (fHelp || params.size() != 0)
+    if (fHelp || params.size() > 1)
         throw runtime_error(
-            "getinfo\n"
-            "Returns an object containing various state info.");
+            "getinfo [extended]\n"
+            "Returns an object containing various state info."
+            "extended is optional true/false returning extended info.");
+
+    bool fExtended = (params.size() > 0) ? params[0].get_bool() : false;
 
     proxyType proxy;
     GetProxy(NET_IPV4, proxy);
 
-    Object obj;
+    Object obj, diff;
     obj.push_back(Pair("version",       FormatFullVersion()));
     obj.push_back(Pair("protocolversion",(int)PROTOCOL_VERSION));
     obj.push_back(Pair("blocks",        (int)nBestHeight));
@@ -80,11 +83,24 @@ Value getinfo(CWallet* pWallet, const Array& params, bool fHelp)
     obj.push_back(Pair("moneysupply",   ValueFromAmount(pindexBest->nMoneySupply)));
     obj.push_back(Pair("connections",   (int)vNodes.size()));
     obj.push_back(Pair("wallets",       pWalletManager->GetWalletCount()));
+    obj.push_back(Pair("walletversion", pWallet->GetVersion()));
     obj.push_back(Pair("proxy",         (proxy.first.IsValid() ? proxy.first.ToStringIPPort() : string())));
     obj.push_back(Pair("ip",            addrSeenByPeer.ToStringIP()));
-    obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
+
+    if (fExtended)
+    {
+        diff.push_back(Pair("proof-of-work",  GetDifficulty()));
+        diff.push_back(Pair("proof-of-stake", GetDifficulty(GetLastBlockIndex(pindexBest, true))));
+        obj.push_back(Pair("difficulty",    diff));
+    }
+    else
+    {
+        obj.push_back(Pair("difficulty",    (double)GetDifficulty()));
+    }
+
     obj.push_back(Pair("testnet",       fTestNet));
     obj.push_back(Pair("paytxfee",      ValueFromAmount(nTransactionFee)));
+    obj.push_back(Pair("mininput",      ValueFromAmount(nMinimumInputValue)));
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     return obj;
 }
@@ -345,7 +361,8 @@ Value signmessage(CWallet* pWallet, const Array& params, bool fHelp)
     if (fHelp || params.size() != 2)
         throw runtime_error(
             "signmessage <HoboNickelsaddress> <message>\n"
-            "Sign a message with the private key of an address");
+            "Sign a message with the private key of an address"
+            + HelpRequiringPassphrase(pWallet));
 
     EnsureWalletIsUnlocked(pWallet);
 
@@ -555,7 +572,7 @@ Value getbalance(CWallet* pWallet, const Array& params, bool fHelp)
         for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
         {
             const CWalletTx& wtx = (*it).second;
-            if (!wtx.IsConfirmed())
+            if (!wtx.IsTrusted())
                 continue;
 
             int64 allGeneratedImmature, allGeneratedMature, allFee;
@@ -988,6 +1005,15 @@ Value listreceivedbyaccount(CWallet* pWallet, const Array& params, bool fHelp)
     return ListReceived(pWallet, params, true);
 }
 
+static void MaybePushAddress(CWallet* pWallet, Object & entry, const CTxDestination &dest)
+{
+
+    CBitcoinAddress addr;
+    if (addr.Set(dest))
+       entry.push_back(Pair("address", addr.ToString()));
+
+}
+
 void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strAccount, int nMinDepth, bool fLong, Array& ret)
 {
     int64 nGeneratedImmature, nGeneratedMature, nFee;
@@ -1035,8 +1061,14 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
         {
             Object entry;
             entry.push_back(Pair("account", strSentAccount));
-            entry.push_back(Pair("address", CBitcoinAddress(s.first).ToString()));
-            entry.push_back(Pair("category", "send"));
+            MaybePushAddress(pWallet, entry, s.first);
+
+            if (wtx.GetDepthInMainChain() < 0) {
+               entry.push_back(Pair("category", "conflicted"));
+            } else {
+               entry.push_back(Pair("category", "send"));
+            }
+
             entry.push_back(Pair("amount", ValueFromAmount(-s.second)));
             entry.push_back(Pair("fee", ValueFromAmount(-nFee)));
             if (fLong)
@@ -1057,7 +1089,7 @@ void ListTransactions(CWallet* pWallet, const CWalletTx& wtx, const string& strA
             {
                 Object entry;
                 entry.push_back(Pair("account", account));
-                entry.push_back(Pair("address", CBitcoinAddress(r.first).ToString()));
+                MaybePushAddress(pWallet, entry, r.first);
                 if (wtx.IsCoinBase() || wtx.IsCoinStake())
                 {
                     if (wtx.GetDepthInMainChain() < 1)
@@ -1359,8 +1391,36 @@ Value backupwallet(CWallet* pWallet, const Array& params, bool fHelp)
             "Safely copies wallet.dat to destination, which can be a directory or a path with filename.");
 
     string strDest = params[0].get_str();
-    if (!BackupWallet(*pWallet, strDest))
+    if (!BackupWallet(*pWallet, strDest, false))
         throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet backup failed!");
+
+    return Value::null;
+}
+
+Value backupallwallets(CWallet* pWallet, const Array& params, bool fHelp)
+{
+
+    if (fHelp || params.size() != 1)
+        throw runtime_error(
+            "backupallwallets <destination>\n"
+            "Safely copies all wallets to destination, which can be a directory or a path with filename.");
+
+    string strDest = params[0].get_str();
+
+    vector<string> vstrNames;
+    vector<boost::shared_ptr<CWallet> > vpWallets;
+
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+       vstrNames.push_back(item.first);
+       vpWallets.push_back(item.second);
+    }
+
+    for (unsigned int i = 0; i < vstrNames.size(); i++)
+    {
+        if (!BackupWallet(*vpWallets[i], strDest, true))
+          throw JSONRPCError(RPC_WALLET_ERROR, "Error: Wallet backup failed!");
+    }
 
     return Value::null;
 }
@@ -1439,8 +1499,15 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
     else
         fWalletUnlockMintOnly = false;
 
+    //HBN: Zero unlock time means forever, well 68 years, forever for crypto.
+    int64 nUnlockTime;
 
-    pWallet->TimedLock(params[1].get_int64());
+    if (params[1].get_int64() == 0 )
+      nUnlockTime=std::numeric_limits<int>::max();
+    else
+      nUnlockTime=params[1].get_int64();
+
+    pWallet->TimedLock(nUnlockTime);
 
     if (!NewThread(ThreadStakeMinter, pWallet))
        printf("Error: NewThread(ThreadStakeMinter) failed\n");
@@ -1490,8 +1557,6 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
     if (!pWallet->IsCrypted())
         throw JSONRPCError(RPC_WALLET_WRONG_ENC_STATE, "Error: running with an unencrypted wallet, but walletlock was called.");
 
-    pWallet->Lock();
-
     if (!fShutdown)
     {
       printf ("Halting Stake Mining while we lock wallet(s)\n");
@@ -1499,33 +1564,9 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
       Sleep(1000);
     }
 
-    //Re-Start Stake for the remaining wallets
-    if (!fShutdown)
-    {
-      fStopMining = false;
-      Sleep(1000);
+    pWallet->Lock();
 
-      vector<string> vstrNames;
-      vector<boost::shared_ptr<CWallet> > vpWallets;
-
-      BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-      {
-         vstrNames.push_back(item.first);
-         vpWallets.push_back(item.second);
-      }
-      for (unsigned int i = 0; i < vstrNames.size(); i++)
-      {
-          if ( !vpWallets[i].get()->IsCrypted() || !vpWallets[i].get()->IsLocked() )
-           {
-              printf ("Restarting ThreadStakeMinter for: %s\n", vstrNames[i].c_str());
-              if (!NewThread(ThreadStakeMinter, vpWallets[i].get()))
-                 printf("Error: NewThread(ThreadStakeMinter) failed\n");
-           }
-           else
-             printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", vstrNames[i].c_str());
-       }
-      }
-
+    pWalletManager->RestartStakeMiner();
 
     return Value::null;
 }
@@ -1720,14 +1761,17 @@ Value checkwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     int nMismatchSpent;
     int64 nBalanceInQuestion;
-    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, true);
+    int nOrphansFound;
+
+    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
     Object result;
-    if (nMismatchSpent == 0)
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
         result.push_back(Pair("wallet check passed", true));
     else
     {
         result.push_back(Pair("mismatched spent coins", nMismatchSpent));
         result.push_back(Pair("amount in question", ValueFromAmount(nBalanceInQuestion)));
+        result.push_back(Pair("orphan blocks found", nOrphansFound));
     }
     return result;
 }
@@ -1743,14 +1787,17 @@ Value repairwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     int nMismatchSpent;
     int64 nBalanceInQuestion;
-    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion);
+    int nOrphansFound;
+
+    pWallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
     Object result;
-    if (nMismatchSpent == 0)
+    if (nMismatchSpent == 0 && nOrphansFound == 0)
         result.push_back(Pair("wallet check passed", true));
     else
     {
         result.push_back(Pair("mismatched spent coins", nMismatchSpent));
         result.push_back(Pair("amount affected by repair", ValueFromAmount(nBalanceInQuestion)));
+        result.push_back(Pair("orphan blocks removed", nOrphansFound));
     }
     return result;
 }
@@ -1869,12 +1916,16 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
         throw runtime_error(
             "listwallets\n"
             "Returns list of wallets.");
+    int64 totBalance = 0;
+    int64 totMint = 0;
+    int64 totStake = 0;
 
-    Object obj;
+    Object obj, comb;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
         Object objWallet;
         objWallet.push_back(Pair("balance", ValueFromAmount(item.second->GetBalance())));
+        totBalance+=item.second->GetBalance();
         objWallet.push_back(Pair("encrypted", item.second->IsCrypted()));
         if (item.second->IsCrypted())
         {
@@ -1885,9 +1936,15 @@ Value listwallets(CWallet* pWallet, const Array& params, bool fHelp)
         objWallet.push_back(Pair("keypoolsize",   (int)item.second->GetKeyPoolSize()));
         objWallet.push_back(Pair("keypoololdest", (boost::int64_t)item.second->GetOldestKeyPoolTime()));
         objWallet.push_back(Pair("newmint",       ValueFromAmount(item.second->GetNewMint())));
+        totMint+=item.second->GetNewMint();
         objWallet.push_back(Pair("stake",       ValueFromAmount(item.second->GetStake())));
+        totStake+=item.second->GetStake();
         obj.push_back(Pair(item.first, objWallet));
     }
+    comb.push_back(Pair("balance",ValueFromAmount(totBalance)));
+    comb.push_back(Pair("newmint", ValueFromAmount(totMint)));
+    comb.push_back(Pair("stake", ValueFromAmount(totStake)));
+    obj.push_back(Pair("total",    comb));
 
     return obj;
 }

@@ -28,15 +28,10 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
     int64 nCredit = wtx.GetCredit(true);
     int64 nDebit = wtx.GetDebit();
     int64 nNet = nCredit - nDebit;
-    uint256 hash = wtx.GetHash();
+    uint256 hash = wtx.GetHash(), hashPrev = 0;;
     std::map<std::string, std::string> mapValue = wtx.mapValue;
 
-    if (wtx.IsCoinStake())
-    {
-        // Stake generation
-        parts.append(TransactionRecord(hash, nTime, TransactionRecord::StakeMint, "", -nDebit, wtx.GetValueOut()));
-    }
-    else if (nNet > 0 || wtx.IsCoinBase())
+    if (nNet > 0 || wtx.IsCoinBase() || wtx.IsCoinStake())
     {
         //
         // Credit
@@ -63,8 +58,20 @@ QList<TransactionRecord> TransactionRecord::decomposeTransaction(const CWallet *
                 }
                 if (wtx.IsCoinBase())
                 {
-                    // Generated
+                    // Generated (proof-of-work)
                     sub.type = TransactionRecord::Generated;
+                }
+                if (wtx.IsCoinStake())
+                {
+                   // Generated (proof-of-stake)
+
+                   if (hashPrev == hash)
+                      continue; // last coinstake output
+
+                   sub.type = TransactionRecord::StakeMint;
+                   sub.credit = nNet > 0 ? nNet : wtx.GetValueOut() - nDebit;
+                   hashPrev = hash;
+
                 }
 
                 parts.append(sub);
@@ -163,7 +170,7 @@ void TransactionRecord::updateStatus(const CWalletTx &wtx)
         (wtx.IsCoinBase() ? 1 : 0),
         wtx.nTimeReceived,
         idx);
-    status.confirmed = wtx.IsConfirmed();
+    status.confirmed = wtx.IsTrusted();
     status.depth = wtx.GetDepthInMainChain();
     status.cur_num_blocks = nBestHeight;
 

@@ -65,10 +65,12 @@ public:
     TransactionTableModel *getTransactionTableModel();
 
     qint64 getBalance(const CCoinControl *coinControl=NULL) const;
+    qint64 getTotBalance() const;
     qint64 getStake() const;
     qint64 getUnconfirmedBalance() const;
     qint64 getImmatureBalance() const;
     int getNumTransactions() const;
+    int getWalletVersion() const;
     EncryptionStatus getEncryptionStatus() const;
 
     // Check address for validity
@@ -92,10 +94,24 @@ public:
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
     // Passphrase only needed when unlocking
-    bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString());
+    bool setWalletLocked(bool locked, const SecureString &passPhrase=SecureString(), bool formint=false);
     bool changePassphrase(const SecureString &oldPass, const SecureString &newPass);
     // Wallet backup
     bool backupWallet(const QString &filename);
+    bool backupAllWallets(const QString &filename);
+    //Wallet Inport/Export
+    bool dumpWallet(const QString &filename);
+    bool importWallet(const QString &filename);
+    // Wallet Repair
+    void checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
+    void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
+    //PoS Information
+    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    quint64 getTotStakeWeight();
+    //PoS Information about value and time
+    void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
+
+
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
@@ -166,6 +182,7 @@ public slots:
 signals:
     // Signal that balance in wallet changed
     void balanceChanged(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance);
+    void totBalanceChanged(qint64 totBalance);
 
     // Number of transactions in wallet changed
     void numTransactionsChanged(int count);
