@@ -38,7 +38,6 @@ static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
 static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; //Incorrect value Too small
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;//Incorrect value Too big
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; //Correct just right
-static const unsigned int LOCKS_SWITCH_TIME = 1394841600; // 15 Mar 2014 00:00:00
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00

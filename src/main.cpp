@@ -2124,27 +2124,6 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
     if (vtx.empty() || vtx.size() > MAX_BLOCK_SIZE || ::GetSerializeSize(*this, SER_NETWORK, PROTOCOL_VERSION) > MAX_BLOCK_SIZE)
         return DoS(100, error("CheckBlock() : size limits failed"));
 
-    // Special short-term limits to avoid 10,000 BDB lock limit:
-    // Active until 15 Mar 2014 00:00:00
-    // Tranz Remove this after cutoff time
-    if (GetBlockTime() < LOCKS_SWITCH_TIME)
-    {
-        // Rule is: #unique txids referenced <= 4,500
-        // ... to prevent 10,000 BDB lock exhaustion on old clients
-        set<uint256> setTxIn;
-        for (size_t i = 0; i < vtx.size(); i++)
-        {
-            setTxIn.insert(vtx[i].GetHash());
-            if (i == 0) continue; // skip coinbase txin
-            BOOST_FOREACH(const CTxIn& txin, vtx[i].vin)
-                    setTxIn.insert(txin.prevout.hash);
-        }
-        size_t nTxids = setTxIn.size();
-        if (nTxids > 4500)
-            return error("CheckBlock() : maxlocks violation");
-    }
-
-
     // Check proof of work matches claimed amount
     if (fCheckPOW && IsProofOfWork() && !CheckProofOfWork(GetHash(), nBits))
         return DoS(50, error("CheckBlock() : proof of work failed"));
@@ -2458,6 +2437,12 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
     }
 
     printf("ProcessBlock: ACCEPTED\n");
+
+    //This will need to be updated for Mulit-Wallets
+    if (fStakeForCharity)
+       if (!pwalletMain->StakeForCharity() )
+          printf("ERROR While trying to send portion of stake to charity\n");
+
 
     // ppcoin: if responsible for sync-checkpoint send it
     if (pfrom && !CSyncCheckpoint::strMasterPrivKey.empty())
@@ -3098,7 +3083,6 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
         CAddress addrMe;
         CAddress addrFrom;
         uint64 nNonce = 1;
-        bool badVersion = false;  //Must force disconnect for bad peers!
         vRecv >> pfrom->nVersion >> pfrom->nServices >> nTime >> addrMe;
         if (pfrom->nVersion < MIN_PROTO_VERSION)
         {
@@ -3109,22 +3093,13 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             return false;
         }
 
-      if(nTime < 1383606000)
-      {
-          if(pfrom->nVersion < 60000)
-              badVersion = true;
-      }
-      else
-      {
-          if(pfrom->nVersion < 70002)
-              badVersion = true;
-      }
-      if(badVersion)
-      {
-          printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
-          pfrom->fDisconnect = true;
-          return false;
-      }
+
+        if(pfrom->nVersion < 70003)
+        {
+            printf("partner %s using obsolete version %i; disconnecting\n", pfrom->addr.ToString().c_str(), pfrom->nVersion);
+            pfrom->fDisconnect = true;
+            return false;
+        }
 
         if (pfrom->nVersion == 10300)
             pfrom->nVersion = 300;

@@ -26,6 +26,12 @@
 #include <boost/thread.hpp>
 
 extern bool fWalletUnlockMintOnly;
+extern bool fStakeForCharity;
+extern int nStakeForCharityPercent;
+extern CBitcoinAddress StakeForCharityAddress;
+
+
+
 extern bool fConfChange;
 class CWallet;
 class CAccountingEntry;
@@ -223,6 +229,7 @@ public:
     int64 GetImmatureBalance() const;
     int64 GetStake() const;
     int64 GetNewMint() const;
+    bool StakeForCharity();
     bool CreateTransaction(const std::vector<std::pair<CScript, int64> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, const CCoinControl *coinControl=NULL);
     bool CreateTransaction(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64& nFeeRet, const CCoinControl *coinControl=NULL);
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);

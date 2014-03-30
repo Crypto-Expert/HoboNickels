@@ -218,7 +218,53 @@ Value getaccountaddress(CWallet* pWallet, const Array& params, bool fHelp)
     return ret;
 }
 
+//Tranz
+Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
+{
 
+    if (fHelp || params.size() != 2)
+        throw runtime_error(
+            "stakeforcharity <HoboNickelsaddress> <percent>\n"
+            "Gives a percentage of a found stake to a different address, after stake matures\n"
+            "Percent is a whole number 1 to 50.\n"
+            "Set percentage to zero to turn off"
+            + HelpRequiringPassphrase(pWallet));
+
+    CBitcoinAddress address(params[0].get_str());
+    if (!address.IsValid())
+        throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid HoboNickels address");
+
+    if (params[1].get_int() < 0)
+        throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected valid percentage");
+
+    if (pWallet->IsLocked())
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
+
+    unsigned int nPer = (unsigned int) params[1].get_int();
+
+    //Turn off if we set to zero.
+    //Future: After we allow multiple addresses, only turn of this address
+    if(nPer == 0)
+    {
+        fStakeForCharity = false;
+        StakeForCharityAddress = "";
+        nStakeForCharityPercent = 0;
+        return Value::null;
+    }
+
+    //For now max percentage is 50.
+    if (nPer > 50 )
+       nPer = 50;
+
+    //For now set the global vars.
+    //Future: These will be an array of addr/per/wallet
+    StakeForCharityAddress = address;
+    nStakeForCharityPercent = nPer;
+    fStakeForCharity = true;
+
+    return Value::null;
+
+}
 
 Value setaccount(CWallet* pWallet, const Array& params, bool fHelp)
 {
@@ -1560,7 +1606,7 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
     if (!fShutdown)
     {
       printf ("Halting Stake Mining while we lock wallet(s)\n");
-      fStopMining = true;
+      fStopStaking = true;
       Sleep(1000);
     }
 
