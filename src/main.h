@@ -75,6 +75,7 @@ extern CBlockIndex* pindexGenesisBlock;
 extern unsigned int nStakeMinAge;
 extern unsigned int nNodeLifespan;
 extern int nCoinbaseMaturity;
+extern int nCoinbaseMaturityMultipiler;
 extern int nBestHeight;
 extern CBigNum bnBestChainTrust;
 extern CBigNum bnBestInvalidTrust;
@@ -135,7 +136,8 @@ std::string GetWarnings(std::string strFor);
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 uint256 WantedByOrphan(const CBlock* pblockOrphan);
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
-void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
+void BitcoinMiner(CWallet *pwallet);
+void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions();
 
 
@@ -1120,6 +1122,7 @@ public:
     bool AcceptBlock();
     bool GetCoinAge(uint64& nCoinAge) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(const CKeyStore& keystore);
+    bool SignPoSBlock(CWallet& wallet);
     bool CheckBlockSignature(bool fProofOfStake) const;
 
 private:
