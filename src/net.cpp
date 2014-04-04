@@ -1154,6 +1154,9 @@ void MapPort()
 static const char *strDNSSeed[][2] = {
     {"scryptseed", "seed.scrypt.io"},
     {"hoboseed", "seed.hobonickels.info"},
+    {"hoboseed2", "seed2.hobonickels.info"},
+    {"hoboseed3", "seed3.hobonickels.info"},
+    {"hoboseed4", "seed4.hobonickels.info"},
 
 
 };
@@ -1221,7 +1224,7 @@ void ThreadDNSAddressSeed2(void* parg)
 unsigned int pnSeed[] =
 {
 
-  0x1e98f905,0x6ab7c936,0xfa6921b2,0xb5b1795b, 0x8267b07b,
+  //0x1e98f905,0x6ab7c936,0xfa6921b2,0xb5b1795b, 0x8267b07b,
 
 };
 

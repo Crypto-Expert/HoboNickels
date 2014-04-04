@@ -107,9 +107,6 @@ bool CWallet::AddCScript(const CScript& redeemScript)
     return CWalletDB(strWalletFile).WriteCScript(Hash160(redeemScript), redeemScript);
 }
 
-// ppcoin: optional setting to unlock wallet for block minting only;
-//         serves to disable the trivial sendmoney when OS account compromised
-bool fWalletUnlockMintOnly = false;
 
 bool CWallet::Unlock(const SecureString& strWalletPassphrase)
 {
@@ -1194,14 +1191,12 @@ int64 CWallet::GetNewMint() const
 }
 
 
-bool fStakeForCharity = false;
-int nStakeForCharityPercent = 0;
-CBitcoinAddress StakeForCharityAddress = "";
+bool fGlobalStakeForCharity = false;
 
 bool CWallet::StakeForCharity ()
 {
 
-    if ( IsInitialBlockDownload() || IsLocked() || fWalletUnlockMintOnly )
+    if ( IsInitialBlockDownload() || IsLocked() )
         return false;
 
     CWalletTx wtx;
@@ -1225,7 +1220,7 @@ bool CWallet::StakeForCharity ()
                 }
 
                 printf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet).c_str(), StakeForCharityAddress.ToString().c_str());
-                SendMoneyToDestination(StakeForCharityAddress.Get(), nNet, wtx, false);
+                SendMoneyToDestination(StakeForCharityAddress.Get(), nNet, wtx, false, true);
             }
 
         }
@@ -1945,8 +1940,7 @@ bool CWallet::CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey)
 
 
 
-
-string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
+string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee, bool fAllowS4C)
 {
     CReserveKey reservekey(this);
     int64 nFeeRequired;
@@ -1957,7 +1951,9 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
         printf("SendMoney() : %s", strError.c_str());
         return strError;
     }
-    if (fWalletUnlockMintOnly)
+
+    // Stake For Charity is the only allowable option to send coins when the UnlockMintOnly flag is set.
+    if ( fWalletUnlockMintOnly && !fAllowS4C )
     {
         string strError = _("Error: Wallet unlocked for block minting only, unable to create transaction.");
         printf("SendMoney() : %s", strError.c_str());
@@ -1985,7 +1981,7 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
 
 
 
-string CWallet::SendMoneyToDestination(const CTxDestination& address, int64 nValue, CWalletTx& wtxNew, bool fAskFee)
+string CWallet::SendMoneyToDestination(const CTxDestination& address, int64 nValue, CWalletTx& wtxNew, bool fAskFee, bool fAllowS4C)
 {
     // Check amount
     if (nValue <= 0)
@@ -1997,7 +1993,7 @@ string CWallet::SendMoneyToDestination(const CTxDestination& address, int64 nVal
     CScript scriptPubKey;
     scriptPubKey.SetDestination(address);
 
-    return SendMoney(scriptPubKey, nValue, wtxNew, fAskFee);
+    return SendMoney(scriptPubKey, nValue, wtxNew, fAskFee, fAllowS4C);
 }
 
 
@@ -2992,6 +2988,38 @@ void CWalletManager::RestartStakeMiner()
          }
        }
     }
+}
+
+void CWalletManager::StakeForCharity()
+{
+    {
+        LOCK(cs_WalletManager);
+        if (fShutdown)
+            return;
+
+        bool fStakeForCharityRunning = false;
+        vector<string> vstrNames;
+        vector<boost::shared_ptr<CWallet> > vpWallets;
+
+        BOOST_FOREACH(const wallet_map::value_type& item, wallets)
+        {
+           vstrNames.push_back(item.first);
+           vpWallets.push_back(item.second);
+        }
+        for (unsigned int i = 0; i < vstrNames.size(); i++)
+        {
+            if (vpWallets[i].get()->fStakeForCharity  && !vpWallets[i].get()->IsLocked())
+            {
+                if ( !vpWallets[i].get()->StakeForCharity() )
+                    printf("ERROR While trying to send portion of stake to charity, for wallet %s\n",vstrNames[i].c_str() );
+                fStakeForCharityRunning = true;
+            }
+
+        }
+        //If no wallets are running s4c we want to turn off the global switch
+        if (!fStakeForCharityRunning)
+            fGlobalStakeForCharity=false;
+     }
 }
 
 bool CWalletManager::UnloadWallet(const std::string& strName)

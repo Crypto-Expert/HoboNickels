@@ -31,7 +31,7 @@ void EnsureWalletIsUnlocked(CWallet* pWallet)
 {
     if (pWallet && pWallet->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
-    if (fWalletUnlockMintOnly)
+    if (pWallet->fWalletUnlockMintOnly)
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Wallet unlocked for block minting only.");
 }
 
@@ -218,7 +218,6 @@ Value getaccountaddress(CWallet* pWallet, const Array& params, bool fHelp)
     return ret;
 }
 
-//Tranz
 Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 {
 
@@ -246,9 +245,9 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     //Future: After we allow multiple addresses, only turn of this address
     if(nPer == 0)
     {
-        fStakeForCharity = false;
-        StakeForCharityAddress = "";
-        nStakeForCharityPercent = 0;
+        pWallet->fStakeForCharity = false;
+        pWallet->StakeForCharityAddress = "";
+        pWallet->nStakeForCharityPercent = 0;
         return Value::null;
     }
 
@@ -256,11 +255,11 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     if (nPer > 50 )
        nPer = 50;
 
-    //For now set the global vars.
     //Future: These will be an array of addr/per/wallet
-    StakeForCharityAddress = address;
-    nStakeForCharityPercent = nPer;
-    fStakeForCharity = true;
+    pWallet->StakeForCharityAddress = address;
+    pWallet->nStakeForCharityPercent = nPer;
+    pWallet->fStakeForCharity = true;
+    fGlobalStakeForCharity = true;
 
     return Value::null;
 
@@ -364,7 +363,7 @@ Value sendtoaddress(CWallet* pWallet, const Array& params, bool fHelp)
     if (pWallet->IsLocked())
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Error: Please enter the wallet passphrase with walletpassphrase first.");
 
-    string strError = pWallet->SendMoneyToDestination(address.Get(), nAmount, wtx);
+    string strError = pWallet->SendMoneyToDestination(address.Get(), nAmount, wtx, false, false);
     if (strError != "")
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
 
@@ -739,7 +738,7 @@ Value sendfrom(CWallet* pWallet, const Array& params, bool fHelp)
         throw JSONRPCError(RPC_WALLET_INSUFFICIENT_FUNDS, "Account has insufficient funds");
 
     // Send
-    string strError = pWallet->SendMoneyToDestination(address.Get(), nAmount, wtx);
+    string strError = pWallet->SendMoneyToDestination(address.Get(), nAmount, wtx, false, false);
     if (strError != "")
         throw JSONRPCError(RPC_WALLET_ERROR, strError);
 
@@ -1541,9 +1540,9 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
 
     // ppcoin: if user OS account compromised prevent trivial sendmoney commands
     if (params.size() > 2)
-        fWalletUnlockMintOnly = params[2].get_bool();
+        pWallet->fWalletUnlockMintOnly = params[2].get_bool();
     else
-        fWalletUnlockMintOnly = false;
+        pWallet->fWalletUnlockMintOnly = false;
 
     //HBN: Zero unlock time means forever, well 68 years, forever for crypto.
     int64 nUnlockTime;

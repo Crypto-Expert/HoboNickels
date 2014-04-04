@@ -2438,11 +2438,8 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 
     printf("ProcessBlock: ACCEPTED\n");
 
-    //This will need to be updated for Mulit-Wallets
-    if (fStakeForCharity)
-       if (!pwalletMain->StakeForCharity() )
-          printf("ERROR While trying to send portion of stake to charity\n");
-
+    if (fGlobalStakeForCharity && !IsInitialBlockDownload())
+        pWalletManager->StakeForCharity();
 
     // ppcoin: if responsible for sync-checkpoint send it
     if (pfrom && !CSyncCheckpoint::strMasterPrivKey.empty())

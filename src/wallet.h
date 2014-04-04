@@ -25,12 +25,7 @@
 #include <boost/regex.hpp>
 #include <boost/thread.hpp>
 
-extern bool fWalletUnlockMintOnly;
-extern bool fStakeForCharity;
-extern int nStakeForCharityPercent;
-extern CBitcoinAddress StakeForCharityAddress;
-
-
+extern bool fGlobalStakeForCharity;
 
 extern bool fConfChange;
 class CWallet;
@@ -48,7 +43,7 @@ enum WalletFeature
     FEATURE_WALLETCRYPT = 40000, // wallet encryption
     FEATURE_COMPRPUBKEY = 60000, // compressed public keys
 
-    FEATURE_LATEST = 60000
+    FEATURE_LATEST = 60001
 };
 
 class CWalletLockJob : public CTimerJob
@@ -115,7 +110,12 @@ public:
     mutable CCriticalSection cs_wallet;
 
     bool fFileBacked;
+    bool fWalletUnlockMintOnly;
+    bool fStakeForCharity;
+    int nStakeForCharityPercent;
+    CBitcoinAddress StakeForCharityAddress;
     std::string strWalletFile;
+
 
     std::set<int64> setKeyPool;
     std::map<CKeyID, CKeyMetadata> mapKeyMetadata;
@@ -136,6 +136,10 @@ public:
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
         nOrderPosNext = 0;
+        fWalletUnlockMintOnly = false;
+        fStakeForCharity = false;
+        nStakeForCharityPercent = 0;
+        StakeForCharityAddress = "";
     }
     CWallet(std::string strWalletFileIn)
     {
@@ -149,6 +153,11 @@ public:
         nMasterKeyMaxID = 0;
         pwalletdbEncryption = NULL;
         nOrderPosNext = 0;
+        fWalletUnlockMintOnly = false;
+        fStakeForCharity = false;
+        nStakeForCharityPercent = 0;
+        StakeForCharityAddress = "";
+
     }
 
     ~CWallet() { CWalletDB::UnloadWallet(this); }
@@ -236,8 +245,8 @@ public:
     bool GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight);
     bool GetStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight);
     bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64 nSearchInterval, CTransaction& txNew, CKey& key);
-    std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
-    std::string SendMoneyToDestination(const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false);
+    std::string SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false, bool fAllowS4C=false);
+    std::string SendMoneyToDestination(const CTxDestination &address, int64 nValue, CWalletTx& wtxNew, bool fAskFee=false, bool fAllowS4C=false);
 
     bool NewKeyPool();
     bool TopUpKeyPool(unsigned int nSize = 0);
@@ -411,6 +420,8 @@ public:
     bool UnloadWallet(const std::string& strName);
     void UnloadAllWallets();
     void RestartStakeMiner();
+    void StakeForCharity();
+
 
     // GetWallet and GetDefaultWallet throw a CWalletManagerException if the wallet is not found.
     boost::shared_ptr<CWallet> GetWallet(const std::string& strName);
