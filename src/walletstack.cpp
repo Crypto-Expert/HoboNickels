@@ -269,7 +269,23 @@ int WalletStack::getWalletVersion() const
 
 bool WalletStack::isWalletLocked()
 {
-  WalletView *walletView = (WalletView*)currentWidget();
-  if (walletView) return walletView->isWalletLocked();
-  return false;
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->isWalletLocked();
+    return false;
 }
+
+int WalletStack::getStakeForCharityPercent()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getStakeForCharityPercent();
+    return 0;
+}
+
+QString WalletStack::getStakeForCharityAddress()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getStakeForCharityAddress();
+    return "";
+}
+
+

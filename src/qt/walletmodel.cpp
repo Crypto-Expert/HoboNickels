@@ -371,6 +371,19 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
+int WalletModel::getStakeForCharityPercent()
+{
+    return wallet->nStakeForCharityPercent;
+}
+
+QString WalletModel::getStakeForCharityAddress()
+{
+     if (!wallet->StakeForCharityAddress.IsValid())
+         return "Not Giving";
+     else
+         return wallet->StakeForCharityAddress.ToString().c_str();
+}
+
 bool WalletModel::dumpWallet(const QString &filename)
 {
   return DumpWallet(wallet, filename.toLocal8Bit().data());

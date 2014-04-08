@@ -619,8 +619,6 @@ void BitcoinGUI::lockIconClicked()
 
    if(walletStack->isWalletLocked())
      unlockWalletForMint();
-   else
-     lockWallet();
 }
 
 void BitcoinGUI::connectionIconClicked()
@@ -690,9 +688,11 @@ void BitcoinGUI::stakingIconClicked()
          "Current Wallet Viewed: %8\n"
          "Current Wallet Version: %9\n"
          "Current Wallet PoS Weight: %10\n\n"
-         "Total Wallets Loaded: %11\n"
-         "Total Wallets PoS Weight: %12\n\n"
-         "Network Money Supply: %13\n")
+         "Stake for Charity Address: %11\n"
+         "Stake for Charity Percentage: %12\n\n"
+         "Total Wallets Loaded: %13\n"
+         "Total Wallets PoS Weight: %14\n\n"
+         "Network Money Supply: %15\n")
          .arg(clientModel->formatFullVersion())
          .arg(clientModel->getProtocolVersion())
          .arg(clientModel->getLastPoSBlock())
@@ -703,6 +703,8 @@ void BitcoinGUI::stakingIconClicked()
          .arg(walletStack->getCurrentWallet())
          .arg(walletStack->getWalletVersion())
          .arg(nWeight)
+         .arg(walletStack->getStakeForCharityAddress())
+         .arg(walletStack->getStakeForCharityPercent())
          .arg(walletManager->GetWalletCount())
          .arg(walletStack->getTotStakeWeight())
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
@@ -1141,7 +1143,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
     case WalletModel::Unlocked:
         labelEncryptionIcon->show();
         labelEncryptionIcon->setPixmap(QIcon(":/icons/lock_open").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
-        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>. Click to lock!"));
+        labelEncryptionIcon->setToolTip(tr("Wallet is <b>encrypted</b> and currently <b>unlocked</b>"));
         encryptWalletAction->setChecked(true);
         unlockWalletAction->setChecked(true);
         lockWalletAction->setChecked(true);
@@ -1280,7 +1282,7 @@ void BitcoinGUI::updateStakingIcon()
           else
           {
             uint64 nNetworkWeight = clientModel->getPosKernalPS();
-            int nEstimateTime = clientModel->getStakeTargetSpacing() * nNetworkWeight / nWeight;
+            int nEstimateTime = clientModel->getStakeTargetSpacing() * 10 * nNetworkWeight / nWeight;
             QString text;
             if (nEstimateTime < 60)
                text = tr("%n second(s)", "", nEstimateTime);

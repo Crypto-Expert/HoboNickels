@@ -670,8 +670,22 @@ int WalletView::getWalletVersion() const
 
 bool WalletView::isWalletLocked()
 {
-  if(!walletModel)
-     return false;
-  return (walletModel->getEncryptionStatus() == WalletModel::Locked);
+    if(!walletModel)
+       return false;
+    return (walletModel->getEncryptionStatus() == WalletModel::Locked);
 
+}
+
+int WalletView::getStakeForCharityPercent()
+{
+    if(!walletModel)
+        return false;
+    return (walletModel->getStakeForCharityPercent());
+}
+
+QString WalletView::getStakeForCharityAddress()
+{
+    if(!walletModel)
+      return "";
+    return (walletModel->getStakeForCharityAddress());
 }
