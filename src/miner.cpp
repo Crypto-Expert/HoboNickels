@@ -9,6 +9,7 @@
 #include "txdb.h"
 #include "miner.h"
 #include "kernel.h"
+#include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
 
