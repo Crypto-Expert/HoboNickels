@@ -38,7 +38,6 @@ static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
 static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; //Incorrect value Too small
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;//Incorrect value Too big
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; //Correct just right
-static const unsigned int LOCKS_SWITCH_TIME = 1394841600; // 15 Mar 2014 00:00:00
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
@@ -75,6 +74,7 @@ extern CBlockIndex* pindexGenesisBlock;
 extern unsigned int nStakeMinAge;
 extern unsigned int nNodeLifespan;
 extern int nCoinbaseMaturity;
+extern int nCoinbaseMaturityMultipiler;
 extern int nBestHeight;
 extern CBigNum bnBestChainTrust;
 extern CBigNum bnBestInvalidTrust;
@@ -135,7 +135,8 @@ std::string GetWarnings(std::string strFor);
 bool GetTransaction(const uint256 &hash, CTransaction &tx, uint256 &hashBlock);
 uint256 WantedByOrphan(const CBlock* pblockOrphan);
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
-void BitcoinMiner(CWallet *pwallet, bool fProofOfStake);
+void BitcoinMiner(CWallet *pwallet);
+void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions();
 
 
@@ -1120,6 +1121,7 @@ public:
     bool AcceptBlock();
     bool GetCoinAge(uint64& nCoinAge) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(const CKeyStore& keystore);
+    bool SignPoSBlock(CWallet& wallet);
     bool CheckBlockSignature(bool fProofOfStake) const;
 
 private:

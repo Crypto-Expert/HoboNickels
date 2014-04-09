@@ -147,7 +147,7 @@ extern bool fPrintToConsole;
 extern bool fPrintToDebugger;
 extern volatile bool fRequestShutdown;
 extern bool fShutdown;
-extern bool fStopMining;
+extern bool fStopStaking;
 extern bool fDaemon;
 extern bool fServer;
 extern bool fCommandLine;

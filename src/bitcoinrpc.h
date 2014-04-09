@@ -145,6 +145,7 @@ extern json_spirit::Value importwallet(CWallet* pWallet, const json_spirit::Arra
 extern json_spirit::Value dumpprivkey(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcdump.cpp
 extern json_spirit::Value importprivkey(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value sendalert(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value stakeforcharity(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getgenerate(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
 extern json_spirit::Value setgenerate(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

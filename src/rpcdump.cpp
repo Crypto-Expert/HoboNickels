@@ -47,7 +47,7 @@ Value importprivkey(CWallet* pWallet, const Array& params, bool fHelp)
     bool fGood = vchSecret.SetString(strSecret);
 
     if (!fGood) throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid private key");
-    if (fWalletUnlockMintOnly)
+    if (pWallet->fWalletUnlockMintOnly)
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
 
     CKey key;
@@ -81,7 +81,7 @@ Value importwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     EnsureWalletIsUnlocked(pWallet);
 
-    if (fWalletUnlockMintOnly) // no importwallet in mint-only mode
+    if (pWallet->fWalletUnlockMintOnly) // no importwallet in mint-only mode
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
 
     if(!ImportWallet(pWallet,params[0].get_str().c_str()))
@@ -105,7 +105,7 @@ Value dumpprivkey(CWallet* pWallet, const Array& params, bool fHelp)
     CBitcoinAddress address;
     if (!address.SetString(strAddress))
         throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid HoboNickels address");
-    if (fWalletUnlockMintOnly)
+    if (pWallet->fWalletUnlockMintOnly)
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
     CKeyID keyID;
     if (!address.GetKeyID(keyID))
@@ -127,7 +127,7 @@ Value dumpwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     EnsureWalletIsUnlocked(pWallet);
 
-    if (fWalletUnlockMintOnly) // no dumpwallet in mint-only mode
+    if (pWallet->fWalletUnlockMintOnly) // no dumpwallet in mint-only mode
         throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
 
     if(!DumpWallet(pWallet, params[0].get_str().c_str() ))

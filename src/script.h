@@ -35,7 +35,7 @@ enum txnouttype
     TX_PUBKEY,
     TX_PUBKEYHASH,
     TX_SCRIPTHASH,
-    TX_MULTISIG,
+    TX_MULTISIG
 };
 
 class CNoDestination {

@@ -110,6 +110,9 @@ public:
     quint64 getTotStakeWeight();
     //PoS Information about value and time
     void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
+    //Wallet Information about Stake For Charity
+    int getStakeForCharityPercent();
+    QString getStakeForCharityAddress();
 
 
 

@@ -110,8 +110,7 @@ public:
     }
 };
 
-// CreateNewBlock:
-//   fProofOfStake: try (best effort) to make a proof-of-stake block
+// CreateNewBlock: create new block (without proof-of-work/proof-of-stake)
 CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
 {
     // Create new block
@@ -127,11 +126,11 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
 
     if (!fProofOfStake)
     {
-       CReserveKey reservekey(pwallet);
-       txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+        CReserveKey reservekey(pwallet);
+        txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
     }
     else
-       txNew.vout[0].SetEmpty();
+        txNew.vout[0].SetEmpty();
 
     // Add our coinbase tx as first transaction
     pblock->vtx.push_back(txNew);
@@ -140,10 +139,6 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     unsigned int nBlockMaxSize = GetArg("-blockmaxsize", MAX_BLOCK_SIZE_GEN/2);
     // Limit to betweeen 1K and MAX_BLOCK_SIZE-1K for sanity:
     nBlockMaxSize = std::max((unsigned int)1000, std::min((unsigned int)(MAX_BLOCK_SIZE-1000), nBlockMaxSize));
-
-    // Special compatibility rule before 15 Mar 2014 00:00:00 limit size to 500,000 bytes:
-    if (GetAdjustedTime() < LOCKS_SWITCH_TIME)
-        nBlockMaxSize = std::min(nBlockMaxSize, (unsigned int)(MAX_BLOCK_SIZE_GEN));
 
     // How much of the block should be dedicated to high-priority transactions,
     // included regardless of the fees they pay
@@ -164,33 +159,9 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     if (mapArgs.count("-mintxfee"))
         ParseMoney(mapArgs["-mintxfee"], nMinTxFee);
 
-    // ppcoin: if coinstake available add coinstake tx
-    static int64 nLastCoinStakeSearchTime = GetAdjustedTime();  // only initialized at startup
     CBlockIndex* pindexPrev = pindexBest;
 
-    if (fProofOfStake)  // attempt to find a coinstake
-    {
-        pblock->nBits = GetNextTargetRequired(pindexPrev, true);
-        CTransaction txCoinStake;
-        int64 nSearchTime = txCoinStake.nTime; // search to current time
-        if (nSearchTime > nLastCoinStakeSearchTime)
-        {
-            if (pwallet->CreateCoinStake(*pwallet, pblock->nBits, nSearchTime-nLastCoinStakeSearchTime, txCoinStake))
-            {
-                if (txCoinStake.nTime >= max(pindexPrev->GetMedianTimePast()+1, PastDrift(pindexPrev->GetBlockTime())))
-                {   // make sure coinstake would meet timestamp protocol
-                    // as it would be the same as the block timestamp
-                    pblock->vtx[0].vout[0].SetEmpty();
-                    pblock->vtx[0].nTime = txCoinStake.nTime;
-                    pblock->vtx.push_back(txCoinStake);
-                }
-            }
-            nLastCoinStakeSearchInterval = nSearchTime - nLastCoinStakeSearchTime;
-            nLastCoinStakeSearchTime = nSearchTime;
-        }
-    }
-
-    pblock->nBits = GetNextTargetRequired(pindexPrev, pblock->IsProofOfStake());
+    pblock->nBits = GetNextTargetRequired(pindexPrev, fProofOfStake);
 
     // Collect memory pool transactions into the block
     int64 nFees = 0;
@@ -263,7 +234,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
             // This is a more accurate fee-per-kilobyte than is used by the client code, because the
             // client code rounds up the size to the nearest 1K. That's good, because it gives an
             // incentive to create smaller transactions.
-            double dFeePerKb =  double(nTotalIn-tx.GetValueOut()) / (double(nTxSize)/1000.0);
+            double dFeePerKb = double(nTotalIn-tx.GetValueOut()) / (double(nTxSize)/1000.0);
 
             if (porphan)
             {
@@ -305,10 +276,10 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                 continue;
 
             // Timestamp limit
-            if (tx.nTime > GetAdjustedTime() || (pblock->IsProofOfStake() && tx.nTime > pblock->vtx[1].nTime))
+            if (tx.nTime > GetAdjustedTime() || (fProofOfStake && tx.nTime > pblock->vtx[0].nTime))
                 continue;
 
-            // ppcoin: simplify transaction fee - allow free = false
+            // Simplify transaction fee - allow free = false
             int64 nMinFee = tx.GetMinFee(nBlockSize, false, GMF_BLOCK);
 
             // Skip free transactions if we're past the minimum block size:
@@ -384,23 +355,21 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
         if (fDebug && GetBoolArg("-printpriority"))
             printf("CreateNewBlock(): total size %"PRI64u"\n", nBlockSize);
 
-        if (pblock->IsProofOfWork())
+        if (!fProofOfStake)
             pblock->vtx[0].vout[0].nValue = GetProofOfWorkReward(pblock->nBits);
 
         // Fill in header
-        pblock->hashPrevBlock  = pindexPrev->GetBlockHash();
-        if (pblock->IsProofOfStake())
-            pblock->nTime      = pblock->vtx[1].nTime; //same as coinstake timestamp
-        pblock->nTime          = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
-        pblock->nTime          = max(pblock->GetBlockTime(), PastDrift(pindexPrev->GetBlockTime()));
-        if (pblock->IsProofOfWork())
+        pblock->hashPrevBlock = pindexPrev->GetBlockHash();
+        pblock->nTime = max(pindexPrev->GetMedianTimePast()+1, pblock->GetMaxTransactionTime());
+        pblock->nTime = max(pblock->GetBlockTime(), PastDrift(pindexPrev->GetBlockTime()));
+        if (!fProofOfStake)
             pblock->UpdateTime(pindexPrev);
-        pblock->nNonce         = 0;
+        pblock->nNonce = 0;
+
     }
 
     return pblock.release();
 }
-
 
 void IncrementExtraNonce(CBlock* pblock, CBlockIndex* pindexPrev, unsigned int& nExtraNonce)
 {
@@ -555,11 +524,11 @@ static bool fGenerateBitcoins = false;
 static bool fLimitProcessors = false;
 static int nLimitProcessors = -1;
 
-void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
+void BitcoinMiner(CWallet *pwallet)
 {
     void *scratchbuf = scrypt_buffer_alloc();
 
-    printf("CPUMiner started for proof-of-%s\n", fProofOfStake? "stake" : "work");
+    printf("CPUMiner started for proof-of-work\n");
     SetThreadPriority(THREAD_PRIORITY_LOWEST);
 
     // Make this thread recognisable as the mining thread
@@ -569,7 +538,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
     CReserveKey reservekey(pwallet);
     unsigned int nExtraNonce = 0;
 
-    while ((fGenerateBitcoins || fProofOfStake) && !fStopMining)
+    while (fGenerateBitcoins)
     {
         if (fShutdown)
             return;
@@ -578,16 +547,12 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             Sleep(1000);
             if (fShutdown)
                 return;
-            if (((!fGenerateBitcoins) && !fProofOfStake) || fStopMining)
+            if (!fGenerateBitcoins)
                 return;
         }
 
         while (pwallet->IsLocked())
-        {
-            strMintWarning = strMintMessage;
             Sleep(1000);
-        }
-        strMintWarning = "";
 
         //
         // Create new block
@@ -595,40 +560,20 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
         unsigned int nTransactionsUpdatedLast = nTransactionsUpdated;
         CBlockIndex* pindexPrev = pindexBest;
 
-        auto_ptr<CBlock> pblock(CreateNewBlock(pwallet, fProofOfStake));
+        auto_ptr<CBlock> pblock(CreateNewBlock(pwallet, false));
         if (!pblock.get())
             return;
         IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
-        if (fProofOfStake)
-        {
-            // ppcoin: if proof-of-stake block found then process block
-            if (pblock->IsProofOfStake())
-            {
-                if (!pblock->SignBlock(*pwallet))
-                {
-                    strMintWarning = strMintMessage;
-                    continue;
-                }
-                strMintWarning = "";
-                printf("CPUMiner : proof-of-stake block found %s\n", pblock->GetHash().ToString().c_str());
-                SetThreadPriority(THREAD_PRIORITY_NORMAL);
-                CheckStake(pblock.get(), *pwallet);
-                SetThreadPriority(THREAD_PRIORITY_LOWEST);
-            }
-            Sleep(500);
-            continue;
-        }
-
-        printf("Running CPUMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        printf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //
         // Pre-build hash buffers
         //
         char pmidstatebuf[32+16]; char* pmidstate = alignup<16>(pmidstatebuf);
-        char pdatabuf[128+16];    char* pdata     = alignup<16>(pdatabuf);
-        char phash1buf[64+16];    char* phash1    = alignup<16>(phash1buf);
+        char pdatabuf[128+16]; char* pdata = alignup<16>(pdatabuf);
+        char phash1buf[64+16]; char* phash1 = alignup<16>(phash1buf);
 
         FormatHashBuffers(pblock.get(), pmidstate, pdata, phash1);
 
@@ -670,7 +615,6 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
                     assert(result == pblock->GetHash());
                     if (!pblock->SignBlock(*pwallet))
                     {
-//                        strMintWarning = strMintMessage;
                         break;
                     }
                     strMintWarning = "";
@@ -714,8 +658,6 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             // Check for stop or if block needs to be rebuilt
             if (fShutdown)
                 return;
-            if (fStopMining)
-                return;
             if (!fGenerateBitcoins)
                 return;
             if (fLimitProcessors && vnThreadsRunning[THREAD_MINER] > nLimitProcessors)
@@ -736,7 +678,7 @@ void BitcoinMiner(CWallet *pwallet, bool fProofOfStake)
             nBlockTime = ByteReverse(pblock->nTime);
 
             if (pblock->GetBlockTime() >= FutureDrift((int64)pblock->vtx[0].nTime))
-                break;  // need to update coinbase timestamp
+                break; // need to update coinbase timestamp
         }
     }
 
@@ -751,7 +693,7 @@ void static ThreadBitcoinMiner(void* parg)
     try
     {
         vnThreadsRunning[THREAD_MINER]++;
-        BitcoinMiner(pwallet, false);
+        BitcoinMiner(pwallet);
         vnThreadsRunning[THREAD_MINER]--;
     }
     catch (std::exception& e) {
@@ -791,6 +733,61 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
                 printf("Error: NewThread(ThreadBitcoinMiner) failed\n");
             Sleep(10);
         }
+    }
+}
+
+void StakeMiner(CWallet *pwallet)
+{
+    SetThreadPriority(THREAD_PRIORITY_LOWEST);
+
+    // Make this thread recognisable as the mining thread
+    RenameThread("stake-miner");
+
+    // Each thread has its own counter
+    unsigned int nExtraNonce = 0;
+
+    while (!fStopStaking)
+    {
+        if (fShutdown)
+            return;
+
+        while (pwallet->IsLocked())
+        {
+            strMintWarning = strMintMessage;
+            Sleep(1000);
+            if (fShutdown)
+                return;
+        }
+
+        while (vNodes.empty() || IsInitialBlockDownload())
+        {
+            Sleep(1000);
+            if (fShutdown)
+                return;
+        }
+
+        strMintWarning = "";
+
+        //
+        // Create new block
+        //
+        CBlockIndex* pindexPrev = pindexBest;
+
+        auto_ptr<CBlock> pblock(CreateNewBlock(pwallet, true));
+        if (!pblock.get())
+            return;
+        IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
+
+        // Trying to sign a block
+        if (pblock->SignPoSBlock(*pwallet))
+        {
+            SetThreadPriority(THREAD_PRIORITY_NORMAL);
+            CheckStake(pblock.get(), *pwallet);
+            SetThreadPriority(THREAD_PRIORITY_LOWEST);
+        }
+
+        Sleep(500);
+        continue;
     }
 }
 
