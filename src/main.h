@@ -865,7 +865,8 @@ public:
 
     // memory only
     mutable std::vector<uint256> vMerkleTree;
-    uint256 hashBlock;
+    //Tranz
+    //uint256 hashBlock;
 
     // Denial-of-service detection:
     mutable int nDoS;
@@ -911,7 +912,8 @@ public:
         vchBlockSig.clear();
         vMerkleTree.clear();
         nDoS = 0;
-        hashBlock = 0;
+        //Tranz
+        //hashBlock = 0;
     }
 
     bool IsNull() const
@@ -1424,6 +1426,8 @@ public:
         READWRITE(nTime);
         READWRITE(nBits);
         READWRITE(nNonce);
+        READWRITE(blockHash);
+
     )
 
     uint256 GetBlockHash() const

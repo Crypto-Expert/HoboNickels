@@ -23,64 +23,100 @@
 using namespace std;
 using namespace boost;
 
-leveldb::DB *txdb;
+leveldb::DB *txdb; // global pointer for LevelDB object instance
 
 static leveldb::Options GetOptions() {
     leveldb::Options options;
     int nCacheSizeMB = GetArg("-dbcache", 25);
     options.block_cache = leveldb::NewLRUCache(nCacheSizeMB * 1048576);
-    options.filter_policy = leveldb::NewBloomFilterPolicy(10); 
+    options.filter_policy = leveldb::NewBloomFilterPolicy(10);
     return options;
 }
 
-void MakeMockTXDB() {
-    leveldb::Options options = GetOptions();
-    options.create_if_missing = true;
-    // This will leak but don't care here.
-    options.env = leveldb::NewMemEnv(leveldb::Env::Default());
-    leveldb::Status status = leveldb::DB::Open(options, "txdb", &txdb);
-    if (!status.ok()) 
-        throw runtime_error(strprintf("Could not create mock LevelDB: %s", status.ToString().c_str()));
-    CTxDB txdb("w");
-    txdb.WriteVersion(CLIENT_VERSION);
+void init_blockindex(leveldb::Options& options, bool fRemoveOld = false) {
+    // First time init.
+    filesystem::path directory = GetDataDir() / "txleveldb";
+
+    if (fRemoveOld) {
+        filesystem::remove_all(directory); // remove directory
+        unsigned int nFile = 1;
+
+        while (true)
+        {
+            filesystem::path strBlockFile = GetDataDir() / strprintf("blk%04u.dat", nFile);
+
+            // Break if no such file
+            if( !filesystem::exists( strBlockFile ) )
+                break;
+
+            filesystem::remove(strBlockFile);
+
+            nFile++;
+        }
+    }
+
+    filesystem::create_directory(directory);
+    printf("Opening LevelDB in %s\n", directory.string().c_str());
+    leveldb::Status status = leveldb::DB::Open(options, directory.string(), &txdb);
+    if (!status.ok()) {
+        throw runtime_error(strprintf("init_blockindex(): error opening database environment %s", status.ToString().c_str()));
+    }
 }
 
-// NOTE: CDB subclasses are created and destroyed VERY OFTEN. Therefore we have
-// to keep databases in global variables to avoid constantly creating and
-// destroying them, which sucks. In future the code should be changed to not
-// treat the instantiation of a database as a free operation.
+// CDB subclasses are created and destroyed VERY OFTEN. That's why
+// we shouldn't treat this as a free operations.
 CTxDB::CTxDB(const char* pszMode)
 {
     assert(pszMode);
-    pdb = txdb;
     activeBatch = NULL;
     fReadOnly = (!strchr(pszMode, '+') && !strchr(pszMode, 'w'));
 
-    if (txdb)
+    if (txdb) {
+        pdb = txdb;
         return;
+    }
 
-    // First time init.
-    filesystem::path directory = GetDataDir() / "txleveldb";
     bool fCreate = strchr(pszMode, 'c');
 
     options = GetOptions();
     options.create_if_missing = fCreate;
     options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-    filesystem::create_directory(directory);
-    printf("Opening LevelDB in %s\n", directory.string().c_str());
-    leveldb::Status status = leveldb::DB::Open(options, directory.string(), &txdb);
-    if (!status.ok()) {
-        throw runtime_error(strprintf("CDB(): error opening database environment %s", status.ToString().c_str()));
-    }
+
+    init_blockindex(options); // Init directory
     pdb = txdb;
 
-    if (fCreate && !Exists(string("version")))
+    if (Exists(string("version")))
+    {
+        ReadVersion(nVersion);
+        printf("Transaction index version is %d\n", nVersion);
+
+        if (nVersion < DATABASE_VERSION)
+        {
+            printf("Required index version is %d, removing old database\n", DATABASE_VERSION);
+
+            // Leveldb instance destruction
+            delete txdb;
+            txdb = pdb = NULL;
+            delete activeBatch;
+            activeBatch = NULL;
+
+            init_blockindex(options, true); // Remove directory and create new database
+            pdb = txdb;
+
+            bool fTmp = fReadOnly;
+            fReadOnly = false;
+            WriteVersion(DATABASE_VERSION); // Save transaction index version
+            fReadOnly = fTmp;
+        }
+    }
+    else if (fCreate)
     {
         bool fTmp = fReadOnly;
         fReadOnly = false;
-        WriteVersion(CLIENT_VERSION);
+        WriteVersion(DATABASE_VERSION);
         fReadOnly = fTmp;
     }
+
     printf("Opened LevelDB successfully\n");
 }
 
@@ -425,8 +461,7 @@ bool CTxDB::LoadBlockIndex()
             return error("LoadBlockIndex() : block.ReadFromDisk failed");
         // check level 1: verify block validity
         // check level 7: verify block signature too
-
-        if (nCheckLevel>0 && !block.CheckBlock(true, true))
+        if (nCheckLevel>0 && !block.CheckBlock(true, true, (nCheckLevel>6)))
         {
             printf("LoadBlockIndex() : *** found bad block at %d, hash=%s\n", pindex->nHeight, pindex->GetBlockHash().ToString().c_str());
             pindexFork = pindex->pprev;
