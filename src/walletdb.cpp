@@ -814,6 +814,9 @@ bool ImportWallet(CWallet *pwallet, const string& strLocation)
       while (pindex && pindex->pprev && pindex->nTime > nTimeBegin - 7200)
           pindex = pindex->pprev;
 
+      if (!pwallet->nTimeFirstKey || nTimeBegin < pwallet->nTimeFirstKey)
+          pwallet->nTimeFirstKey = nTimeBegin;
+
       printf("Rescanning last %i blocks\n", pindexBest->nHeight - pindex->nHeight + 1);
       pwallet->ScanForWalletTransactions(pindex);
       pwallet->ReacceptWalletTransactions();
