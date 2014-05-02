@@ -99,8 +99,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     // Create wallet list control, load and unload buttons
     QFrame *listFrame = new QFrame();
-    listFrame->setMinimumWidth(200);
-    listFrame->setMaximumWidth(200);
+    listFrame->setMinimumWidth(175);
+    listFrame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     QVBoxLayout *listFrameLayout = new QVBoxLayout(listFrame);
 
     QLabel *listFrameLabel = new QLabel();
@@ -111,26 +111,21 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     walletList = new QListWidget();
     listFrameLayout->addWidget(walletList);
 
-    // Create wallet load and unload buttons
-    QFrame *loadButtonFrame = new QFrame();
-    QHBoxLayout *loadButtonFrameLayout = new QHBoxLayout(loadButtonFrame);
 
     newWalletButton = new QPushButton(QIcon(":/icons/add"),tr("New"));
-    loadButtonFrameLayout->addWidget(newWalletButton);
-    newWalletButton->setMinimumWidth(50);
+    listFrameLayout->addWidget(newWalletButton);
+    newWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-[name].dat, (wallet-stake.dat) for example"));
 
     loadWalletButton = new QPushButton(QIcon(":/icons/load_wallet"),tr("Load"));
-    loadButtonFrameLayout->addWidget(loadWalletButton);
-    loadWalletButton->setMinimumWidth(50);
+    listFrameLayout->addWidget(loadWalletButton);
+    loadWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     loadWalletButton->setStatusTip(tr("Load an existing wallet"));
 
     unloadWalletButton = new QPushButton(QIcon(":/icons/unload_wallet"),tr("Unload"));
-    loadButtonFrameLayout->addWidget(unloadWalletButton);
-    unloadWalletButton->setMinimumWidth(59);
+    listFrameLayout->addWidget(unloadWalletButton);
+    unloadWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     unloadWalletButton->setStatusTip(tr("Remove an open wallet from memory"));
-
-    listFrameLayout->addWidget(loadButtonFrame);
 
     connect(newWalletButton, SIGNAL(clicked()), this, SLOT(newWallet()));
     connect(loadWalletButton, SIGNAL(clicked()), this, SLOT(loadWallet()));
@@ -152,8 +147,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     // Status bar notification icons
     QFrame *frameBlocks = new QFrame();
     frameBlocks->setContentsMargins(0,0,0,0);
-    frameBlocks->setMinimumWidth(56);
-    frameBlocks->setMaximumWidth(90);
+    frameBlocks->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
@@ -535,8 +529,8 @@ void BitcoinGUI::createTrayIconMenu()
 #else
     // Note: On Mac, the dock icon is used to provide the tray's functionality.
     MacDockIconHandler *dockIconHandler = MacDockIconHandler::instance();
-    trayIconMenu = dockIconHandler->dockMenu();
     dockIconHandler->setMainWindow((QMainWindow*)this);
+    trayIconMenu = dockIconHandler->dockMenu();
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
