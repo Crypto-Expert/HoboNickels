@@ -48,6 +48,7 @@
         <file alias="import">res/icons/import.png</file>
         <file alias="export2">res/icons/export2.png</file>
         <file alias="repair">res/icons/repair.png</file>
+        <file alias="transaction_conflicted">res/icons/transaction_conflicted.png</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="about">res/images/about.png</file>
