@@ -137,7 +137,7 @@ uint256 WantedByOrphan(const CBlock* pblockOrphan);
 const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfStake);
 void BitcoinMiner(CWallet *pwallet);
 void StakeMiner(CWallet *pwallet);
-void ResendWalletTransactions();
+void ResendWalletTransactions(bool fForce = false);
 
 
 
