@@ -507,9 +507,8 @@ bool BitcoinGUI::setCurrentWallet(const QString& name)
 
 void BitcoinGUI::createTrayIcon()
 {
-#ifndef Q_OS_MAC
     trayIcon = new QSystemTrayIcon(this);
-
+#ifndef Q_OS_MAC
     trayIcon->setToolTip(tr("HoboNickels client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     trayIcon->show();
@@ -534,7 +533,6 @@ void BitcoinGUI::createTrayIconMenu()
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
-    trayIconMenu->addAction(toggleHideAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(sendCoinsAction);
     trayIconMenu->addAction(receiveCoinsAction);
