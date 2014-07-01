@@ -2007,7 +2007,7 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 1 || params.size() > 4)
         throw runtime_error(
-            "loadwallet <walletname> [rescan=false] [upgradewallet=false] [maxversion=(latest)]\n"
+            "loadwallet <walletname> [rescan=false] [upgradewallet=false] [zapwallettxes=false] [maxversion=(latest)]\n"
             "Loads a wallet.");
 
     string strWalletName = params[0].get_str();
@@ -2018,8 +2018,9 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     ostringstream strErrors;
     bool fRescan = (params.size() > 1) ? params[1].get_bool() : false;
     bool fUpgrade = (params.size() > 2) ? params[2].get_bool() : false;
-    int nMaxVersion = (params.size() > 3) ? params[3].get_int() : 0;
-    if (!pWalletManager->LoadWallet(strWalletName, strErrors, fRescan, fUpgrade, nMaxVersion))
+    bool fZapWallet = (params.size() > 3) ? params[3].get_bool() : false;
+    int nMaxVersion = (params.size() > 4) ? params[4].get_int() : 0;
+    if (!pWalletManager->LoadWallet(strWalletName, strErrors, fRescan, fUpgrade, fZapWallet, nMaxVersion))
         throw JSONRPCError(RPC_WALLET_ERROR, string("Load failed: ") + strErrors.str());
 
     boost::shared_ptr<CWallet> spWallet;

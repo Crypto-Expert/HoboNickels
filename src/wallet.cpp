@@ -2036,6 +2036,28 @@ DBErrors CWallet::LoadWallet(bool& fFirstRunRet)
     return DB_LOAD_OK;
 }
 
+DBErrors CWallet::ZapWalletTx()
+{
+    if (!fFileBacked)
+        return DB_LOAD_OK;
+    DBErrors nZapWalletTxRet = CWalletDB(strWalletFile,"cr+").ZapWalletTx(this);
+    if (nZapWalletTxRet == DB_NEED_REWRITE)
+    {
+        if (CDB::Rewrite(strWalletFile, "\x04pool"))
+        {
+            LOCK(cs_wallet);
+            setKeyPool.clear();
+            // Note: can't top-up keypool here, because wallet is locked.
+            // User will be prompted to unlock wallet the next operation
+            // the requires a new key.
+        }
+    }
+
+    if (nZapWalletTxRet != DB_LOAD_OK)
+        return nZapWalletTxRet;
+
+    return DB_LOAD_OK;
+}
 
 bool CWallet::SetAddressBookName(const CTxDestination& address, const string& strName)
 {
@@ -2685,7 +2707,7 @@ bool static InitWarning(const std::string &str)
 
 // TODO: Remove dependencies for I/O on printf to debug.log, InitError, and InitWarning
 // TODO: Fix error handling.
-bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors, bool fRescan, bool fUpgrade, int nMaxVersion)
+bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors, bool fRescan, bool fUpgrade, bool fZapWallet, int nMaxVersion)
 {
     // Check that the wallet name is valid
     if (!CWalletManager::IsValidName(strName))
@@ -2716,6 +2738,19 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
     bool fFirstRun = true;
     CWallet* pWallet;
     DBErrors nLoadWalletRet;
+
+    if (fZapWallet) {
+        uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
+        pWallet = new CWallet(strFile);
+        DBErrors nZapWalletRet = pWallet->ZapWalletTx();
+        if (nZapWalletRet != DB_LOAD_OK) {
+            uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
+            return false;
+        }
+            delete pWallet;
+            pWallet = NULL;
+            fRescan = true;
+    }
 
     try
     {
@@ -2763,6 +2798,8 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
         else
             strErrors << _("Error loading ") << strFile << "\n";
     }
+
+
 
     if (fFirstRun || fUpgrade)
     {
@@ -2826,7 +2863,7 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
     return true;
 }
 
-bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, ostringstream& strErrors, bool fRescan, bool fUpgrade, int nMaxVersion)
+bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, ostringstream& strErrors, bool fRescan, bool fUpgrade, bool fZapWallet, int nMaxVersion)
 {
     // Get wallet file name minus extension.
     const boost::regex STRIP_DIR_AND_EXTENSION_REGEX(".*/wallet-([a-zA-Z0-9_]+)\\.dat");
@@ -2900,6 +2937,19 @@ bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, 
         }
         else
             strErrors << _("Error loading ") << strFile << "\n";
+    }
+
+    if (fZapWallet) {
+        uiInterface.InitMessage(_("Zapping all transactions from wallet..."));
+        pWallet = new CWallet(strFile);
+        DBErrors nZapWalletRet = pWallet->ZapWalletTx();
+        if (nZapWalletRet != DB_LOAD_OK) {
+            uiInterface.InitMessage(_("Error loading wallet.dat: Wallet corrupted"));
+            return false;
+        }
+            delete pWallet;
+            pWallet = NULL;
+            fRescan = true;
     }
 
     if (fFirstRun || fUpgrade)

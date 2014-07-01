@@ -328,6 +328,8 @@ public:
 
     DBErrors LoadWallet(bool& fFirstRunRet);
 
+    DBErrors ZapWalletTx();
+
     bool SetAddressBookName(const CTxDestination& address, const std::string& strName);
 
     bool DelAddressBookName(const CTxDestination& address);
@@ -415,8 +417,8 @@ public:
 
     std::set<COutPoint> setLockedCoins;
 
-    bool LoadWallet(const std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, int nMaxVersion = 0);
-    bool LoadWalletFromFile(const std::string& strFile, std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, int nMaxVersion = 0);
+    bool LoadWallet(const std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, bool fZapWallet = false, int nMaxVersion = 0);
+    bool LoadWalletFromFile(const std::string& strFile, std::string& strName, std::ostringstream& strErrors, bool fRescan = false, bool fUpgrade = false, bool fZapWallet = false, int nMaxVersion = 0);
     bool UnloadWallet(const std::string& strName);
     void UnloadAllWallets();
     void RestartStakeMiner();
