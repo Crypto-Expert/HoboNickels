@@ -18,6 +18,7 @@
 
 using namespace std;
 extern int nStakeMaxAge;
+extern int nMinerSleep;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -3026,13 +3027,13 @@ void CWalletManager::RestartStakeMiner()
        if (!fShutdown)
        {
          fStopStaking = true;
-         MilliSleep(1000);
+         MilliSleep(nMinerSleep > 500 ? nMinerSleep * 2 : 1000);
        }
-       //Re-Start Stake for the remaining wallets
+       // Re-Start Stake for the remaining wallets
        if (!fShutdown)
        {
          fStopStaking = false;
-         MilliSleep(1000);
+         MilliSleep(500);
          vector<string> vstrNames;
          vector<boost::shared_ptr<CWallet> > vpWallets;
 
@@ -3082,7 +3083,7 @@ void CWalletManager::StakeForCharity()
             }
 
         }
-        //If no wallets are running s4c we want to turn off the global switch
+        // If no wallets are running s4c we want to turn off the global switch
         if (!fStakeForCharityRunning)
             fGlobalStakeForCharity=false;
      }
@@ -3098,7 +3099,7 @@ bool CWalletManager::UnloadWallet(const std::string& strName)
         {
           printf ("Halting Stake Mining while we unload wallet(s)\n");
           fStopStaking = true;
-          MilliSleep(1000);
+          MilliSleep(nMinerSleep > 500 ? nMinerSleep * 2 : 1000);
         }
         boost::shared_ptr<CWallet> spWallet(wallets[strName]);
         printf("Unloading wallet %s\n", strName.c_str());

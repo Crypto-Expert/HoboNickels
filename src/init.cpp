@@ -29,6 +29,7 @@ CWalletManager* pWalletManager;
 // TODO: get rid of pwalletMain
 CWallet* pwalletMain;
 unsigned int nNodeLifespan;
+unsigned int nMinerSleep;
 enum Checkpoints::CPMode CheckpointsMode;
 bool fUseFastIndex;
 bool fConfChange;
@@ -448,6 +449,7 @@ bool AppInit2()
 
     nNodeLifespan = GetArg("-addrlifespan", 7);
     fUseFastIndex = GetBoolArg("-fastindex", true);
+    nMinerSleep = GetArg("-minersleep", 500);
 
     CheckpointsMode = Checkpoints::STRICT;
     std::string strCpMode = GetArg("-cppolicy", "strict");

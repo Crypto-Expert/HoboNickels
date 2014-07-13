@@ -18,8 +18,9 @@ using namespace std;
 // BitcoinMiner
 //
 
-string strMintMessage = "Info: Minting suspended due to locked wallet.";
 string strMintWarning;
+
+extern unsigned int nMinerSleep;
 
 int static FormatHashBlocks(void* pbuffer, unsigned int len)
 {
@@ -743,6 +744,8 @@ void StakeMiner(CWallet *pwallet)
     // Make this thread recognisable as the mining thread
     RenameThread("stake-miner");
 
+    bool fTryToSync = true;
+
     // Each thread has its own counter
     unsigned int nExtraNonce = 0;
 
@@ -753,7 +756,6 @@ void StakeMiner(CWallet *pwallet)
 
         while (pwallet->IsLocked())
         {
-            strMintWarning = strMintMessage;
             MilliSleep(1000);
             if (fShutdown)
                 return;
@@ -761,12 +763,22 @@ void StakeMiner(CWallet *pwallet)
 
         while (vNodes.empty() || IsInitialBlockDownload())
         {
+            fTryToSync = true;
             MilliSleep(1000);
             if (fShutdown)
                 return;
         }
 
-        strMintWarning = "";
+        if (fTryToSync)
+        {
+            fTryToSync = false;
+            if (vNodes.size() < 3 || nBestHeight < GetNumBlocksOfPeers())
+            {
+                printf("stake-miner sleeping while we get connectd.\n");
+                MilliSleep(60000);
+                continue;
+            }
+        }
 
         //
         // Create new block
@@ -784,10 +796,10 @@ void StakeMiner(CWallet *pwallet)
             SetThreadPriority(THREAD_PRIORITY_NORMAL);
             CheckStake(pblock.get(), *pwallet);
             SetThreadPriority(THREAD_PRIORITY_LOWEST);
+            MilliSleep(500);
         }
-
-        MilliSleep(500);
-        continue;
+        else
+            MilliSleep(nMinerSleep);
     }
 }
 
