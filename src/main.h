@@ -947,21 +947,22 @@ public:
     // ppcoin: entropy bit for stake modifier if chosen by modifier
     unsigned int GetStakeEntropyBit(unsigned int nHeight) const
     {
+
         // Protocol switch to support p2pool at HoboNickels block #9689
         if (nHeight >= 9689 || fTestNet)
         {
             // Take last bit of block hash as entropy bit
             unsigned int nEntropyBit = ((GetHash().Get64()) & 1llu);
-            if (fDebug && GetBoolArg("-printstakemodifier"))
+            if (fDebug && fPrintStakeModifer)
                 printf("GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString().c_str(), nEntropyBit);
             return nEntropyBit;
         }
         // Before HoboNickels block #9689 - old protocol
         uint160 hashSig = Hash160(vchBlockSig);
-        if (fDebug && GetBoolArg("-printstakemodifier"))
+        if (fDebug && fPrintStakeModifer)
             printf("GetStakeEntropyBit: hashSig=%s", hashSig.ToString().c_str());
         hashSig >>= 159; // take the first bit of the hash
-        if (fDebug && GetBoolArg("-printstakemodifier"))
+        if (fDebug && fPrintStakeModifer)
             printf(" entropybit=%"PRI64d"\n", hashSig.Get64());
         return hashSig.Get64();
     }
