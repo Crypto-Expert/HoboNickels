@@ -2537,7 +2537,7 @@ void CWalletLockJob::Run()
     {
       printf ("Halting Stake Mining while we lock wallet(s)\n");
       fStopStaking = true;
-      Sleep(1000);
+      MilliSleep(1000);
     }
 
     pWalletManager->RestartStakeMiner();
@@ -3026,13 +3026,13 @@ void CWalletManager::RestartStakeMiner()
        if (!fShutdown)
        {
          fStopStaking = true;
-         Sleep(1000);
+         MilliSleep(1000);
        }
        //Re-Start Stake for the remaining wallets
        if (!fShutdown)
        {
          fStopStaking = false;
-         Sleep(1000);
+         MilliSleep(1000);
          vector<string> vstrNames;
          vector<boost::shared_ptr<CWallet> > vpWallets;
 
@@ -3098,7 +3098,7 @@ bool CWalletManager::UnloadWallet(const std::string& strName)
         {
           printf ("Halting Stake Mining while we unload wallet(s)\n");
           fStopStaking = true;
-          Sleep(1000);
+          MilliSleep(1000);
         }
         boost::shared_ptr<CWallet> spWallet(wallets[strName]);
         printf("Unloading wallet %s\n", strName.c_str());

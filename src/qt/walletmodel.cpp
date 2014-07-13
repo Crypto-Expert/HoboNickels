@@ -317,7 +317,7 @@ bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, b
            // Lock as Requested by user
            rc = wallet->Lock();
            fStopStaking=true;
-           Sleep(1000);
+           MilliSleep(1000);
            pWalletManager->RestartStakeMiner();
            return rc;
         }
@@ -496,7 +496,7 @@ WalletModel::UnlockContext WalletModel::requestUnlock()
     if( (!valid) && wallet->fWalletUnlockMintOnly)
     {
        fStopStaking=true;
-       Sleep(1000);
+       MilliSleep(1000);
        pWalletManager->RestartStakeMiner();
     }
 

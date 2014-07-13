@@ -544,7 +544,7 @@ void BitcoinMiner(CWallet *pwallet)
             return;
         while (vNodes.empty() || IsInitialBlockDownload())
         {
-            Sleep(1000);
+            MilliSleep(1000);
             if (fShutdown)
                 return;
             if (!fGenerateBitcoins)
@@ -552,7 +552,7 @@ void BitcoinMiner(CWallet *pwallet)
         }
 
         while (pwallet->IsLocked())
-            Sleep(1000);
+            MilliSleep(1000);
 
         //
         // Create new block
@@ -731,7 +731,7 @@ void GenerateBitcoins(bool fGenerate, CWallet* pwallet)
         {
             if (!NewThread(ThreadBitcoinMiner, pwallet))
                 printf("Error: NewThread(ThreadBitcoinMiner) failed\n");
-            Sleep(10);
+            MilliSleep(10);
         }
     }
 }
@@ -754,14 +754,14 @@ void StakeMiner(CWallet *pwallet)
         while (pwallet->IsLocked())
         {
             strMintWarning = strMintMessage;
-            Sleep(1000);
+            MilliSleep(1000);
             if (fShutdown)
                 return;
         }
 
         while (vNodes.empty() || IsInitialBlockDownload())
         {
-            Sleep(1000);
+            MilliSleep(1000);
             if (fShutdown)
                 return;
         }
@@ -786,7 +786,7 @@ void StakeMiner(CWallet *pwallet)
             SetThreadPriority(THREAD_PRIORITY_LOWEST);
         }
 
-        Sleep(500);
+        MilliSleep(500);
         continue;
     }
 }

@@ -1575,7 +1575,7 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
     {
       printf ("Halting Stake Mining while we lock wallet(s)\n");
       fStopStaking = true;
-      Sleep(1000);
+      MilliSleep(1000);
     }
 
     pWallet->Lock();
