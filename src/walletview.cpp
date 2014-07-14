@@ -488,11 +488,11 @@ void WalletView::backupWallet()
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupWallet(filename)) {
-            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the location you specified."),
                       CClientUIInterface::MSG_ERROR);
         }
         else
-            gui->message(tr("Backup Successful"), tr("The wallet data was successfully saved to the new location."),
+            gui->message(tr("Backup Successful"), tr("The wallet data was successfully saved to the location you specified."),
                       CClientUIInterface::MSG_INFORMATION);
     }
 }
@@ -520,7 +520,7 @@ void WalletView::dumpWallet()
     if(!filename.isEmpty()) {
         if(!walletModel->dumpWallet(filename)) {
             gui->message(tr("Export Failed"),
-                         tr("There was an error trying to save the wallet's keys to your location.\n"
+                         tr("There was an error trying to save the wallet's keys to the location you specified.\n"
                             "Keys from wallet: %1, were not saved")
                          .arg(gui->getCurrentWallet())
                       ,CClientUIInterface::MSG_ERROR);
@@ -583,11 +583,11 @@ void WalletView::backupAllWallets()
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Prefix for wallet Data (*)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupAllWallets(filename)) {
-            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the location you specified."),
                       CClientUIInterface::MSG_ERROR);
         }
         else
-            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the new location."),
+            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the location you specified."),
                       CClientUIInterface::MSG_INFORMATION);
     }
 }

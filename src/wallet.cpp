@@ -1968,7 +1968,7 @@ string CWallet::SendMoney(CScript scriptPubKey, int64 nValue, CWalletTx& wtxNew,
     // Stake For Charity is the only allowable option to send coins when the UnlockMintOnly flag is set.
     if ( fWalletUnlockMintOnly && !fAllowS4C )
     {
-        string strError = _("Error: Wallet unlocked for block minting only, unable to create transaction.");
+        string strError = _("Error: Wallet unlocked for staking and mining only, unable to create transaction.");
         printf("SendMoney() : %s", strError.c_str());
         return strError;
     }
