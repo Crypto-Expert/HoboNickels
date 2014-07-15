@@ -1552,8 +1552,8 @@ bool CWallet::GetStakeWeightFromValue(const int64& nTime, const int64& nValue, u
 {
 
 
-  //This is a negative value when there is no weight. But set it to zero
-  //so the user is not confused. Used in reporting in Coin Control.
+  // This is a negative value when there is no weight. But set it to zero
+  // so the user is not confused. Used in reporting in Coin Control.
   // Descisions based on this function should be used with care.
   int64 nTimeWeight = GetWeight(nTime, (int64)GetTime());
   if (nTimeWeight < 0 )
@@ -1581,26 +1581,6 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint
         return false;
 
     vector<const CWalletTx*> vwtxPrev;
-
-/*
-* TODO: performance comparison
-
-static set<pair<const CWalletTx*,unsigned int> > setCoins;
-static uint256 hashPrevBlock;
-static int64 nValueIn = 0;
-
-// Cache outputs unless best block changed
-if (hashPrevBlock != pindexBest->GetBlockHash())
-{
-if (!SelectCoinsSimple(nBalance - nReserveBalance, GetAdjustedTime(), nCoinbaseMaturity * nCoinbaseMaturityMultipiler, setCoins, nValueIn))
-return false;
-
-if (setCoins.empty())
-return false;
-
-hashPrevBlock == pindexBest->GetBlockHash();
-}
-*/
 
     set<pair<const CWalletTx*,unsigned int> > setCoins;
     int64 nValueIn = 0;
@@ -1662,6 +1642,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     static unsigned int nStakeSplitAge = (60 * 60 * 24 * 90);
     int64 nCombineThreshold = GetProofOfWorkReward(GetLastBlockIndex(pindexBest, false)->nBits) / 3;
 
+    CBlockIndex* pindexPrev = pindexBest;
     CBigNum bnTargetPerCoinDay;
     bnTargetPerCoinDay.SetCompact(nBits);
 
@@ -1684,26 +1665,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
         return false;
 
     vector<const CWalletTx*> vwtxPrev;
-
-/*
-* TODO: performance comparison
-
-static set<pair<const CWalletTx*,unsigned int> > setCoins;
-static uint256 hashPrevBlock;
-static int64 nValueIn = 0;
-
-// Cache outputs unless best block changed
-if (hashPrevBlock != pindexBest->GetBlockHash())
-{
-if (!SelectCoinsSimple(nBalance - nReserveBalance, txNew.nTime, nCoinbaseMaturity * nCoinbaseMaturityMultipiler, setCoins, nValueIn))
-return false;
-
-if (setCoins.empty())
-return false;
-
-hashPrevBlock == pindexBest->GetBlockHash();
-}
-*/
 
     set<pair<const CWalletTx*,unsigned int> > setCoins;
     int64 nValueIn = 0;
@@ -1740,7 +1701,7 @@ hashPrevBlock == pindexBest->GetBlockHash();
             continue; // only count coins meeting min age requirement
 
         bool fKernelFound = false;
-        for (unsigned int n=0; n<min(nSearchInterval,(int64)nMaxStakeSearchInterval) && !fKernelFound && !fShutdown; n++)
+        for (unsigned int n=0; n<min(nSearchInterval,(int64)nMaxStakeSearchInterval) && !fKernelFound && !fShutdown && pindexPrev == pindexBest; n++)
         {
             // Search backward in time from the given txNew timestamp
             // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
