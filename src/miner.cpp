@@ -128,7 +128,10 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     if (!fProofOfStake)
     {
         CReserveKey reservekey(pwallet);
-        txNew.vout[0].scriptPubKey << reservekey.GetReservedKey() << OP_CHECKSIG;
+        CPubKey pubkey;
+        if (!reservekey.GetReservedKey(pubkey))
+            return NULL;
+        txNew.vout[0].scriptPubKey.SetDestination(pubkey.GetID());
     }
     else
         txNew.vout[0].SetEmpty();
