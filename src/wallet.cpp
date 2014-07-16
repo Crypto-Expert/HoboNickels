@@ -17,7 +17,6 @@
 #include <boost/algorithm/string/replace.hpp>
 
 using namespace std;
-extern int nStakeMaxAge;
 extern int nMinerSleep;
 
 

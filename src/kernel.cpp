@@ -9,9 +9,6 @@
 
 using namespace std;
 
-extern int nStakeMaxAge;
-extern int nStakeTargetSpacing;
-
 // Modifier interval: time to elapse before new modifier is computed
 // Set to 6-hour for production network and 20-minute for test network
 unsigned int nModifierInterval = MODIFIER_INTERVAL;
@@ -115,7 +112,7 @@ static bool SelectBlockFromCandidates(
             *pindexSelected = (const CBlockIndex*) pindex;
         }
     }
-    if (fDebug && GetBoolArg("-printstakemodifier"))
+    if (fDebug && fPrintStakeModifer)
         printf("SelectBlockFromCandidates: selection hash=%s\n", hashBest.ToString().c_str());
     return fSelected;
 }
@@ -184,13 +181,13 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64& nStakeModif
         nStakeModifierNew |= (((uint64)pindex->GetStakeEntropyBit()) << nRound);
         // add the selected block from candidates to selected list
         mapSelectedBlocks.insert(make_pair(pindex->GetBlockHash(), pindex));
-        if (fDebug && GetBoolArg("-printstakemodifier"))
+        if (fDebug && fPrintStakeModifer)
             printf("ComputeNextStakeModifier: selected round %d stop=%s height=%d bit=%d\n",
                 nRound, DateTimeStrFormat(nSelectionIntervalStop).c_str(), pindex->nHeight, pindex->GetStakeEntropyBit());
     }
 
     // Print selection map for visualization of the selected blocks
-    if (fDebug && GetBoolArg("-printstakemodifier"))
+    if (fDebug && fPrintStakeModifer)
     {
         string strSelectionMap = "";
         // '-' indicates proof-of-work blocks not selected
