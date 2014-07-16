@@ -61,8 +61,17 @@ Value importprivkey(CWallet* pWallet, const Array& params, bool fHelp)
         pWallet->MarkDirty();
         pWallet->SetAddressBookName(vchAddress, strLabel);
 
+        // Don't throw error in case a key is already there
+        if (pWallet->HaveKey(vchAddress))
+            return Value::null;
+
+        pWallet ->mapKeyMetadata[vchAddress].nCreateTime = 1;
+
         if (!pWallet->AddKey(key))
             throw JSONRPCError(RPC_WALLET_ERROR, "Error adding key to wallet");
+
+        // whenever a key is imported, we need to scan the whole chain
+        pWallet->nTimeFirstKey = 1; // 0 would be considered 'no value'
 
         pWallet->ScanForWalletTransactions(pindexGenesisBlock, true);
         pWallet->ReacceptWalletTransactions();
