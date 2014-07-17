@@ -67,7 +67,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     aboutQtAction(0),
     trayIcon(0),
     notificator(0),
-    rpcConsole(0)
+    rpcConsole(0),
+    nWeight(0)
 {
     resize(850, 550);
     setWindowTitle(tr("HoboNickels") + " - " + tr("Wallet"));
@@ -168,6 +169,11 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelBlocksIcon);
     frameBlocksLayout->addStretch();
+
+    QTimer *timerStakingIcon = new QTimer(labelStakingIcon);
+    connect(timerStakingIcon, SIGNAL(timeout()), this, SLOT(updateStakingIcon()));
+    timerStakingIcon->start(30 * 1000);
+    updateStakingIcon();
 
     // Progress bar and label for blocks download
     progressBarLabel = new QLabel();
@@ -468,7 +474,6 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
 
         setNumBlocks(clientModel->getNumBlocks(), clientModel->getNumBlocksOfPeers());
         connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(setNumBlocks(int,int)));
-        connect(clientModel, SIGNAL(numBlocksChanged(int,int)), this, SLOT(updateStakingIcon()));
 
         // Receive and report messages from network/worker thread
         connect(clientModel, SIGNAL(message(QString,QString,unsigned int)), this, SLOT(message(QString,QString,unsigned int)));
@@ -1266,7 +1271,7 @@ void BitcoinGUI::updateStakingIcon()
          labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
       else
       {
-         uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+         uint64 nMinWeight = 0, nMaxWeight = 0;
 
          walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
          if (!nWeight)

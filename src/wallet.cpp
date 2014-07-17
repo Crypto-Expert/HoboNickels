@@ -1573,6 +1573,8 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint
     int64 nBalance = GetBalance();
     int64 nReserveBalance = 0;
 
+    nMinWeight = nMaxWeight = nWeight = 0;
+
     if (mapArgs.count("-reservebalance") && !ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
     {
         error("GetStakeWeight : invalid reserve balance amount");
