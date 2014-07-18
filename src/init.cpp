@@ -538,6 +538,11 @@ bool AppInit2()
     fPrintToConsole = GetBoolArg("-printtoconsole");
     fPrintToDebugger = GetBoolArg("-printtodebugger");
     fLogTimestamps = GetBoolArg("-logtimestamps",true);
+    fPrintStakeModifer = GetBoolArg("-printstakemodifier");
+    fPrintCreation =  GetBoolArg("-printcreation");
+    fPrintCoinStake = GetBoolArg("-printcoinstake");
+    fPrintCoinAge = GetBoolArg("-printcoinage");
+    fPrintPriority = GetBoolArg("-printpriority");
 
     if (mapArgs.count("-timeout"))
     {
@@ -545,12 +550,6 @@ bool AppInit2()
         if (nNewTimeout > 0 && nNewTimeout < 600000)
             nConnectTimeout = nNewTimeout;
     }
-
-    // Continue to put "/P2SH/" in the coinbase to monitor
-    // BIP16 support.
-    // This can be removed eventually...
-    const char* pszP2SH = "/P2SH/";
-    COINBASE_FLAGS << std::vector<unsigned char>(pszP2SH, pszP2SH+strlen(pszP2SH));
 
 
     if (mapArgs.count("-paytxfee"))

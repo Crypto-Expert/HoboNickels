@@ -1296,18 +1296,6 @@ public:
         return pbegin[(pend - pbegin)/2];
     }
 
-    int64 GetMedianTime() const
-    {
-        const CBlockIndex* pindex = this;
-        for (int i = 0; i < nMedianTimeSpan/2; i++)
-        {
-            if (!pindex->pnext)
-                return GetBlockTime();
-            pindex = pindex->pnext;
-        }
-        return pindex->GetMedianTimePast();
-    }
-
     /**
      * Returns true if there are nRequired or more blocks of minVersion or above
      * in the last nToCheck blocks, starting at pstart and going backwards.
