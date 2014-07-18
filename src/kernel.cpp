@@ -31,9 +31,9 @@ int64 GetWeight(int64 nIntervalBeginning, int64 nIntervalEnd)
     //
     // Maximum TimeWeight is 30 days.
 
-  //Tranz We are going to want to change this to fix the max weight. Requires a hard fork
-  //New Code:
-  //return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64)nStakeMaxAge);
+  // Tranz We are going to want to change this to fix the max weight. Requires a hard fork
+  // New Code:
+  // return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64)nStakeMaxAge);
   return min(nIntervalEnd - nIntervalBeginning, (int64)nStakeMaxAge) - nStakeMinAge;
 
 }
@@ -293,9 +293,9 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     // v0.3 protocol kernel hash weight starts from 0 at the 10-day min age
     // this change increases active coins participating the hash and helps
     // to secure the network when proof-of-stake difficulty is low
-    //Tranz We are going to want to change this to fix the max weight. Requires a hard fork
-    //New Code:
-    //int64 nTimeWeight = min((int64)nTimeTx - txPrev.nTime - nStakeMinAge, (int64)nStakeMaxAge);
+    // Tranz We are going to want to change this to fix the max weight. Requires a hard fork
+    // New Code:
+    // int64 nTimeWeight = min((int64)nTimeTx - txPrev.nTime - nStakeMinAge, (int64)nStakeMaxAge);
     int64 nTimeWeight = min((int64)nTimeTx - txPrev.nTime, (int64)nStakeMaxAge) - nStakeMinAge;
     CBigNum bnCoinDayWeight = CBigNum(nValueIn) * nTimeWeight / COIN / (24 * 60 * 60);
     targetProofOfStake = CBigNum(bnCoinDayWeight * bnTargetPerCoinDay).getuint256();

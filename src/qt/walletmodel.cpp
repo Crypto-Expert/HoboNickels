@@ -34,7 +34,7 @@ WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *p
 
 WalletModel::~WalletModel()
 {
-    //unsubscribeFromCoreSignals();
+
 }
 qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 {
@@ -53,8 +53,6 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 
 qint64 WalletModel::getTotBalance() const
 {
-    //This is display only, and we don't lock coins,
-    //so Coin Control is not needed for now
     int64 nTotBalance = 0;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {

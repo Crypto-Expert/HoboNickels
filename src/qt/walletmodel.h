@@ -99,18 +99,18 @@ public:
     // Wallet backup
     bool backupWallet(const QString &filename);
     bool backupAllWallets(const QString &filename);
-    //Wallet Inport/Export
+    // Wallet Inport/Export
     bool dumpWallet(const QString &filename);
     bool importWallet(const QString &filename);
     // Wallet Repair
     void checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
     void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
-    //PoS Information
+    // PoS Information
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
     quint64 getTotStakeWeight();
-    //PoS Information about value and time
+    // PoS Information about value and time
     void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
-    //Wallet Information about Stake For Charity
+    // Wallet Information about Stake For Charity
     int getStakeForCharityPercent();
     QString getStakeForCharityAddress();
 

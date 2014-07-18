@@ -241,8 +241,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 
     unsigned int nPer = (unsigned int) params[1].get_int();
 
-    //Turn off if we set to zero.
-    //Future: After we allow multiple addresses, only turn of this address
+    // Turn off if we set to zero.
+    // Future: After we allow multiple addresses, only turn of this address
     if(nPer == 0)
     {
         pWallet->fStakeForCharity = false;
@@ -251,11 +251,11 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         return Value::null;
     }
 
-    //For now max percentage is 50.
+    // For now max percentage is 50.
     if (nPer > 50 )
        nPer = 50;
 
-    //Future: These will be an array of addr/per/wallet
+    // Future: These will be an array of addr/per/wallet
     pWallet->StakeForCharityAddress = address;
     pWallet->nStakeForCharityPercent = nPer;
     pWallet->fStakeForCharity = true;
@@ -1523,7 +1523,7 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
     else
         pWallet->fWalletUnlockMintOnly = false;
 
-    //HBN: Zero unlock time means forever, well 68 years, forever for crypto.
+    // HBN: Zero unlock time means forever, well 68 years, forever for crypto.
     int64 nUnlockTime;
 
     if (params[1].get_int64() == 0 )
@@ -2076,7 +2076,7 @@ Value unloadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     if (!pWalletManager->UnloadWallet(strWalletName))
         throw JSONRPCError(RPC_WALLET_ERROR, string("No wallet named ") + strWalletName + " is currently loaded.");
 
-    //Tell GUI a wallet was unloaded so it can be removed from stack
+    // Tell GUI a wallet was unloaded so it can be removed from stack
      uiInterface.NotifyWalletRemoved(strWalletName);
 
     return string("Wallet ") + strWalletName + " unloaded.";

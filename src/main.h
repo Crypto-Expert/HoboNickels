@@ -35,9 +35,9 @@ static const int64 MIN_RELAY_TX_FEE = 0.1 * CENT;
 static const int64 MAX_MONEY = 120000000 * COIN;
 static const int64 MAX_MINT_PROOF_OF_WORK = 5 * COIN;
 static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
-static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; //Incorrect value Too small
-static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;//Incorrect value Too big
-static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; //Correct just right
+static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; // Incorrect value Too small
+static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;// Incorrect value Too big
+static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just right
 
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
@@ -127,7 +127,7 @@ bool LoadExternalBlockFile(FILE* fileIn);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
-int64 GetProofOfWorkReward(unsigned int nBits);
+int64 GetProofOfWorkReward();
 int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
 unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
 unsigned int ComputeMinStake(unsigned int nBase, int64 nTime, unsigned int nBlockTime);

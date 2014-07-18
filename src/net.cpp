@@ -1887,8 +1887,8 @@ void StartNode(void* parg)
         printf("Error; NewThread(ThreadDumpAddress) failed\n");
 
     // ppcoin: mint proof-of-stake blocks in the background
-    //hbn: each wallet gets its own thread.
-    //Todo: Need to add a method to choose not to run stake off wallet.
+    // hbn: each wallet gets its own thread.
+    // Todo: Need to add a method to choose not to run stake off wallet.
 
     pWalletManager->RestartStakeMiner();
 

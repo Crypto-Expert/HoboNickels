@@ -481,7 +481,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         walletStack->setClientModel(clientModel);
         rpcConsole->setClientModel(clientModel);
 
-        //Watch for wallets being loaded or unloaded
+        // Watch for wallets being loaded or unloaded
         connect(clientModel, SIGNAL(walletAdded(QString)), this, SLOT(addWallet(QString)));
         connect(clientModel, SIGNAL(walletRemoved(QString)), this, SLOT(removeWallet(QString)));
     }
@@ -603,7 +603,7 @@ void BitcoinGUI::blocksIconClicked()
           .arg(clientModel->getLastBlockDate().toString())
           .arg(clientModel->getDifficulty())
           .arg(clientModel->getPoWMHashPS())
-          .arg(tr("5.0000000")) //Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
+          .arg(tr("5.0000000")) // Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
           .arg(walletStack->getCurrentWallet())
           .arg(walletStack->getWalletVersion())
           .arg(walletManager->GetWalletCount())
@@ -1166,7 +1166,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
         connect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
         break;
     }
-    //Put here as this function will be called on any wallet or lock status change.
+    // Put here as this function will be called on any wallet or lock status change.
     updateStakingIcon();
 
 }

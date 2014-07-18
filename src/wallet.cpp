@@ -295,7 +295,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
         {
             if (fFileBacked)
                 pwalletdbEncryption->TxnAbort();
-            exit(1); //We now probably have half of our keys encrypted in memory, and half not...die and let the user reload their unencrypted wallet.
+            exit(1); // We now probably have half of our keys encrypted in memory, and half not...die and let the user reload their unencrypted wallet.
         }
 
         // Encryption was introduced in version 0.4.0
@@ -304,7 +304,7 @@ bool CWallet::EncryptWallet(const SecureString& strWalletPassphrase)
         if (fFileBacked)
         {
             if (!pwalletdbEncryption->TxnCommit())
-                exit(1); //We now have keys encrypted in memory, but no on disk...die to avoid confusion and let the user reload their unencrypted wallet.
+                exit(1); // We now have keys encrypted in memory, but no on disk...die to avoid confusion and let the user reload their unencrypted wallet.
 
             delete pwalletdbEncryption;
             pwalletdbEncryption = NULL;
@@ -1635,7 +1635,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     // The following split & combine thresholds are important to security
     // Should not be adjusted if you don't understand the consequences
     static unsigned int nStakeSplitAge = (60 * 60 * 24 * 90);
-    int64 nCombineThreshold = GetProofOfWorkReward(GetLastBlockIndex(pindexBest, false)->nBits) / 3;
+    int64 nCombineThreshold = GetProofOfWorkReward() / 3;
 
     CBlockIndex* pindexPrev = pindexBest;
     CBigNum bnTargetPerCoinDay;
@@ -1762,7 +1762,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
                 vwtxPrev.push_back(pcoin.first);
                 txNew.vout.push_back(CTxOut(0, scriptPubKeyOut));
                 if (block.GetBlockTime() + nStakeSplitAge > txNew.nTime)
-                    txNew.vout.push_back(CTxOut(0, scriptPubKeyOut)); //split stake
+                    txNew.vout.push_back(CTxOut(0, scriptPubKeyOut)); // split stake
                 if (fDebug && fPrintCoinStake)
                     printf("CreateCoinStake : added kernel type=%d\n", whichType);
                 fKernelFound = true;
@@ -2817,7 +2817,7 @@ bool CWalletManager::LoadWallet(const string& strName, ostringstream& strErrors,
         printf(" rescan %15"PRI64d"ms\n", GetTimeMillis() - nStart);
     }
 
-    //Tell GUI a wallet was loaded so it can be added to the stack
+    // Tell GUI a wallet was loaded so it can be added to the stack
     uiInterface.NotifyWalletAdded(strName);
 
     return true;

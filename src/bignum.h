@@ -78,7 +78,7 @@ public:
         BN_clear_free(this);
     }
 
-    //CBigNum(char n) is not portable.  Use 'signed char' or 'unsigned char'.
+    // CBigNum(char n) is not portable.  Use 'signed char' or 'unsigned char'.
     CBigNum(signed char n)      { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
     CBigNum(short n)            { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }
     CBigNum(int n)              { BN_init(this); if (n >= 0) setulong(n); else setint64(n); }

@@ -1004,11 +1004,9 @@ uint256 WantedByOrphan(const CBlock* pblockOrphan)
     return pblockOrphan->hashPrevBlock;
 }
 
-// miner's coin base reward based on nBits
-int64 GetProofOfWorkReward(unsigned int nHeight)
+int64 GetProofOfWorkReward()
 {
-		int64 nSubsidy = 5 * COIN;
-
+    int64 nSubsidy = 5 * COIN;
     return nSubsidy;	   
 }
 
@@ -1093,11 +1091,11 @@ int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTi
     if(bCoinYearOnly)
         return nRewardCoinYear;
    
-//Stake calculation fix for small tx values courtesy of Mineral And Yukon Coinelius. This will fix the rounding of small stake rewards to zero
+// Stake calculation fix for small tx values courtesy of Mineral And Yukon Coinelius. This will fix the rounding of small stake rewards to zero
     int64 nSubsidy = nRewardCoinYear * nCoinAge * 33 / (365 * 33 + 8);
     if (nTime > POS_REWARD_SWITCH_TIME)
         nSubsidy = (nCoinAge * 33 * nRewardCoinYear) / (365 * 33 + 8);
-  else
+    else
         nSubsidy = nCoinAge * 33 / (365 * 33 + 8) * nRewardCoinYear;
 
 
@@ -1183,9 +1181,9 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
 
     int64 nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
 
-    //Tranz saved for later.
-    //int nHeight = pindexPrev->nHeight+1;
-    //if (nHeight >= ???? & nActualSpacing < 0) nActualSpacing = 0;  //Sanity Check on nActualSpacing, corrects negative block values
+    // Tranz saved for later.
+    // int nHeight = pindexPrev->nHeight+1;
+    // if (nHeight >= ???? & nActualSpacing < 0) nActualSpacing = 0;  //Sanity Check on nActualSpacing, corrects negative block values
 
     // ppcoin: target change every block
     // ppcoin: retarget with exponential moving toward target spacing
@@ -2198,14 +2196,14 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
            if (vtx[0].GetValueOut() > (IsProofOfWork()? MAX_MINT_PROOF_OF_WORK_LEGACY : 0))
               return DoS(50, error("CheckBlock() : coinbase reward exceeded %s > %s",
                  FormatMoney(vtx[0].GetValueOut()).c_str(),
-                 FormatMoney(IsProofOfWork()? GetProofOfWorkReward(nBits) : 0).c_str()));
+                 FormatMoney(IsProofOfWork()? GetProofOfWorkReward() : 0).c_str()));
         }
         else
         {
-            if (vtx[0].GetValueOut() > (IsProofOfWork()? (GetProofOfWorkReward(nBits) - vtx[0].GetMinFee() + MIN_TX_FEE) : 0))
+            if (vtx[0].GetValueOut() > (IsProofOfWork()? (GetProofOfWorkReward() - vtx[0].GetMinFee() + MIN_TX_FEE) : 0))
               return DoS(50, error("CheckBlock() : coinbase reward exceeded %s > %s",
                  FormatMoney(vtx[0].GetValueOut()).c_str(),
-                 FormatMoney(IsProofOfWork()? GetProofOfWorkReward(nBits) : 0).c_str()));
+                 FormatMoney(IsProofOfWork()? GetProofOfWorkReward() : 0).c_str()));
         }
 
      }
@@ -2822,9 +2820,6 @@ void PrintBlockTree()
     {
         CBlockIndex* pindex = (*mi).second;
         mapNext[pindex->pprev].push_back(pindex);
-        // test
-        //while (rand() % 3 == 0)
-        //    mapNext[pindex->pprev].push_back(pindex);
     }
 
     vector<pair<int, CBlockIndex*> > vStack;
@@ -3147,7 +3142,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv)
             return true;
         }
 
-        //Record my external IP reported by peer
+        // Record my external IP reported by peer
         if (addrFrom.IsRoutable() && addrMe.IsRoutable())
             addrSeenByPeer = addrMe;
 
@@ -3761,7 +3756,7 @@ bool ProcessMessages(CNode* pfrom)
     CDataStream& vRecv = pfrom->vRecv;
     if (vRecv.empty())
         return true;
-    //if (fDebug)
+    // if (fDebug)
     //    printf("ProcessMessages(%u bytes)\n", vRecv.size());
 
     //

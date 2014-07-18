@@ -222,7 +222,7 @@ void WalletStack::setCurrentWalletView(const QString& name)
     setCurrentWidget(walletView);
     walletView->setEncryptionStatus();
 
-    //Call the pages that have export and only set that connect
+    // Call the pages that have export and only set that connect
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
     {

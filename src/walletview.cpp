@@ -236,7 +236,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
 
-        //Set Total Balance for all loaded wallets.
+        // Set Total Balance for all loaded wallets.
         overviewPage->setTotBalance(walletModel->getTotBalance());
         connect(walletModel, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     }

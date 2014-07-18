@@ -8,7 +8,7 @@
 #include "wallet.h"
 
 extern CWalletManager* pWalletManager;
-//TODO: get rid of pwalletMain
+// TODO: get rid of pwalletMain
 extern CWallet* pwalletMain;
 
 void StartShutdown();
