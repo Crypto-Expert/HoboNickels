@@ -863,6 +863,9 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     }
     CScript result;
     result.SetMultisig(nRequired, pubkeys);
+    if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
+        throw runtime_error(
+                 strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
     return result;
 }
 
@@ -884,7 +887,8 @@ Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
   // Construct using pay-to-script-hash:
   CScript inner = _createmultisig(pWallet, params);
   CScriptID innerID = inner.GetID();
-  pWallet->AddCScript(inner);
+  if (!pWallet->AddCScript(inner))
+      throw runtime_error("AddCScript() failed");
 
   pWallet->SetAddressBookName(innerID, strAccount);
   return CBitcoinAddress(innerID).ToString();
