@@ -1755,22 +1755,19 @@ Value reservebalance(CWallet* pWallet, const Array& params, bool fHelp)
             nAmount = (nAmount / CENT) * CENT;  // round to cent
             if (nAmount < 0)
                 throw runtime_error("amount cannot be negative.\n");
-            mapArgs["-reservebalance"] = FormatMoney(nAmount).c_str();
+            pWallet->nReserveBalance = nAmount;
         }
         else
         {
             if (params.size() > 1)
                 throw runtime_error("cannot specify amount to turn off reserve.\n");
-            mapArgs["-reservebalance"] = "0";
+            pWallet->nReserveBalance = 0 ;
         }
     }
 
     Object result;
-    int64 nReserveBalance = 0;
-    if (mapArgs.count("-reservebalance") && !ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
-        throw runtime_error("invalid reserve balance amount\n");
-    result.push_back(Pair("reserve", (nReserveBalance > 0)));
-    result.push_back(Pair("amount", ValueFromAmount(nReserveBalance)));
+    result.push_back(Pair("reserve", (pWallet->nReserveBalance > 0)));
+    result.push_back(Pair("amount", ValueFromAmount(pWallet->nReserveBalance)));
     return result;
 }
 

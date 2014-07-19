@@ -756,15 +756,7 @@ bool AppInit2()
         }
     }
 
-    if (mapArgs.count("-reservebalance")) // ppcoin: reserve balance amount
-    {
-        int64 nReserveBalance = 0;
-        if (!ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
-        {
-            InitError(_("Invalid amount for -reservebalance=<amount>"));
-            return false;
-        }
-    }
+
 
     if (mapArgs.count("-checkpointkey")) // ppcoin: checkpoint master priv key
     {
@@ -848,6 +840,32 @@ bool AppInit2()
 
     TimerThread::StartTimer(); // for walletpassphrase unlock
     if (!LoadWallets(strErrors)) return false;
+
+    if (mapArgs.count("-reservebalance"))
+    {
+        int64 nReserveBalance = 0;
+        if (!ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
+            InitError(_("Invalid amount for -reservebalance=<amount>"));
+        else
+        {
+            // Set the reservebalance the same for each wallet that was loaded.
+            // Individual Wallets can be set using the rpc command after loading is complete
+            vector<string> vstrNames;
+            vector<boost::shared_ptr<CWallet> > vpWallets;
+
+            BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+            {
+               vstrNames.push_back(item.first);
+               vpWallets.push_back(item.second);
+            }
+            for (unsigned int i = 0; i < vstrNames.size(); i++)
+            {
+                vpWallets[i]->nReserveBalance = nReserveBalance;
+            }
+
+        }
+    }
+
 
     // ********************************************************* Step 9: import blocks
 

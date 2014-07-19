@@ -115,6 +115,8 @@ public:
     int nStakeForCharityPercent;
     CBitcoinAddress StakeForCharityAddress;
     std::string strWalletFile;
+    int64 nReserveBalance;
+
 
 
     std::set<int64> setKeyPool;
@@ -140,6 +142,7 @@ public:
         fStakeForCharity = false;
         nStakeForCharityPercent = 0;
         StakeForCharityAddress = "";
+        nReserveBalance = 0;
     }
     CWallet(std::string strWalletFileIn)
     {
@@ -157,6 +160,7 @@ public:
         fStakeForCharity = false;
         nStakeForCharityPercent = 0;
         StakeForCharityAddress = "";
+        nReserveBalance = 0;
 
     }
 
