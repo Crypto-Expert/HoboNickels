@@ -653,6 +653,13 @@ void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& 
     walletModel->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 }
 
+quint64 WalletView::getReserveBalance()
+{
+    if(!walletModel)
+       return 0;
+    return walletModel->getReserveBalance();
+}
+
 quint64 WalletView::getTotStakeWeight()
 {
     if(!walletModel)

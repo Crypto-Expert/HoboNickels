@@ -107,6 +107,8 @@ public slots:
     /** Give user information about staking */
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
     quint64 getTotStakeWeight();
+    /** Give user information about reserve balance */
+    quint64 getReserveBalance();
     /** Give user information about Stake For Charity */
     int getStakeForCharityPercent();
     QString getStakeForCharityAddress();

@@ -108,6 +108,8 @@ public:
     // PoS Information
     void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
     quint64 getTotStakeWeight();
+    /** Give user information about reserve balance */
+    quint64 getReserveBalance();
     // PoS Information about value and time
     void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
     // Wallet Information about Stake For Charity

@@ -406,6 +406,11 @@ void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64&
    wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
 }
 
+quint64 WalletModel::getReserveBalance()
+{
+   return wallet->nReserveBalance;
+}
+
 uint64 WalletModel::getTotStakeWeight()
 {
 

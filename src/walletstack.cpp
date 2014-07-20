@@ -253,6 +253,13 @@ void WalletStack::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint
     if (walletView) walletView->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 }
 
+quint64 WalletStack::getReserveBalance()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getReserveBalance();
+    return 0;
+}
+
 quint64 WalletStack::getTotStakeWeight()
 {
     WalletView *walletView = (WalletView*)currentWidget();
@@ -287,5 +294,3 @@ QString WalletStack::getStakeForCharityAddress()
     if (walletView) return walletView->getStakeForCharityAddress();
     return "";
 }
-
-
