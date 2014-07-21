@@ -1563,9 +1563,6 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint
     // Choose coins to use
     int64 nBalance = GetBalance();
 
-
-    nMinWeight = nMaxWeight = nWeight = 0;
-
     if (nBalance <= nReserveBalance)
         return false;
 

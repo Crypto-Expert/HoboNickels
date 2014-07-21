@@ -384,25 +384,16 @@ QString WalletModel::getStakeForCharityAddress()
 
 bool WalletModel::dumpWallet(const QString &filename)
 {
-    return DumpWallet(wallet, filename.toLocal8Bit().data());
+  return DumpWallet(wallet, filename.toLocal8Bit().data());
 }
 
 bool WalletModel::importWallet(const QString &filename)
 {
-    return ImportWallet(wallet, filename.toLocal8Bit().data());
+  return ImportWallet(wallet, filename.toLocal8Bit().data());
 }
 
 void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
 {
-
-   TRY_LOCK(cs_main, lockMain);
-   if (!lockMain)
-       return;
-
-   TRY_LOCK(wallet->cs_wallet, lockWallet);
-   if (!lockWallet)
-       return;
-
    wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
 }
 
