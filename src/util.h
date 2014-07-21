@@ -28,6 +28,9 @@
 
 #include "netbase.h" // for AddTimeData
 
+// to obtain PRId64 on some old systems
+#define __STDC_FORMAT_MACROS 1
+
 typedef long long  int64;
 typedef unsigned long long  uint64;
 
