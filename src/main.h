@@ -1279,6 +1279,11 @@ public:
         return true;
     }
 
+    int64 GetPastTimeLimit() const
+    {
+        return GetMedianTimePast();
+    }
+
     enum { nMedianTimeSpan=11 };
 
     int64 GetMedianTimePast() const
