@@ -113,7 +113,7 @@ public:
     bool fWalletUnlockMintOnly;
     bool fStakeForCharity;
     int nStakeForCharityPercent;
-    CBitcoinAddress StakeForCharityAddress;
+    CBitcoinAddress strStakeForCharityAddress;
     std::string strWalletFile;
     int64 nReserveBalance;
 
@@ -129,6 +129,17 @@ public:
 
     CWallet()
     {
+        SetNull();
+    }
+    CWallet(std::string strWalletFileIn)
+    {
+        SetNull();
+        strWalletFile = strWalletFileIn;
+        fFileBacked = true;
+    }
+
+    void SetNull()
+    {
         lockJob.SetWallet(this);
         nLockTime = 0;
         strLockTime = "Locked";
@@ -141,27 +152,8 @@ public:
         fWalletUnlockMintOnly = false;
         fStakeForCharity = false;
         nStakeForCharityPercent = 0;
-        StakeForCharityAddress = "";
+        strStakeForCharityAddress = "";
         nReserveBalance = 0;
-    }
-    CWallet(std::string strWalletFileIn)
-    {
-        lockJob.SetWallet(this);
-        nLockTime = 0;
-        strLockTime = "Locked";
-        nWalletVersion = FEATURE_BASE;
-        nWalletMaxVersion = FEATURE_BASE;
-        strWalletFile = strWalletFileIn;
-        fFileBacked = true;
-        nMasterKeyMaxID = 0;
-        pwalletdbEncryption = NULL;
-        nOrderPosNext = 0;
-        fWalletUnlockMintOnly = false;
-        fStakeForCharity = false;
-        nStakeForCharityPercent = 0;
-        StakeForCharityAddress = "";
-        nReserveBalance = 0;
-
     }
 
     ~CWallet() { CWalletDB::UnloadWallet(this); }

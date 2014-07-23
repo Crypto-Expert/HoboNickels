@@ -376,10 +376,10 @@ int WalletModel::getStakeForCharityPercent()
 
 QString WalletModel::getStakeForCharityAddress()
 {
-     if (!wallet->StakeForCharityAddress.IsValid())
+     if (!wallet->strStakeForCharityAddress.IsValid())
          return "Not Giving";
      else
-         return wallet->StakeForCharityAddress.ToString().c_str();
+         return wallet->strStakeForCharityAddress.ToString().c_str();
 }
 
 bool WalletModel::dumpWallet(const QString &filename)

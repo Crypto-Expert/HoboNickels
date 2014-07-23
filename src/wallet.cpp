@@ -1207,8 +1207,8 @@ bool CWallet::StakeForCharity ()
                     return false;
                 }
 
-                printf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet).c_str(), StakeForCharityAddress.ToString().c_str());
-                SendMoneyToDestination(StakeForCharityAddress.Get(), nNet, wtx, false, true);
+                printf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet).c_str(), strStakeForCharityAddress.ToString().c_str());
+                SendMoneyToDestination(strStakeForCharityAddress.Get(), nNet, wtx, false, true);
             }
 
         }

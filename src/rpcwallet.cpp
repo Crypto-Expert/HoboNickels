@@ -246,7 +246,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     if(nPer == 0)
     {
         pWallet->fStakeForCharity = false;
-        pWallet->StakeForCharityAddress = "";
+        pWallet->strStakeForCharityAddress = "";
         pWallet->nStakeForCharityPercent = 0;
         return Value::null;
     }
@@ -256,7 +256,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
        nPer = 50;
 
     // Future: These will be an array of addr/per/wallet
-    pWallet->StakeForCharityAddress = address;
+    pWallet->strStakeForCharityAddress = address;
     pWallet->nStakeForCharityPercent = nPer;
     pWallet->fStakeForCharity = true;
     fGlobalStakeForCharity = true;
