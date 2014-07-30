@@ -81,7 +81,10 @@ contains(USE_UPNP, -) {
     win32:LIBS += -liphlpapi
 }
 
-# use: qmake "USE_DBUS=1"
+# use: qmake "USE_DBUS=1" or qmake "USE_DBUS=0"
+linux:count(USE_DBUS, 0) {
+    USE_DBUS=1
+}
 contains(USE_DBUS, 1) {
     message(Building with DBUS (Freedesktop notifications) support)
     DEFINES += USE_DBUS
@@ -404,10 +407,7 @@ windows:!contains(MINGW_THREAD_BUGFIX, 0) {
     QMAKE_LIBS_QT_ENTRY = -lmingwthrd $$QMAKE_LIBS_QT_ENTRY
 }
 
-!windows:!macx {
-    DEFINES += LINUX
-    LIBS += -lrt
-}
+
 
 macx:HEADERS += src/qt/macdockiconhandler.h src/qt/macnotificationhandler.h
 macx:OBJECTIVE_SOURCES += src/qt/macdockiconhandler.mm src/qt/macnotificationhandler.mm
@@ -433,6 +433,11 @@ contains(RELEASE, 1) {
         # Linux: turn dynamic linking back on for c/c++ runtime libraries
         LIBS += -Wl,-Bdynamic
     }
+}
+
+!windows:!macx {
+    DEFINES += LINUX
+    LIBS += -lrt -ldl
 }
 
 system($$QMAKE_LRELEASE -silent $$_PRO_FILE_)
