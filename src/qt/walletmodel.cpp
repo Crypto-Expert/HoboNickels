@@ -53,6 +53,7 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 
 qint64 WalletModel::getTotBalance() const
 {
+    LOCK(wallet->cs_wallet);
     int64 nTotBalance = 0;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
@@ -64,16 +65,19 @@ qint64 WalletModel::getTotBalance() const
 
 qint64 WalletModel::getUnconfirmedBalance() const
 {
+    LOCK(wallet->cs_wallet);
     return wallet->GetUnconfirmedBalance();
 }
 
 qint64 WalletModel::getStake() const
 {
+    LOCK(wallet->cs_wallet);
     return wallet->GetStake();
 }
 
 qint64 WalletModel::getImmatureBalance() const
 {
+    LOCK(wallet->cs_wallet);
     return wallet->GetImmatureBalance();
 }
 
@@ -89,6 +93,7 @@ int WalletModel::getNumTransactions() const
 
 int WalletModel::getWalletVersion() const
 {
+    LOCK(wallet->cs_wallet);
     return wallet->GetVersion();
 }
 

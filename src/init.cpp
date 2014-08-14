@@ -850,6 +850,7 @@ bool AppInit2()
             }
             for (unsigned int i = 0; i < vstrNames.size(); i++)
             {
+                LOCK(vpWallets[i]->cs_wallet);
                 vpWallets[i]->nReserveBalance = nReserveBalance;
             }
 
