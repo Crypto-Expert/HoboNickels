@@ -241,6 +241,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 
     unsigned int nPer = (unsigned int) params[1].get_int();
 
+    LOCK(pWallet->cs_wallet);
+
     // Turn off if we set to zero.
     // Future: After we allow multiple addresses, only turn of this address
     if(nPer == 0)

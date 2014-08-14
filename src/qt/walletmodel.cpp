@@ -102,11 +102,23 @@ void WalletModel::updateStatus()
 
 void WalletModel::pollBalanceChanged()
 {
+    // Get required locks upfront. This avoids the GUI from getting stuck on
+    // periodical polls if the core is holding the locks for a longer time -
+    // for example, during a wallet rescan.
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
+    TRY_LOCK(wallet->cs_wallet, lockWallet);
+    if(!lockWallet)
+        return;
+
     if(nBestHeight != cachedNumBlocks)
     {
-        // Balance and number of transactions might have changed
-        cachedNumBlocks = nBestHeight;
-        checkBalanceChanged();
+         // Balance and number of transactions might have changed
+         cachedNumBlocks = nBestHeight;
+         checkBalanceChanged();
+         if(transactionTableModel)
+             transactionTableModel->updateConfirmations();
     }
 }
 
@@ -384,52 +396,60 @@ QString WalletModel::getStakeForCharityAddress()
 
 bool WalletModel::dumpWallet(const QString &filename)
 {
-  return DumpWallet(wallet, filename.toLocal8Bit().data());
+    return DumpWallet(wallet, filename.toLocal8Bit().data());
 }
 
 bool WalletModel::importWallet(const QString &filename)
 {
-  return ImportWallet(wallet, filename.toLocal8Bit().data());
+    return ImportWallet(wallet, filename.toLocal8Bit().data());
 }
 
 void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
 {
-   wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
+    TRY_LOCK(cs_main, lockMain);
+    if (!lockMain)
+        return;
+
+    TRY_LOCK(wallet->cs_wallet, lockWallet);
+    if (!lockWallet)
+      return;
+
+    wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
 }
 
 quint64 WalletModel::getReserveBalance()
 {
-   return wallet->nReserveBalance;
+    return wallet->nReserveBalance;
 }
 
 uint64 WalletModel::getTotStakeWeight()
 {
 
-   uint64 nTotWeight = 0;
-   BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-   {
-      CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
-      uint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
-      pwallet->GetStakeWeight(*pwallet, nMinWeight,nMaxWeight,nWeight);
+    uint64 nTotWeight = 0;
+    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
+    {
+        CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
+        uint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
+        pwallet->GetStakeWeight(*pwallet, nMinWeight,nMaxWeight,nWeight);
 
-      nTotWeight+=nWeight;
-   }
-   return nTotWeight;
+        nTotWeight+=nWeight;
+    }
+    return nTotWeight;
 }
 
 void WalletModel::getStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight)
 {
-   wallet->GetStakeWeightFromValue(nTime, nValue, nWeight);
+    wallet->GetStakeWeightFromValue(nTime, nValue, nWeight);
 }
 
 void WalletModel::checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
 {
-  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
+    wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
 }
 
 void WalletModel::repairWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
 {
-  wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
+    wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
 }
 
 // Handlers for core signals
@@ -536,6 +556,7 @@ bool WalletModel::getPubKey(const CKeyID &address, CPubKey& vchPubKeyOut) const
 // returns a list of COutputs from COutPoints
 void WalletModel::getOutputs(const std::vector<COutPoint>& vOutpoints, std::vector<COutput>& vOutputs)
 {
+    LOCK2(cs_main, wallet->cs_wallet);
     BOOST_FOREACH(const COutPoint& outpoint, vOutpoints)
     {
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
@@ -551,6 +572,8 @@ void WalletModel::listCoins(std::map<QString, std::vector<COutput> >& mapCoins) 
 {
     std::vector<COutput> vCoins;
     wallet->AvailableCoins(vCoins);
+
+    LOCK2(cs_main, wallet->cs_wallet); // ListLockedCoins, mapWallet
     std::vector<COutPoint> vLockedCoins;
 
     // add locked coins

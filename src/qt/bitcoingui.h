@@ -122,6 +122,8 @@ private:
 
     QMovie *syncIconMovie;
 
+    quint64 nWeight;
+
     /** Create the main UI actions. */
     void createActions();
     /** Create the menu bar and sub-menus. */

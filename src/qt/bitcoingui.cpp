@@ -67,7 +67,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     aboutQtAction(0),
     trayIcon(0),
     notificator(0),
-    rpcConsole(0)
+    rpcConsole(0),
+    nWeight(0)
 {
     resize(850, 550);
     setWindowTitle(tr("HoboNickels") + " - " + tr("Wallet"));
@@ -663,7 +664,7 @@ void BitcoinGUI::connectionIconClicked()
 void BitcoinGUI::stakingIconClicked()
 {
 
-   uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+   uint64 nMinWeight = 0, nMaxWeight = 0;
    walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
    int unit = clientModel->getOptionsModel()->getDisplayUnit();
