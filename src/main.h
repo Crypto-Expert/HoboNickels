@@ -25,21 +25,34 @@ class CInv;
 class CRequestTracker;
 class CNode;
 
+/** The maximum allowed size for a serialized block, in bytes (network rule) */
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
+/** The maximum size for mined blocks */
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+/** The maximum allowed number of signature check operations in a block (network rule) */
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
+/** The maximum number of orphan transactions kept in memory */
 static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
+/** The maximum number of entries in an 'inv' protocol message */
 static const unsigned int MAX_INV_SZ = 50000;
+/** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
 static const int64 MIN_TX_FEE = 0.1 * CENT;
+/** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
 static const int64 MIN_RELAY_TX_FEE = 0.1 * CENT;
+/** No amount larger than this (in satoshi) is valid */
 static const int64 MAX_MONEY = 120000000 * COIN;
+/** Base Rate for Proof of Work Reward */
 static const int64 MAX_MINT_PROOF_OF_WORK = 5 * COIN;
-static const int64 MAX_MINT_PROOF_OF_WORK_LEGACY = 5 * COIN;
+/** Base Rate for Proof of Stake Reward(Incorrect), kept for sync */
 static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; // Incorrect value Too small
+/** Base Rate for Proof of Stake Reward(Incorrect), kept for sync */
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;// Incorrect value Too big
+/** Base Rate for Proof of Stake Reward 100% per year */
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just right
-
+/** Transactions smaller then this are ignored */
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
+
+/** Hard Fork Change Times */
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
 static const unsigned int REWARD_SWITCH_TIME = 1369432800; // 25 May 2013 00:00:00
 static const unsigned int POS_REWARD_SWITCH_TIME = 1378684800; // 9 SEP 2013 00:00:00
@@ -48,7 +61,7 @@ static const unsigned int POS_REWARD_FIX_TIME2 = 1383606000; // 04 Nov 2013 23:0
 
 
 inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
-// Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp.
+/** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
 #ifdef USE_UPNP

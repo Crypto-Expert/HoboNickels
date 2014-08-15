@@ -2183,7 +2183,7 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
         int64 nTimeBlock = GetBlockTime();
         if (nTimeBlock < REWARD_SWITCH_TIME)
         {
-           if (vtx[0].GetValueOut() > (IsProofOfWork()? MAX_MINT_PROOF_OF_WORK_LEGACY : 0))
+           if (vtx[0].GetValueOut() > (IsProofOfWork()? MAX_MINT_PROOF_OF_WORK : 0))
               return DoS(50, error("CheckBlock() : coinbase reward exceeded %s > %s",
                  FormatMoney(vtx[0].GetValueOut()).c_str(),
                  FormatMoney(IsProofOfWork()? GetProofOfWorkReward() : 0).c_str()));
