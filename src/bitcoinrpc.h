@@ -132,7 +132,6 @@ extern json_spirit::Value ValueFromAmount(int64 amount);
 extern double GetDifficulty(const CBlockIndex* blockindex = NULL);
 extern double GetPoWMHashPS();
 extern double GetPoSKernelPS();
-extern std::string HexBits(unsigned int nBits);
 extern std::string HelpRequiringPassphrase(CWallet* pWallet = NULL);
 extern void EnsureWalletIsUnlocked(CWallet* pWallet = NULL);
 

@@ -337,17 +337,6 @@ inline std::string HexStr(const std::vector<unsigned char>& vch, bool fSpaces=fa
     return HexStr(vch.begin(), vch.end(), fSpaces);
 }
 
-template<typename T>
-void PrintHex(const T pbegin, const T pend, const char* pszFormat="%s", bool fSpaces=true)
-{
-    printf(pszFormat, HexStr(pbegin, pend, fSpaces).c_str());
-}
-
-inline void PrintHex(const std::vector<unsigned char>& vch, const char* pszFormat="%s", bool fSpaces=true)
-{
-    printf(pszFormat, HexStr(vch, fSpaces).c_str());
-}
-
 inline int64 GetPerformanceCounter()
 {
     int64 nCounter = 0;
