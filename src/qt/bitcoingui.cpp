@@ -579,6 +579,10 @@ void BitcoinGUI::aboutClicked()
 void BitcoinGUI::blocksIconClicked()
 {
 
+   TRY_LOCK(cs_main, lockMain);
+   if(!lockMain)
+       return;
+
    int unit = clientModel->getOptionsModel()->getDisplayUnit();
 
    message(tr("Extended Block Chain Information"),
@@ -656,19 +660,19 @@ void BitcoinGUI::connectionIconClicked()
           CClientUIInterface::MODAL,
           tr("%1")
           .arg(strAllPeer));
-
-
-
 }
 
 void BitcoinGUI::stakingIconClicked()
 {
 
+   TRY_LOCK(cs_main, lockMain);
+   if(!lockMain)
+       return;
+
    uint64 nMinWeight = 0, nMaxWeight = 0;
    walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
    int unit = clientModel->getOptionsModel()->getDisplayUnit();
-
 
    message(tr("Extended Staking Information"),
       tr("Client Version: %1\n"
@@ -704,8 +708,6 @@ void BitcoinGUI::stakingIconClicked()
          .arg(walletStack->getTotStakeWeight())
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
       ,CClientUIInterface::MODAL);
-
-
 }
 
 void BitcoinGUI::gotoOverviewPage()
