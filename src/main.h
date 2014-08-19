@@ -29,6 +29,8 @@ class CNode;
 static const unsigned int MAX_BLOCK_SIZE = 1000000;
 /** The maximum size for mined blocks */
 static const unsigned int MAX_BLOCK_SIZE_GEN = MAX_BLOCK_SIZE/2;
+/** The maximum size for transactions we're willing to relay/mine **/
+static const unsigned int MAX_STANDARD_TX_SIZE = MAX_BLOCK_SIZE_GEN/5;
 /** The maximum allowed number of signature check operations in a block (network rule) */
 static const unsigned int MAX_BLOCK_SIGOPS = MAX_BLOCK_SIZE/50;
 /** The maximum number of orphan transactions kept in memory */
@@ -499,24 +501,6 @@ public:
         return SerializeHash(*this);
     }
 
-    bool IsFinal(int nBlockHeight=0, int64 nBlockTime=0) const
-    {
-        AssertLockHeld(cs_main);
-        // Time based nLockTime implemented in 0.1.6
-        if (nLockTime == 0)
-            return true;
-        if (nBlockHeight == 0)
-            nBlockHeight = nBestHeight;
-        if (nBlockTime == 0)
-            nBlockTime = GetAdjustedTime();
-        if ((int64)nLockTime < ((int64)nLockTime < LOCKTIME_THRESHOLD ? (int64)nBlockHeight : nBlockTime))
-            return true;
-        BOOST_FOREACH(const CTxIn& txin, vin)
-            if (!txin.IsFinal())
-                return false;
-        return true;
-    }
-
     bool IsNewerThan(const CTransaction& old) const
     {
         if (vin.size() != old.vin.size())
@@ -556,11 +540,6 @@ public:
         // ppcoin: the coin stake transaction is marked with the first output empty
         return (vin.size() > 0 && (!vin[0].prevout.IsNull()) && vout.size() >= 2 && vout[0].IsEmpty());
     }
-
-    /** Check for standard transaction types
-        @return True if all outputs (scriptPubKeys) use only standard transaction forms
-    */
-    bool IsStandard() const;
 
     /** Check for standard transaction types
         @param[in] mapInputs	Map of previous transactions that have outputs we're spending
@@ -730,8 +709,12 @@ protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
 };
 
+/** Check for standard transaction types
+    @return True if all outputs (scriptPubKeys) use only standard transaction forms
+*/
+bool IsStandardTx(const CTransaction& tx);
 
-
+bool IsFinalTx(const CTransaction &tx, int nBlockHeight = 0, int64_t nBlockTime = 0);
 
 
 /** A transaction with a merkle branch linking it to the block chain. */

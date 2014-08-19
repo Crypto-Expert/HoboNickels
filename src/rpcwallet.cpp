@@ -502,7 +502,7 @@ Value getreceivedbyaddress(CWallet* pWallet, const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !wtx.IsFinal())
+        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !IsFinalTx(wtx))
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -548,7 +548,7 @@ Value getreceivedbyaccount(CWallet* pWallet, const Array& params, bool fHelp)
     for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !wtx.IsFinal())
+        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !IsFinalTx(wtx))
             continue;
 
         BOOST_FOREACH(const CTxOut& txout, wtx.vout)
@@ -572,7 +572,7 @@ int64 GetAccountBalance(CWallet* pWallet, CWalletDB& walletdb, const string& str
     for (map<uint256, CWalletTx>::iterator it = pWallet->mapWallet.begin(); it != pWallet->mapWallet.end(); ++it)
     {
         const CWalletTx& wtx = (*it).second;
-        if (!wtx.IsFinal() || wtx.GetDepthInMainChain() < 0)
+        if (!IsFinalTx(wtx) || wtx.GetDepthInMainChain() < 0)
             continue;
 
         int64 nReceived, nSent, nFee;
@@ -950,7 +950,7 @@ Value ListReceived(CWallet* pWallet,const Array& params, bool fByAccounts)
     {
         const CWalletTx& wtx = (*it).second;
 
-        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !wtx.IsFinal())
+        if (wtx.IsCoinBase() || wtx.IsCoinStake() || !IsFinalTx(wtx))
             continue;
 
         int nDepth = wtx.GetDepthInMainChain();
@@ -1749,6 +1749,7 @@ Value reservebalance(CWallet* pWallet, const Array& params, bool fHelp)
     if (params.size() > 0)
     {
         bool fReserve = params[0].get_bool();
+        LOCK(pWallet->cs_wallet);
         if (fReserve)
         {
             if (params.size() == 1)

@@ -761,7 +761,7 @@ public:
     bool IsTrusted() const
     {
         // Quick answer in most cases
-        if (!IsFinal())
+        if (!IsFinalTx(*this))
             return false;
         int nDepth = GetDepthInMainChain();
         if (nDepth >= 1)
@@ -781,7 +781,7 @@ public:
         {
             const CMerkleTx* ptx = vWorkQueue[i];
 
-            if (!ptx->IsFinal())
+            if (!IsFinalTx(*ptx))
                 return false;
             int nPDepth = ptx->GetDepthInMainChain();
             if (nPDepth >= 1)
