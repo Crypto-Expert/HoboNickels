@@ -47,7 +47,6 @@ unsigned int nStakeMaxAge = 60 * 60 * 24 * 30; // stake age of full weight - 30 
 unsigned int nStakeTargetSpacing = 1 * 30; // 1-minute block spacing
 int64 nChainStartTime = 1371910049;
 int nCoinbaseMaturity = 5;
-int nCoinbaseMaturityMultipiler = 5000;
 CBlockIndex* pindexGenesisBlock = NULL;
 int nBestHeight = -1;
 uint256 nBestChainTrust = 0;
@@ -2742,7 +2741,6 @@ bool LoadBlockIndex(bool fAllowNew)
         nStakeMinAge = 2 * 60 * 60; // test net min age is 2 hours
         nModifierInterval = 20 * 60; // test modifier interval is 20 minutes
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
-        nCoinbaseMaturityMultipiler = 1;
         nStakeTargetSpacing = 1 * 60; // test block spacing is 3 minutes
     }
 

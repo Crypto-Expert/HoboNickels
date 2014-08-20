@@ -91,7 +91,7 @@ class CWallet : public CCryptoKeyStore
 {
 private:
     bool SelectCoins(int64 nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet, const CCoinControl *coinControl=NULL) const;
-    bool SelectCoinsSimple(int64 nTargetValue, unsigned int nSpendTime, int nMinConf, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
+    bool SelectCoinsForStaking(int64 nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
 
     CWalletDB *pwalletdbEncryption;
 
@@ -179,7 +179,7 @@ public:
     bool CanSupportFeature(enum WalletFeature wf) { AssertLockHeld(cs_wallet); return nWalletMaxVersion >= wf; }
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
-    void AvailableCoinsMinConf(std::vector<COutput>& vCoins, int nConf) const;
+    void AvailableCoinsForStaking(std::vector<COutput>& vCoins, unsigned int nSpendTime) const;
     bool SelectCoinsMinConf(int64 nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const;
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);

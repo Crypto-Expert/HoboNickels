@@ -1098,7 +1098,7 @@ void CWallet::AvailableCoins(vector<COutput>& vCoins, bool fOnlyConfirmed, const
     }
 }
 
-void CWallet::AvailableCoinsMinConf(vector<COutput>& vCoins, int nConf) const
+void CWallet::AvailableCoinsForStaking(vector<COutput>& vCoins, unsigned int nSpendTime) const
 {
     vCoins.clear();
 
@@ -1108,15 +1108,20 @@ void CWallet::AvailableCoinsMinConf(vector<COutput>& vCoins, int nConf) const
         {
             const CWalletTx* pcoin = &(*it).second;
 
-            if (!pcoin->IsFinal())
+            // Filtering by tx timestamp instead of block timestamp may give false positives but never false negatives
+            if (pcoin->nTime + nStakeMinAge > nSpendTime)
                 continue;
 
-            if(pcoin->GetDepthInMainChain() < nConf)
+            if (pcoin->GetBlocksToMaturity() > 0)
                 continue;
+
+            int nDepth = pcoin->GetDepthInMainChain();
+            if (nDepth < 1)
+               continue;
 
             for (unsigned int i = 0; i < pcoin->vout.size(); i++)
                 if (!(pcoin->IsSpent(i)) && IsMine(pcoin->vout[i]) && pcoin->vout[i].nValue >= nMinimumInputValue)
-                    vCoins.push_back(COutput(pcoin, i, pcoin->GetDepthInMainChain()));
+                    vCoins.push_back(COutput(pcoin, i, nDepth));
         }
     }
 }
@@ -1353,10 +1358,10 @@ bool CWallet::SelectCoins(int64 nTargetValue, unsigned int nSpendTime, set<pair<
 }
 
 // Select some coins without random shuffle or best subset approximation
-bool CWallet::SelectCoinsSimple(int64 nTargetValue, unsigned int nSpendTime, int nMinConf, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const
+bool CWallet::SelectCoinsForStaking(int64 nTargetValue, unsigned int nSpendTime, set<pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64& nValueRet) const
 {
     vector<COutput> vCoins;
-    AvailableCoinsMinConf(vCoins, nMinConf);
+    AvailableCoinsForStaking(vCoins, nSpendTime);
 
     setCoinsRet.clear();
     nValueRet = 0;
@@ -1369,10 +1374,6 @@ bool CWallet::SelectCoinsSimple(int64 nTargetValue, unsigned int nSpendTime, int
         // Stop if we've chosen enough inputs
         if (nValueRet >= nTargetValue)
             break;
-
-        // Follow the timestamp rules
-        if (pcoin->nTime > nSpendTime)
-            continue;
 
         int64 n = pcoin->vout[i].nValue;
 
@@ -1564,7 +1565,7 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64& nMinWeight, uint
     set<pair<const CWalletTx*,unsigned int> > setCoins;
     int64 nValueIn = 0;
 
-    if (!SelectCoinsSimple(nBalance - nReserveBalance, GetTime(), nCoinbaseMaturity * nCoinbaseMaturityMultipiler, setCoins, nValueIn))
+    if (!SelectCoinsForStaking(nBalance - nReserveBalance, GetTime(), setCoins, nValueIn))
         return false;
 
     if (setCoins.empty())
@@ -1645,7 +1646,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     int64 nValueIn = 0;
 
     // Select coins with suitable depth
-    if (!SelectCoinsSimple(nBalance - nReserveBalance, txNew.nTime, nCoinbaseMaturity * nCoinbaseMaturityMultipiler, setCoins, nValueIn))
+    if (!SelectCoinsForStaking(nBalance - nReserveBalance, txNew.nTime, setCoins, nValueIn))
         return false;
 
     if (setCoins.empty())
