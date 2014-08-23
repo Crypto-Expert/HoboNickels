@@ -38,24 +38,21 @@ ClientModel::~ClientModel()
 int ClientModel::getNumConnections() const
 {
     return vNodes.size();
-
 }
 
 QVector<CNodeStats> ClientModel::getPeerStats()
 {
+    QVector<CNodeStats> qvNodeStats;
+    CNode *pnode;
 
-   QVector<CNodeStats> qvNodeStats;
-   CNode *pnode;
-
-   {
-
-      LOCK(cs_vNodes);
-      qvNodeStats.reserve(vNodes.size());
-      BOOST_FOREACH(pnode, vNodes) {
-          CNodeStats stats;
-          pnode->copyStats(stats);
-          qvNodeStats.push_back(stats);
-      }
+    {
+        LOCK(cs_vNodes);
+        qvNodeStats.reserve(vNodes.size());
+        BOOST_FOREACH(pnode, vNodes) {
+            CNodeStats stats;
+            pnode->copyStats(stats);
+            qvNodeStats.push_back(stats);
+        }
     }
 
     return qvNodeStats;

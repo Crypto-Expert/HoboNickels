@@ -137,6 +137,7 @@ extern void EnsureWalletIsUnlocked(CWallet* pWallet = NULL);
 
 extern json_spirit::Value getconnectioncount(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcnet.cpp
 extern json_spirit::Value getpeerinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value ping(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value addnode(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getaddednodeinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value dumpwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

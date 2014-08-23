@@ -578,88 +578,93 @@ void BitcoinGUI::aboutClicked()
 
 void BitcoinGUI::blocksIconClicked()
 {
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
 
-   TRY_LOCK(cs_main, lockMain);
-   if(!lockMain)
-       return;
+    int unit = clientModel->getOptionsModel()->getDisplayUnit();
 
-   int unit = clientModel->getOptionsModel()->getDisplayUnit();
-
-   message(tr("Extended Block Chain Information"),
-       tr("Client Version: %1\n"
-          "Protocol Version: %2\n\n"
-          "Last Block Number: %3\n"
-          "Last Block Time: %4\n\n"
-          "Current PoW Difficulty: %5\n"
-          "Current PoW Mh/s: %6\n"
-          "Current PoW Reward: %7\n\n"
-          "Current Wallet Viewed: %8\n"
-          "Current Wallet Version: %9\n"
-          "Total Wallets Loaded: %10\n\n"
-          "Network Money Supply: %11\n")
-          .arg(clientModel->formatFullVersion())
-          .arg(clientModel->getProtocolVersion())
-          .arg(clientModel->getNumBlocks())
-          .arg(clientModel->getLastBlockDate().toString())
-          .arg(clientModel->getDifficulty())
-          .arg(clientModel->getPoWMHashPS())
-          .arg(tr("5.0000000")) // Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
-          .arg(walletStack->getCurrentWallet())
-          .arg(walletStack->getWalletVersion())
-          .arg(walletManager->GetWalletCount())
-          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
-       ,CClientUIInterface::MODAL);
+    message(tr("Extended Block Chain Information"),
+        tr("Client Version: %1\n"
+           "Protocol Version: %2\n\n"
+           "Last Block Number: %3\n"
+           "Last Block Time: %4\n\n"
+           "Current PoW Difficulty: %5\n"
+           "Current PoW Mh/s: %6\n"
+           "Current PoW Reward: %7\n\n"
+           "Current Wallet Viewed: %8\n"
+           "Current Wallet Version: %9\n"
+           "Total Wallets Loaded: %10\n\n"
+           "Network Money Supply: %11\n")
+           .arg(clientModel->formatFullVersion())
+           .arg(clientModel->getProtocolVersion())
+           .arg(clientModel->getNumBlocks())
+           .arg(clientModel->getLastBlockDate().toString())
+           .arg(clientModel->getDifficulty())
+           .arg(clientModel->getPoWMHashPS())
+           .arg(tr("5.0000000")) // Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
+           .arg(walletStack->getCurrentWallet())
+           .arg(walletStack->getWalletVersion())
+           .arg(walletManager->GetWalletCount())
+           .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
+        ,CClientUIInterface::MODAL);
 }
 
 void BitcoinGUI::lockIconClicked()
 {
-
-   if(walletStack->isWalletLocked())
-     unlockWalletForMint();
+    if(walletStack->isWalletLocked())
+        unlockWalletForMint();
 }
 
 void BitcoinGUI::connectionIconClicked()
 {
+    QString strAllPeer;
+    QVector<CNodeStats> qvNodeStats = clientModel->getPeerStats();
+    uint64 nTotSendBytes = 0, nTotRecvBytes = 0 ,nTotBlocksRequested = 0;
+    int nTotPeers = clientModel->getNumConnections();
+    double dTotPingTime = 0.0;
 
-   QString strAllPeer;
-   QVector<CNodeStats> qvNodeStats = clientModel->getPeerStats();
-   uint64 nTotSendBytes = 0, nTotRecvBytes = 0 ,nTotBlocksRequested = 0;
+    BOOST_FOREACH(const CNodeStats& stats, qvNodeStats) {
+        QString strPeer;
+        nTotSendBytes+=stats.nSendBytes;
+        nTotRecvBytes+=stats.nRecvBytes;
+        nTotBlocksRequested+=stats.nBlocksRequested;
+        dTotPingTime+=stats.dPingTime;
 
-   BOOST_FOREACH(const CNodeStats& stats, qvNodeStats) {
-      QString strPeer;
-      nTotSendBytes+=stats.nSendBytes;
-      nTotRecvBytes+=stats.nRecvBytes;
-      nTotBlocksRequested+=stats.nBlocksRequested;
+        strPeer=tr("Peer IP: %1\n") .arg(stats.addrName.c_str());
+        strPeer=strPeer+tr("Time Connected: %1\n") .arg(QDateTime::fromTime_t(QDateTime::currentDateTimeUtc().toTime_t() - stats.nTimeConnected).toUTC().toString("hh:mm:ss"));
+        strPeer=strPeer+tr("Time of Last Send: %1\n") .arg(QDateTime::fromTime_t(stats.nLastSend).toString());
+        strPeer=strPeer+tr("Time of Last Recv: %1\n") .arg(QDateTime::fromTime_t(stats.nLastRecv).toString());
+        strPeer=strPeer+tr("Bytes Sent: %1\n") .arg(stats.nSendBytes);
+        strPeer=strPeer+tr("Bytes Recv: %1\n") .arg(stats.nRecvBytes);
+        strPeer=strPeer+tr("Ping Time: %1\n") .arg(stats.dPingTime);
+        if (stats.dPingWait > 0.0)
+            strPeer=strPeer+tr("Ping Wait Time: %1\n") .arg(stats.dPingWait);
+         strPeer=strPeer+tr("Blocks Requested: %1\n") .arg(stats.nBlocksRequested);
+        strPeer=strPeer+tr("Version: %1\n") .arg(stats.nVersion);
+        strPeer=strPeer+tr("SubVersion: %1\n") .arg(stats.strSubVer.c_str());
+        strPeer=strPeer+tr("Inbound?: %1\n") .arg(stats.fInbound ? "N": "Y");
+        strPeer=strPeer+tr("Starting Block: %1\n") .arg(stats.nStartingHeight);
+        strPeer=strPeer+tr("Ban Score(100 max): %1\n\n") .arg(stats.nMisbehavior);
 
-      strPeer=tr("Peer IP: %1\n") .arg(stats.addrName.c_str());
-      strPeer=strPeer+tr("Time Connected: %1\n") .arg(QDateTime::fromTime_t(QDateTime::currentDateTimeUtc().toTime_t() - stats.nTimeConnected).toUTC().toString("hh:mm:ss"));
-      strPeer=strPeer+tr("Time of Last Send: %1\n") .arg(QDateTime::fromTime_t(stats.nLastSend).toString());
-      strPeer=strPeer+tr("Time of Last Recv: %1\n") .arg(QDateTime::fromTime_t(stats.nLastRecv).toString());
-      strPeer=strPeer+tr("Bytes Sent: %1\n") .arg(stats.nSendBytes);
-      strPeer=strPeer+tr("Bytes Recv: %1\n") .arg(stats.nRecvBytes);
-      strPeer=strPeer+tr("Blocks Requested: %1\n") .arg(stats.nBlocksRequested);
-      strPeer=strPeer+tr("Version: %1\n") .arg(stats.nVersion);
-      strPeer=strPeer+tr("SubVersion: %1\n") .arg(stats.strSubVer.c_str());
-      strPeer=strPeer+tr("Inbound?: %1\n") .arg(stats.fInbound ? "N": "Y");
-      strPeer=strPeer+tr("Starting Block: %1\n") .arg(stats.nStartingHeight);
-      strPeer=strPeer+tr("Ban Score(100 max): %1\n\n") .arg(stats.nMisbehavior);
+        strAllPeer=strAllPeer+strPeer;
+     }
 
-      strAllPeer=strAllPeer+strPeer;
-   }
-
-  message(tr("Extended Peer Information"),
-          tr("\tNumber of Connections: %1\n"
-             "\tTotal Bytes Recv: %2\n"
-             "\tTotal Bytes Sent: %3\n"
-             "\tTotal Blocks Requested: %4\n\n"
-             "\tPlease click \"Show Details\" for more information.\n")
-          .arg(clientModel->getNumConnections())
-          .arg(nTotRecvBytes)
-          .arg(nTotSendBytes)
-          .arg(nTotBlocksRequested),
-          CClientUIInterface::MODAL,
-          tr("%1")
-          .arg(strAllPeer));
+     message(tr("Extended Peer Information"),
+            tr("\tNumber of Connections: %1\n"
+               "\tAverage Ping Time: %2\n\n"
+               "\tTotal Bytes Recv: %3\n"
+               "\tTotal Bytes Sent: %4\n"
+               "\tTotal Blocks Requested: %5\n\n"
+               "\tPlease click \"Show Details\" for more information.\n")
+            .arg(nTotPeers)
+            .arg(dTotPingTime/nTotPeers)
+            .arg(nTotRecvBytes)
+            .arg(nTotSendBytes)
+            .arg(nTotBlocksRequested),
+            CClientUIInterface::MODAL,
+            tr("%1")
+             .arg(strAllPeer));
 }
 
 void BitcoinGUI::stakingIconClicked()
