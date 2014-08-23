@@ -677,10 +677,6 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CTransaction &tx,
     if (tx.IsCoinStake())
         return tx.DoS(100, error("AcceptToMemoryPool : coinstake as individual tx"));
 
-    // To help v0.1.5 clients who would see it as a negative number
-    if ((int64)tx.nLockTime > std::numeric_limits<int>::max())
-        return error("CTxMemPool::accept() : not accepting nLockTime beyond 2038 yet");
-
     // Rather not work on nonstandard transactions (unless -testnet)
     if (!fTestNet && !IsStandardTx(tx))
         return error("AcceptToMemoryPool : nonstandard transaction type");
