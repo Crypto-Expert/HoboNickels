@@ -1502,6 +1502,15 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (!pWallet->IsLocked())
         throw JSONRPCError(RPC_WALLET_ALREADY_UNLOCKED, "Error: Wallet is already unlocked, use walletlock first if need to change unlock settings.");
+
+    int64 nUnlockTime = params[1].get_int64();
+
+    if (nUnlockTime < 0 || nUnlockTime >= std::numeric_limits<int64>::max() / 100)
+        throw runtime_error("timeout is out of bounds");
+
+    if (nUnlockTime == 0 ) // Zero timeout means forever, well 292 epochs, close enough.
+        nUnlockTime = std::numeric_limits<int64>::max() / 100;
+
     // Note that the walletpassphrase is stored in params[0] which is not mlock()ed
     SecureString strWalletPass;
     strWalletPass.reserve(100);
@@ -1519,19 +1528,16 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
             "walletpassphrase <passphrase> <timeout>\n"
             "Stores the wallet decryption key in memory for <timeout> seconds.");
 
-    // ppcoin: if user OS account compromised prevent trivial sendmoney commands
-    if (params.size() > 2)
-        pWallet->fWalletUnlockMintOnly = params[2].get_bool();
-    else
-        pWallet->fWalletUnlockMintOnly = false;
+    {
+        LOCK(pWallet->cs_wallet);
 
-    // HBN: Zero unlock time means forever, well 68 years, forever for crypto.
-    int64 nUnlockTime;
+        // If user OS account compromised prevent trivial sendmoney commands
+        if (params.size() > 2)
+            pWallet->fWalletUnlockMintOnly = params[2].get_bool();
+        else
+            pWallet->fWalletUnlockMintOnly = false;
 
-    if (params[1].get_int64() == 0 )
-      nUnlockTime=std::numeric_limits<int>::max();
-    else
-      nUnlockTime=params[1].get_int64();
+    }
 
     pWallet->TimedLock(nUnlockTime);
 
