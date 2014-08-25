@@ -137,7 +137,6 @@ bool static GetTransaction(const uint256& hashTx, CWalletTx& wtx)
 
 // erases transaction with the given hash from all wallets
 void static EraseFromWallets(uint256 hash)
-
 {
   {
      LOCK(cs_setpwalletRegistered);
@@ -3674,7 +3673,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
         }
 
         if (!(sProblem.empty())) {
-            printf("pong %s %s: %s, %"PRI64x" expected, %"PRI64x" received, %zu bytes\n"
+            printf("pong %s %s: %s, %"PRI64x" expected, %"PRI64x" received, %u bytes\n"
                 , pfrom->addr.ToString().c_str()
                 , pfrom->strSubVer.c_str()
                 , sProblem.c_str()
