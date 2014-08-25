@@ -110,7 +110,6 @@ extern std::map<uint256, CBlock*> mapOrphanBlocks;
 extern int64 nTransactionFee;
 extern int64 nMinimumInputValue;
 extern bool fUseFastIndex;
-extern bool fEnforceCanonical;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64 nMinDiskSpace = 52428800;

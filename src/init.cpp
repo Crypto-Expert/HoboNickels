@@ -33,7 +33,6 @@ unsigned int nMinerSleep;
 enum Checkpoints::CPMode CheckpointsMode;
 bool fUseFastIndex;
 bool fConfChange;
-bool fEnforceCanonical;
 
 CClientUIInterface uiInterface;
 
@@ -293,7 +292,6 @@ std::string HelpMessage()
         "  -blocknotify=<cmd>     " + _("Execute command when the best block changes (%s in cmd is replaced by block hash)") + "\n" +
         "  -walletnotify=<cmd>    " + _("Execute command when a wallet transaction changes (%s in cmd is replaced by TxID)") + "\n" +
         "  -confchange            " + _("Require a confirmations for change (default: 0)") + "\n" +
-        "  -enforcecanonical      " + _("Enforce transaction scripts to use canonical PUSH operators (default: 1)") + "\n" +
         "  -newtxnotify=<cmd>     " + _("Execute command when a new wallet transaction occurs (%s in cmd is replaced by TxID)") + "\n" +
         "  -confirmnotify=<cmd>   " + _("Execute command when a wallet transaction is confirmed (%s in cmd is replaced by TxID)") + "\n" +
         "  -blockfoundnotify=<cmd>" + _("Execute command when a block is found (%s in cmd is replaced by block hash)") + "\n" +
@@ -578,7 +576,6 @@ bool AppInit2()
     }
 
     fConfChange = GetBoolArg("-confchange", false);
-    fEnforceCanonical = GetBoolArg("-enforcecanonical", true);
 
     if (mapArgs.count("-mininput"))
     {
