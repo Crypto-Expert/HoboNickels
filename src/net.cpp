@@ -1259,8 +1259,7 @@ static const char *strDNSSeed[][2] = {
     {"hoboseed2", "seed2.hobonickels.info"},
     {"hoboseed3", "seed3.hobonickels.info"},
     {"hoboseed4", "seed4.hobonickels.info"},
-
-
+    {"cce",   "hbn.altcointech.net"},
 };
 
 void ThreadDNSAddressSeed(void* parg)
@@ -1287,6 +1286,17 @@ void ThreadDNSAddressSeed(void* parg)
 void ThreadDNSAddressSeed2(void* parg)
 {
     printf("ThreadDNSAddressSeed started\n");
+
+    // goal: only query DNS seeds if address need is acute
+    if ((addrman.size() > 0) && (!GetBoolArg("-forcednsseed", false))) {
+        MilliSleep(25* 1000);
+
+        LOCK(cs_vNodes);
+        if (vNodes.size() >= 2) {
+            printf("P2P peers available. Skipped DNS seeding.\n");
+            return;
+        }
+    }
     int found = 0;
 
     if (!fTestNet)
