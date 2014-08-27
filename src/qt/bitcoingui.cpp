@@ -255,6 +255,13 @@ void BitcoinGUI::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
+    blockAction = new QAction(QIcon(":/icons/blexp"), tr("&Block Explorer"), this);
+    blockAction->setStatusTip(tr("Explore the BlockChain"));
+    blockAction->setToolTip(blockAction->statusTip());
+    blockAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    blockAction->setCheckable(true);
+    tabGroup->addAction(blockAction);
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -366,6 +373,7 @@ void BitcoinGUI::createActions()
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
     connect(unlockWalletAction, SIGNAL(triggered()), this, SLOT(unlockWalletForMint()));
     connect(lockWalletAction, SIGNAL(triggered()), this, SLOT(lockWallet()));
+    connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -407,14 +415,14 @@ void BitcoinGUI::createMenuBar()
     wallet->addAction(signMessageAction);
     wallet->addAction(verifyMessageAction);
 
-
+    QMenu *network = appMenuBar->addMenu(tr("&Network"));
+    network->addAction(blockAction);
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(openRPCConsoleAction);
     help->addSeparator();
     help->addAction(aboutAction);
     help->addAction(aboutQtAction);
-
 }
 
 void BitcoinGUI::createToolBars()
@@ -431,6 +439,7 @@ void BitcoinGUI::createToolBars()
     toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     toolbar2->addAction(exportAction);
     toolbar2->addAction(openRPCConsoleAction);
+    toolbar2->addAction(blockAction);
 }
 
 void BitcoinGUI::setClientModel(ClientModel *clientModel)
@@ -713,6 +722,11 @@ void BitcoinGUI::stakingIconClicked()
          .arg(walletStack->getTotStakeWeight())
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
       ,CClientUIInterface::MODAL);
+}
+
+void BitcoinGUI::gotoBlockBrowser()
+{
+    if (walletStack) walletStack->gotoBlockBrowser();
 }
 
 void BitcoinGUI::gotoOverviewPage()

@@ -20,6 +20,7 @@ class SendCoinsDialog;
 class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
+class BlockBrowser;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -57,6 +58,7 @@ private:
     BitcoinGUI *gui;
     ClientModel *clientModel;
     WalletModel *walletModel;
+    BlockBrowser *blockBrowser;
 
     OverviewPage *overviewPage;
     QWidget *transactionsPage;
@@ -95,6 +97,7 @@ private:
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
+    QAction *blockAction;
 
     TransactionView *transactionView;
 
@@ -113,6 +116,8 @@ public slots:
     void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
+    /** Switch to block explorer page */
+    void gotoBlockBrowser();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");

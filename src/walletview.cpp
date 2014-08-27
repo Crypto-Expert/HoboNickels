@@ -25,6 +25,8 @@
 #include "askpassphrasedialog.h"
 #include "guiutil.h"
 #include "ui_interface.h"
+#include "blockbrowser.h"
+
 
 #include <QVBoxLayout>
 #include <QActionGroup>
@@ -51,7 +53,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     createActions();
 
     // Create tabs
-    overviewPage = new OverviewPage();
+    overviewPage =  new OverviewPage();
+    blockBrowser = new BlockBrowser(this);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -72,6 +75,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(blockBrowser);
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), gui, SLOT(gotoHistoryPage()));
@@ -131,11 +135,19 @@ void WalletView::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
+    blockAction = new QAction(QIcon(":/icons/blexp"), tr("&Block Explorer"), this);
+    blockAction->setStatusTip(tr("Explore the BlockChain"));
+    blockAction->setToolTip(blockAction->statusTip());
+    blockAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    blockAction->setCheckable(true);
+    tabGroup->addAction(blockAction);
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
+    connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
@@ -270,6 +282,16 @@ void WalletView::gotoOverviewPage()
     gui->exportAction->setEnabled(false);
     disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
+
+void WalletView::gotoBlockBrowser()
+{
+    blockAction->setChecked(true);
+    setCurrentWidget(blockBrowser);
+
+    gui->exportAction->setEnabled(false);
+    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+}
+
 
 void WalletView::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {
@@ -415,7 +437,6 @@ void WalletView::encryptWallet(bool status)
 
 void WalletView::checkWallet()
 {
-
     int nMismatchSpent;
     qint64 nBalanceInQuestion;
     int nOrphansFound;
@@ -448,7 +469,6 @@ void WalletView::checkWallet()
 
 void WalletView::repairWallet()
 {
-
     int nMismatchSpent;
     int64 nBalanceInQuestion;
     int nOrphansFound;
@@ -499,10 +519,8 @@ void WalletView::backupWallet()
 
 void WalletView::dumpWallet()
 {
-
    if(!walletModel)
       return;
-
 
    WalletModel::UnlockContext ctx(walletModel->requestUnlock());
    if(!ctx.isValid())
@@ -536,10 +554,8 @@ void WalletView::dumpWallet()
 
 void WalletView::importWallet()
 {
-
    if(!walletModel)
       return;
-
 
    WalletModel::UnlockContext ctx(walletModel->requestUnlock());
    if(!ctx.isValid())
