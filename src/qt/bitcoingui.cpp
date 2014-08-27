@@ -262,6 +262,18 @@ void BitcoinGUI::createActions()
     blockAction->setCheckable(true);
     tabGroup->addAction(blockAction);
 
+    blocksIconAction = new QAction(QIcon(""), tr("Current &Block Info"), this);
+    blocksIconAction->setStatusTip(tr("Get Current Block Information"));
+    blocksIconAction->setToolTip(blocksIconAction->statusTip());
+
+    stakingIconAction = new QAction(QIcon(""), tr("Current &PoS Block Info"), this);
+    stakingIconAction->setStatusTip(tr("Get Current PoS Block Information"));
+    stakingIconAction->setToolTip(stakingIconAction->statusTip());
+
+    connectionIconAction = new QAction(QIcon(""), tr("Current &Node Info"), this);
+    connectionIconAction->setStatusTip(tr("Get Current Peer Information"));
+    connectionIconAction->setToolTip(connectionIconAction->statusTip());
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -374,6 +386,9 @@ void BitcoinGUI::createActions()
     connect(unlockWalletAction, SIGNAL(triggered()), this, SLOT(unlockWalletForMint()));
     connect(lockWalletAction, SIGNAL(triggered()), this, SLOT(lockWallet()));
     connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
+    connect(blocksIconAction, SIGNAL(triggered()), this, SLOT(blocksIconClicked()));
+    connect(connectionIconAction, SIGNAL(triggered()), this, SLOT(connectionIconClicked()));
+    connect(stakingIconAction, SIGNAL(triggered()), this, SLOT(stakingIconClicked()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -417,6 +432,10 @@ void BitcoinGUI::createMenuBar()
 
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
+    network->addSeparator();
+    network->addAction(blocksIconAction);
+    network->addAction(stakingIconAction);
+    network->addAction(connectionIconAction);
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(openRPCConsoleAction);
@@ -678,7 +697,6 @@ void BitcoinGUI::connectionIconClicked()
 
 void BitcoinGUI::stakingIconClicked()
 {
-
    TRY_LOCK(cs_main, lockMain);
    if(!lockMain)
        return;

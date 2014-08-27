@@ -117,6 +117,9 @@ private:
     QAction *unloadWalletAction;
     QAction *newWalletAction;
     QAction *blockAction;
+    QAction *blocksIconAction;
+    QAction *connectionIconAction;
+    QAction *stakingIconAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
