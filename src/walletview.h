@@ -21,6 +21,7 @@ class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
 class BlockBrowser;
+class StakeForCharityDialog;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -66,6 +67,7 @@ private:
     AddressBookPage *receiveCoinsPage;
     SendCoinsDialog *sendCoinsPage;
     SignVerifyMessageDialog *signVerifyMessageDialog;
+    StakeForCharityDialog *stakeForCharityDialog;
 
     QLabel *labelEncryptionIcon;
     QLabel *labelStakingIcon;
@@ -149,6 +151,7 @@ public slots:
     void lockWallet();
     /** Ask for passphrase to unlock wallet for the session to mint */
     void unlockWalletForMint();
+    void charityClicked(QString addr);
 
     void setEncryptionStatus();
     /** Add up all loaded wallets and show total balance */

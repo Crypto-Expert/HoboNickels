@@ -209,6 +209,11 @@ void WalletStack::unlockWalletForMint()
     if (walletView) walletView->unlockWalletForMint();
 }
 
+void WalletStack::charityClicked(QString addr)
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->charityClicked(addr);
+}
 
 void WalletStack::setEncryptionStatus()
 {

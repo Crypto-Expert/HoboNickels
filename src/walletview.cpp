@@ -12,6 +12,7 @@
 #include "signverifymessagedialog.h"
 #include "optionsdialog.h"
 #include "aboutdialog.h"
+#include "charitydialog.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "editaddressdialog.h"
@@ -70,6 +71,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     signVerifyMessageDialog = new SignVerifyMessageDialog(gui);
 
+    stakeForCharityDialog = new StakeForCharityDialog(gui);
+
     addWidget(overviewPage);
     addWidget(transactionsPage);
     addWidget(addressBookPage);
@@ -88,6 +91,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     connect(addressBookPage, SIGNAL(verifyMessage(QString)), this, SLOT(gotoVerifyMessageTab(QString)));
     // Clicking on "Sign Message" in the receive coins page sends you to the sign message tab
     connect(receiveCoinsPage, SIGNAL(signMessage(QString)), this, SLOT(gotoSignMessageTab(QString)));
+    // Clicking on "Stake For Charity" in the address book sends you to the stake for charity page
+    connect(addressBookPage, SIGNAL(stakeForCharitySignal(QString)), this, SLOT(charityClicked(QString)));
 
     gotoOverviewPage();
 }
@@ -237,6 +242,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
         sendCoinsPage->setModel(walletModel);
         signVerifyMessageDialog->setModel(walletModel);
+        stakeForCharityDialog->setModel(walletModel);
 
         setEncryptionStatus();
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
@@ -660,6 +666,14 @@ void WalletView::unlockWalletForMint()
                      .arg(gui->getCurrentWallet())
                      ,CClientUIInterface::MSG_INFORMATION);
     }
+}
+
+void WalletView::charityClicked(QString addr)
+{
+    stakeForCharityDialog->show();
+
+    if(!addr.isEmpty())
+        stakeForCharityDialog->setAddress(addr);
 }
 
 void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)

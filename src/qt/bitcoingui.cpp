@@ -310,6 +310,10 @@ void BitcoinGUI::createActions()
     aboutAction->setStatusTip(tr("Show information about HoboNickels"));
     aboutAction->setMenuRole(QAction::AboutRole);
 
+    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
+    charityAction->setStatusTip(tr("Enable Stake For Charity"));
+    charityAction->setToolTip(charityAction->statusTip());
+
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
     aboutQtAction->setMenuRole(QAction::AboutQtRole);
@@ -389,6 +393,7 @@ void BitcoinGUI::createActions()
     connect(blocksIconAction, SIGNAL(triggered()), this, SLOT(blocksIconClicked()));
     connect(connectionIconAction, SIGNAL(triggered()), this, SLOT(connectionIconClicked()));
     connect(stakingIconAction, SIGNAL(triggered()), this, SLOT(stakingIconClicked()));
+    connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -421,6 +426,7 @@ void BitcoinGUI::createMenuBar()
     QMenu *wallet = appMenuBar->addMenu(tr("&Wallet"));
     wallet->addAction(encryptWalletAction);
     wallet->addAction(changePassphraseAction);
+    wallet->addSeparator();
     wallet->addAction(unlockWalletAction);
     wallet->addAction(lockWalletAction);
     wallet->addSeparator();
@@ -429,6 +435,9 @@ void BitcoinGUI::createMenuBar()
     wallet->addSeparator();
     wallet->addAction(signMessageAction);
     wallet->addAction(verifyMessageAction);
+    wallet->addSeparator();
+    wallet->addAction(charityAction);
+
 
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
@@ -741,6 +750,8 @@ void BitcoinGUI::stakingIconClicked()
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
       ,CClientUIInterface::MODAL);
 }
+
+
 
 void BitcoinGUI::gotoBlockBrowser()
 {
@@ -1261,6 +1272,11 @@ void BitcoinGUI::lockWallet()
 void BitcoinGUI::unlockWalletForMint()
 {
    if (walletStack) walletStack->unlockWalletForMint();
+}
+
+void BitcoinGUI::charityClicked(QString addr)
+{
+    if (walletStack) walletStack->charityClicked(addr);
 }
 
 void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)

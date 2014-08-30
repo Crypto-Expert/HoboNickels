@@ -105,6 +105,8 @@ public slots:
     void lockWallet();
     /** Ask for passphrase to unlock wallet for the session to mint */
     void unlockWalletForMint();
+    /** Show Stake For Charity Dialog */
+    void charityClicked(QString addr = "");
     /** Add up all loaded wallets and show total balance */
     void setTotBalance();
     /** Give user information about staking */

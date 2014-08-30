@@ -10,6 +10,7 @@
 class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
+class CBitcoinAddress;
 class CWallet;
 class CKeyID;
 class CPubKey;
@@ -115,8 +116,8 @@ public:
     // Wallet Information about Stake For Charity
     int getStakeForCharityPercent();
     QString getStakeForCharityAddress();
-
-
+    // setStakeForCharity Wallet Settings
+    void setStakeForCharity(bool fStakeForCharity, int nStakeForCharityPercent, CBitcoinAddress strStakeForCharityAddress);
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext

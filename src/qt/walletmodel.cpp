@@ -318,7 +318,6 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
 
 bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
-
     bool rc;
     if(locked)
     {
@@ -381,6 +380,17 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
+void WalletModel::setStakeForCharity(bool fStakeForCharity, int nStakeForCharityPercent, CBitcoinAddress strStakeForCharityAddress)
+{
+    // This function assumes the values were checked before being called
+    {
+        LOCK(wallet->cs_wallet);
+        wallet->fStakeForCharity = fStakeForCharity;
+        wallet->nStakeForCharityPercent = nStakeForCharityPercent;
+        wallet->strStakeForCharityAddress = strStakeForCharityAddress;
+    }
+}
+
 int WalletModel::getStakeForCharityPercent()
 {
     return wallet->nStakeForCharityPercent;
@@ -416,6 +426,8 @@ void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64&
 
     wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
 }
+
+
 
 quint64 WalletModel::getReserveBalance()
 {
