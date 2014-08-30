@@ -118,6 +118,8 @@ public:
     bool fWalletUnlockMintOnly;
     bool fStakeForCharity;
     int nStakeForCharityPercent;
+    int64 nStakeForCharityMin;
+    int64 nStakeForCharityMax;
     CBitcoinAddress strStakeForCharityAddress;
     std::string strWalletFile;
     int64 nReserveBalance;
@@ -157,6 +159,8 @@ public:
         fWalletUnlockMintOnly = false;
         fStakeForCharity = false;
         nStakeForCharityPercent = 0;
+        nStakeForCharityMin = MIN_TXOUT_AMOUNT;
+        nStakeForCharityMax = MAX_MONEY;
         strStakeForCharityAddress = "";
         nReserveBalance = 0;
     }

@@ -117,7 +117,10 @@ public:
     int getStakeForCharityPercent();
     QString getStakeForCharityAddress();
     // setStakeForCharity Wallet Settings
-    void setStakeForCharity(bool fStakeForCharity, int nStakeForCharityPercent, CBitcoinAddress strStakeForCharityAddress);
+    void setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext

@@ -1218,7 +1218,7 @@ int64 CWallet::GetNewMint() const
 
 bool fGlobalStakeForCharity = false;
 
-bool CWallet::StakeForCharity ()
+bool CWallet::StakeForCharity()
 {
     if ( IsInitialBlockDownload() || IsLocked() )
         return false;
@@ -1236,10 +1236,10 @@ bool CWallet::StakeForCharity ()
                 // Calculate Amount for Charity
                 nNet = ( ( pcoin->GetCredit() - pcoin->GetDebit() ) * nStakeForCharityPercent )/100;
 
-                // Do not send if amount is too low
-                if (nNet < MIN_TXOUT_AMOUNT )
+                // Do not send if amount is too low/high
+                if (nNet <= nStakeForCharityMin || nNet >= nStakeForCharityMax )
                 {
-                    printf("StakeForCharity: Amount: %s is below MIN_TXOUT_AMOUNT: %s\n",FormatMoney(nNet).c_str(),FormatMoney(MIN_TXOUT_AMOUNT).c_str());
+                    printf("StakeForCharity: Amount: %s is not in range of Min: %s and Max:%s\n",FormatMoney(nNet).c_str(),FormatMoney(nStakeForCharityMin).c_str(),FormatMoney(nStakeForCharityMax).c_str());
                     return false;
                 }
 

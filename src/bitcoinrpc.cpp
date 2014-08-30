@@ -1240,7 +1240,8 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "loadwallet"             && n > 3) ConvertTo<bool>(params[3]);
     if (strMethod == "loadwallet"             && n > 4) ConvertTo<boost::int64_t>(params[4]);
     if (strMethod == "stakeforcharity"        && n > 1) ConvertTo<int>(params[1]);
-
+    if (strMethod == "stakeforcharity"        && n > 2) ConvertTo<double>(params[2]);
+    if (strMethod == "stakeforcharity"        && n > 3) ConvertTo<double>(params[3]);
 
     return params;
 }

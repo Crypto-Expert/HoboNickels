@@ -221,11 +221,12 @@ Value getaccountaddress(CWallet* pWallet, const Array& params, bool fHelp)
 Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 {
 
-    if (fHelp || params.size() != 2)
+    if (fHelp || params.size() < 2 || params.size() > 4)
         throw runtime_error(
-            "stakeforcharity <HoboNickelsaddress> <percent>\n"
+            "stakeforcharity <HoboNickelsaddress> <percent> [min amount] [max amount]\n"
             "Gives a percentage of a found stake to a different address, after stake matures\n"
             "Percent is a whole number 1 to 50.\n"
+            "Min and Max Amount are optional\n"
             "Set percentage to zero to turn off"
             + HelpRequiringPassphrase(pWallet));
 
@@ -241,6 +242,30 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 
     unsigned int nPer = (unsigned int) params[1].get_int();
 
+    int64 nMinAmount = MIN_TXOUT_AMOUNT;
+    int64 nMaxAmount = MAX_MONEY;
+
+    // Optional Min Amount
+    if (params.size() > 2)
+    {
+        int64 nAmount = AmountFromValue(params[2]);
+        if (nAmount < MIN_TXOUT_AMOUNT)
+            throw JSONRPCError(-101, "Send amount too small");
+        else
+             nMinAmount = nAmount;
+    }
+
+    // Optional Max Amount
+    if (params.size() > 3)
+    {
+        int64 nAmount = AmountFromValue(params[3]);
+
+        if (nAmount < MIN_TXOUT_AMOUNT)
+            throw JSONRPCError(-101, "Send amount too small");
+        else
+             nMaxAmount = nAmount;
+    }
+
     LOCK(pWallet->cs_wallet);
 
     // Turn off if we set to zero.
@@ -250,6 +275,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         pWallet->fStakeForCharity = false;
         pWallet->strStakeForCharityAddress = "";
         pWallet->nStakeForCharityPercent = 0;
+        pWallet->nStakeForCharityMin = nMinAmount;
+        pWallet->nStakeForCharityMax = nMaxAmount;
         return Value::null;
     }
 
@@ -260,6 +287,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     // Future: These will be an array of addr/per/wallet
     pWallet->strStakeForCharityAddress = address;
     pWallet->nStakeForCharityPercent = nPer;
+    pWallet->nStakeForCharityMin = nMinAmount;
+    pWallet->nStakeForCharityMax = nMaxAmount;
     pWallet->fStakeForCharity = true;
     fGlobalStakeForCharity = true;
 

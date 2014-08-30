@@ -380,7 +380,10 @@ bool WalletModel::backupAllWallets(const QString &filename)
     return mretval;
 }
 
-void WalletModel::setStakeForCharity(bool fStakeForCharity, int nStakeForCharityPercent, CBitcoinAddress strStakeForCharityAddress)
+void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
+                                     CBitcoinAddress& strStakeForCharityAddress,
+                                     int64& nStakeForCharityMinAmout,
+                                     int64& nStakeForCharityMaxAmount)
 {
     // This function assumes the values were checked before being called
     {
@@ -388,6 +391,8 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int nStakeForCharity
         wallet->fStakeForCharity = fStakeForCharity;
         wallet->nStakeForCharityPercent = nStakeForCharityPercent;
         wallet->strStakeForCharityAddress = strStakeForCharityAddress;
+        wallet->nStakeForCharityMin = nStakeForCharityMinAmout;
+        wallet->nStakeForCharityMax = nStakeForCharityMaxAmount;
     }
 }
 
@@ -426,8 +431,6 @@ void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64&
 
     wallet->GetStakeWeight(*wallet, nMinWeight, nMaxWeight, nWeight);
 }
-
-
 
 quint64 WalletModel::getReserveBalance()
 {
