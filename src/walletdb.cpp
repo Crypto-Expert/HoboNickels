@@ -421,6 +421,17 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
         {
             ssValue >> pwallet->nOrderPosNext;
         }
+        else if (strType == "s4c")
+        {
+            string strS4CAccount;
+            ssKey >> strS4CAccount;
+            if (CBitcoinAddress(strS4CAccount).IsValid())
+            {
+                pwallet->fStakeForCharity = true;
+                pwallet->strStakeForCharityAddress = CBitcoinAddress(strS4CAccount).Get();
+            }
+            ssValue >> pwallet->nStakeForCharityPercent;
+        }
     } catch (...)
     {
         return false;

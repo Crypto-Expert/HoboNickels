@@ -165,6 +165,20 @@ public:
         return Write(std::string("minversion"), nVersion);
     }
 
+    bool WriteStakeForCharity(std::string strStakeForCharityAddress, int nStakeForCharityPercent)
+    {
+        nWalletDBUpdated++;
+        return Write(std::make_pair(std::string("s4c"), strStakeForCharityAddress),nStakeForCharityPercent);
+    }
+
+    bool EraseStakeForCharity(std::string strStakeForCharityAddress)
+    {
+        nWalletDBUpdated++;
+        return Erase(std::make_pair(std::string("s4c"), strStakeForCharityAddress));
+    }
+
+
+
     bool ReadAccount(const std::string& strAccount, CAccount& account);
     bool WriteAccount(const std::string& strAccount, const CAccount& account);
 private:

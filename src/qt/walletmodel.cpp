@@ -386,6 +386,20 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharit
                                      int64& nStakeForCharityMaxAmount)
 {
     // This function assumes the values were checked before being called
+    if (wallet->fFileBacked) // Tranz add option to not save.
+    {
+        CWalletDB walletdb(wallet->strWalletFile);
+        if (wallet->fStakeForCharity) {
+            walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
+            walletdb.WriteStakeForCharity(strStakeForCharityAddress.ToString(), nStakeForCharityPercent );
+        }
+        else
+            walletdb.EraseStakeForCharity(strStakeForCharityAddress.ToString());
+
+        if(fDebug)
+             printf("setStakeForCharity: %s %d\n", strStakeForCharityAddress.ToString().c_str(), nStakeForCharityPercent);
+    }
+
     {
         LOCK(wallet->cs_wallet);
         wallet->fStakeForCharity = fStakeForCharity;

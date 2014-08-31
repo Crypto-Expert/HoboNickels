@@ -222,6 +222,7 @@ public:
 
     typedef std::pair<CWalletTx*, CAccountingEntry*> TxPair;
     typedef std::multimap<int64, TxPair > TxItems;
+    // Tranz: typedef boost::tuple<int64, int64, int64> MyTest;
 
     /** Get the wallet's activity log
         @return multimap of ordered transactions and accounting entries
