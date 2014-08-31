@@ -225,7 +225,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         throw runtime_error(
             "stakeforcharity <HoboNickelsaddress> <percent> [min amount] [max amount]\n"
             "Gives a percentage of a found stake to a different address, after stake matures\n"
-            "Percent is a whole number 1 to 50.\n"
+            "Percent is a whole number 1 to 50. Set to 0 to turn off.\n"
             "Min and Max Amount are optional\n"
             "Set percentage to zero to turn off"
             + HelpRequiringPassphrase(pWallet));
@@ -265,32 +265,42 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         else
              nMaxAmount = nAmount;
     }
+    CWalletDB walletdb(pWallet->strWalletFile);
 
     LOCK(pWallet->cs_wallet);
-
-    // Turn off if we set to zero.
-    // Future: After we allow multiple addresses, only turn of this address
-    if(nPer == 0)
     {
-        pWallet->fStakeForCharity = false;
-        pWallet->strStakeForCharityAddress = "";
-        pWallet->nStakeForCharityPercent = 0;
+        // Turn off if we set to zero.
+        // Future: After we allow multiple addresses, only turn of this address
+        if(nPer == 0)
+        {
+            pWallet->fStakeForCharity = false;
+            pWallet->nStakeForCharityPercent = 0;
+            pWallet->nStakeForCharityMin = nMinAmount;
+            pWallet->nStakeForCharityMax = nMaxAmount;
+
+            walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
+
+            pWallet->strStakeForCharityAddress = "";
+
+            return Value::null;
+        }
+
+       // For now max percentage is 50.
+       if (nPer > 50 )
+           nPer = 50;
+
+        // Future: These will be an array of addr/per/wallet
+        walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
+
+        pWallet->strStakeForCharityAddress = address;
+        pWallet->nStakeForCharityPercent = nPer;
         pWallet->nStakeForCharityMin = nMinAmount;
         pWallet->nStakeForCharityMax = nMaxAmount;
-        return Value::null;
+        pWallet->fStakeForCharity = true;
+        fGlobalStakeForCharity = true;
+
+        walletdb.WriteStakeForCharity(address.ToString(), nPer);
     }
-
-    // For now max percentage is 50.
-    if (nPer > 50 )
-       nPer = 50;
-
-    // Future: These will be an array of addr/per/wallet
-    pWallet->strStakeForCharityAddress = address;
-    pWallet->nStakeForCharityPercent = nPer;
-    pWallet->nStakeForCharityMin = nMinAmount;
-    pWallet->nStakeForCharityMax = nMaxAmount;
-    pWallet->fStakeForCharity = true;
-    fGlobalStakeForCharity = true;
 
     return Value::null;
 
