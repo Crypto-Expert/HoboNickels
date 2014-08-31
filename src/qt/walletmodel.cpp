@@ -389,12 +389,14 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharit
     if (wallet->fFileBacked) // Tranz add option to not save.
     {
         CWalletDB walletdb(wallet->strWalletFile);
-        if (wallet->fStakeForCharity) {
+        if (fStakeForCharity) {
             walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
             walletdb.WriteStakeForCharity(strStakeForCharityAddress.ToString(), nStakeForCharityPercent );
         }
-        else
+        else {
+            walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
             walletdb.EraseStakeForCharity(strStakeForCharityAddress.ToString());
+        }
 
         if(fDebug)
              printf("setStakeForCharity: %s %d\n", strStakeForCharityAddress.ToString().c_str(), nStakeForCharityPercent);
