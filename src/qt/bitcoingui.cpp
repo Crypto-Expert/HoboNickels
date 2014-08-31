@@ -263,6 +263,13 @@ void BitcoinGUI::createActions()
     blockAction->setCheckable(true);
     tabGroup->addAction(blockAction);
 
+    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
+    charityAction->setStatusTip(tr("Enable Stake For Charity"));
+    charityAction->setToolTip(charityAction->statusTip());
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    charityAction->setCheckable(true);
+    tabGroup->addAction(charityAction);
+
     blocksIconAction = new QAction(QIcon(""), tr("Current &Block Info"), this);
     blocksIconAction->setStatusTip(tr("Get Current Block Information"));
     blocksIconAction->setToolTip(blocksIconAction->statusTip());
@@ -311,9 +318,7 @@ void BitcoinGUI::createActions()
     aboutAction->setStatusTip(tr("Show information about HoboNickels"));
     aboutAction->setMenuRole(QAction::AboutRole);
 
-    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
-    charityAction->setStatusTip(tr("Enable Stake For Charity"));
-    charityAction->setToolTip(charityAction->statusTip());
+
 
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
@@ -463,6 +468,7 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
+    toolbar->addAction(charityAction);
 
     QToolBar *toolbar2 = addToolBar(tr("Actions toolbar"));
     toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);

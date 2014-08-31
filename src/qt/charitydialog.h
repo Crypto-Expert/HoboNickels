@@ -1,7 +1,7 @@
 #ifndef CHARITYDIALOG_H
 #define CHARITYDIALOG_H
 
-#include <QDialog>
+#include <QWidget>
 
 namespace Ui {
     class StakeForCharityDialog;
@@ -11,7 +11,7 @@ class WalletModel;
 QT_BEGIN_NAMESPACE
 QT_END_NAMESPACE
 
-class StakeForCharityDialog : public QDialog
+class StakeForCharityDialog : public QWidget
 {
     Q_OBJECT
 
@@ -24,7 +24,6 @@ public:
 private slots:
     void on_enableButton_clicked();
     void on_disableButton_clicked();
-    void on_closeButton_clicked();
     void on_addressBookButton_clicked();
 
 

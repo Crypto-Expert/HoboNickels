@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>StakeForCharityDialog</class>
- <widget class="QDialog" name="StakeForCharityDialog">
+ <widget class="QWidget" name="StakeForCharityDialog">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -136,7 +139,7 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
   <widget class="QPushButton" name="disableButton">
    <property name="geometry">
     <rect>
-     <x>120</x>
+     <x>160</x>
      <y>240</y>
      <width>75</width>
      <height>23</height>
@@ -147,19 +150,6 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
    </property>
    <property name="text">
     <string>Disable</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="closeButton">
-   <property name="geometry">
-    <rect>
-     <x>220</x>
-     <y>240</y>
-     <width>75</width>
-     <height>23</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Close</string>
    </property>
   </widget>
   <widget class="QPushButton" name="addressBookButton">

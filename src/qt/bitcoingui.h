@@ -18,6 +18,7 @@ class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
 class BlockBrowser;
+class StakeForCharityDialog;
 
 class CWallet;
 class CWalletManager;
@@ -73,6 +74,8 @@ private:
     ClientModel *clientModel;
     CWalletManager *walletManager;
     BlockBrowser *blockBrowser;
+    StakeForCharityDialog *stakeForCharityDialog;
+
     QMap<QString, WalletModel*> mapWalletModels;
     QListWidget *walletList;
     WalletStack *walletStack;

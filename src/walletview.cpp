@@ -71,7 +71,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     signVerifyMessageDialog = new SignVerifyMessageDialog(gui);
 
-    stakeForCharityDialog = new StakeForCharityDialog(gui);
+    stakeForCharityDialog = new StakeForCharityDialog(this);
 
     addWidget(overviewPage);
     addWidget(transactionsPage);
@@ -79,6 +79,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
     addWidget(blockBrowser);
+    addWidget(stakeForCharityDialog);
+
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), gui, SLOT(gotoHistoryPage()));
@@ -147,12 +149,21 @@ void WalletView::createActions()
     blockAction->setCheckable(true);
     tabGroup->addAction(blockAction);
 
+    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
+    charityAction->setStatusTip(tr("Enable Stake For Charity"));
+    charityAction->setToolTip(charityAction->statusTip());
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    charityAction->setCheckable(true);
+    tabGroup->addAction(charityAction);
+
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
     connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
+    connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
@@ -670,10 +681,13 @@ void WalletView::unlockWalletForMint()
 
 void WalletView::charityClicked(QString addr)
 {
-    stakeForCharityDialog->show();
-
+    charityAction->setChecked(true);
+    setCurrentWidget(stakeForCharityDialog);
     if(!addr.isEmpty())
         stakeForCharityDialog->setAddress(addr);
+
+    gui->exportAction->setEnabled(false);
+    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
 
 void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)

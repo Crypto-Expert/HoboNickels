@@ -24,6 +24,7 @@ class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
 class BlockBrowser;
+class StakeForCharityDialog;
 
 class CWalletManager;
 

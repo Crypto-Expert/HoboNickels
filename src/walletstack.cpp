@@ -211,8 +211,9 @@ void WalletStack::unlockWalletForMint()
 
 void WalletStack::charityClicked(QString addr)
 {
-    WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) walletView->charityClicked(addr);
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->charityClicked(addr);
 }
 
 void WalletStack::setEncryptionStatus()

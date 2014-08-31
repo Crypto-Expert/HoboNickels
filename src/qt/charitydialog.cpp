@@ -8,7 +8,7 @@
 
 
 StakeForCharityDialog::StakeForCharityDialog(QWidget *parent) :
-    QDialog(parent),
+    QWidget(parent),
     ui(new Ui::StakeForCharityDialog),
     model(0)
 {
@@ -124,9 +124,4 @@ void StakeForCharityDialog::on_disableButton_clicked()
     ui->message->setStyleSheet("QLabel { color: black; }");
     ui->message->setText(tr("Stake for Charity is now off"));
     return;
-}
-
-void StakeForCharityDialog::on_closeButton_clicked()
-{
-    close();
 }

@@ -100,6 +100,7 @@ private:
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
     QAction *blockAction;
+    QAction *charityAction;
 
     TransactionView *transactionView;
 
@@ -151,7 +152,7 @@ public slots:
     void lockWallet();
     /** Ask for passphrase to unlock wallet for the session to mint */
     void unlockWalletForMint();
-    void charityClicked(QString addr);
+    void charityClicked(QString addr = "");
 
     void setEncryptionStatus();
     /** Add up all loaded wallets and show total balance */
