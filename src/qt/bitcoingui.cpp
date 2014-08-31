@@ -100,7 +100,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     // Create wallet list control, load and unload buttons
     QFrame *listFrame = new QFrame();
-    listFrame->setMinimumWidth(175);
+    listFrame->setMinimumWidth(150);
+    listFrame->setMaximumWidth(150);
     listFrame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     QVBoxLayout *listFrameLayout = new QVBoxLayout(listFrame);
 
