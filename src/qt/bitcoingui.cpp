@@ -267,15 +267,15 @@ void BitcoinGUI::createActions()
     blockAction->setStatusTip(tr("Explore the BlockChain"));
     blockAction->setToolTip(blockAction->statusTip());
 
-    blocksIconAction = new QAction(QIcon(""), tr("Current &Block Info"), this);
+    blocksIconAction = new QAction(QIcon(":/icons/info"), tr("Current &Block Info"), this);
     blocksIconAction->setStatusTip(tr("Get Current Block Information"));
     blocksIconAction->setToolTip(blocksIconAction->statusTip());
 
-    stakingIconAction = new QAction(QIcon(""), tr("Current &PoS Block Info"), this);
+    stakingIconAction = new QAction(QIcon(":/icons/info"), tr("Current &PoS Block Info"), this);
     stakingIconAction->setStatusTip(tr("Get Current PoS Block Information"));
     stakingIconAction->setToolTip(stakingIconAction->statusTip());
 
-    connectionIconAction = new QAction(QIcon(""), tr("Current &Node Info"), this);
+    connectionIconAction = new QAction(QIcon(":/icons/info"), tr("Current &Node Info"), this);
     connectionIconAction->setStatusTip(tr("Get Current Peer Information"));
     connectionIconAction->setToolTip(connectionIconAction->statusTip());
 
@@ -438,9 +438,6 @@ void BitcoinGUI::createMenuBar()
     wallet->addSeparator();
     wallet->addAction(signMessageAction);
     wallet->addAction(verifyMessageAction);
-    wallet->addSeparator();
-    wallet->addAction(charityAction);
-
 
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
