@@ -25,6 +25,17 @@ StakeForCharityDialog::~StakeForCharityDialog()
 void StakeForCharityDialog::setModel(WalletModel *model)
 {
     this->model = model;
+
+    QString strAddress = model->getStakeForCharityAddress();
+    QString strPer = QString::number(model->getStakeForCharityPercent());
+
+    if (!strAddress.isEmpty() && strPer.toInt() > 0 )
+    {
+        ui->charityAddressEdit->setText(strAddress);
+        ui->charityPercentEdit->setText(strPer);
+        ui->message->setStyleSheet("QLabel { color: green; }");
+        ui->message->setText(tr("Thank you for giving to\n") + strAddress + tr("."));
+    }
 }
 
 void StakeForCharityDialog::setAddress(const QString &address)
