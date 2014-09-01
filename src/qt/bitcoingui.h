@@ -17,7 +17,6 @@ class SendCoinsDialog;
 class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
-class BlockBrowser;
 class StakeForCharityDialog;
 
 class CWallet;
@@ -73,7 +72,6 @@ protected:
 private:
     ClientModel *clientModel;
     CWalletManager *walletManager;
-    BlockBrowser *blockBrowser;
     StakeForCharityDialog *stakeForCharityDialog;
 
     QMap<QString, WalletModel*> mapWalletModels;
@@ -156,7 +154,7 @@ public slots:
     void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
-    /** Switch to block explorer page */
+    /** Switch to block browser page */
     void gotoBlockBrowser();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */

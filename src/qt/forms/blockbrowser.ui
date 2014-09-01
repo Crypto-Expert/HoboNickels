@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>BlockBrowser</class>
- <widget class="QWidget" name="BlockBrowser">
+ <widget class="QDialog" name="BlockBrowser">
   <property name="windowModality">
    <enum>Qt::NonModal</enum>
   </property>
@@ -12,8 +12,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>822</width>
-    <height>524</height>
+    <width>850</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -32,7 +32,7 @@
    <bool>false</bool>
   </property>
   <property name="windowTitle">
-   <string>Form</string>
+   <string>Block Browser</string>
   </property>
   <layout class="QGridLayout">
    <property name="sizeConstraint">
@@ -63,26 +63,26 @@
         <number>7</number>
        </property>
        <item>
-           <widget class="QLabel" name="labelBlockExplorer">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="font">
-             <font>
-              <weight>75</weight>
-              <bold>true</bold>
-             </font>
-            </property>
-            <property name="styleSheet">
-             <string notr="true">font-weight:bold;</string>
-            </property>
-            <property name="text">
-             <string>Block Explorer</string>
-            </property>
-           </widget>
+        <widget class="QLabel" name="labelBlockExplorer">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="font">
+          <font>
+           <weight>75</weight>
+           <bold>true</bold>
+          </font>
+         </property>
+         <property name="styleSheet">
+          <string notr="true">font-weight:bold;</string>
+         </property>
+         <property name="text">
+          <string>Block Browser</string>
+         </property>
+        </widget>
        </item>
        <item>
         <spacer name="horizontalSpacerBE">

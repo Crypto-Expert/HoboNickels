@@ -55,7 +55,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     // Create tabs
     overviewPage =  new OverviewPage();
-    blockBrowser = new BlockBrowser(this);
+    blockBrowser = new BlockBrowser(gui);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -78,7 +78,6 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
-    addWidget(blockBrowser);
     addWidget(stakeForCharityDialog);
 
 
@@ -142,17 +141,10 @@ void WalletView::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
-    blockAction = new QAction(QIcon(":/icons/blexp"), tr("&Block Explorer"), this);
-    blockAction->setStatusTip(tr("Explore the BlockChain"));
-    blockAction->setToolTip(blockAction->statusTip());
-    blockAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
-    blockAction->setCheckable(true);
-    tabGroup->addAction(blockAction);
-
     charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
     charityAction->setStatusTip(tr("Enable Stake For Charity"));
     charityAction->setToolTip(charityAction->statusTip());
-    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
     charityAction->setCheckable(true);
     tabGroup->addAction(charityAction);
 
@@ -162,7 +154,6 @@ void WalletView::createActions()
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
-    connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
     connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
@@ -302,13 +293,8 @@ void WalletView::gotoOverviewPage()
 
 void WalletView::gotoBlockBrowser()
 {
-    blockAction->setChecked(true);
-    setCurrentWidget(blockBrowser);
-
-    gui->exportAction->setEnabled(false);
-    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+    blockBrowser->show();
 }
-
 
 void WalletView::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
 {

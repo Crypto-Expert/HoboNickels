@@ -256,19 +256,16 @@ void BitcoinGUI::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
-    blockAction = new QAction(QIcon(":/icons/blexp"), tr("&Block Explorer"), this);
-    blockAction->setStatusTip(tr("Explore the BlockChain"));
-    blockAction->setToolTip(blockAction->statusTip());
-    blockAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
-    blockAction->setCheckable(true);
-    tabGroup->addAction(blockAction);
-
     charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
     charityAction->setStatusTip(tr("Enable Stake For Charity"));
     charityAction->setToolTip(charityAction->statusTip());
-    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_7));
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
     charityAction->setCheckable(true);
     tabGroup->addAction(charityAction);
+
+    blockAction = new QAction(QIcon(":/icons/blexp"), tr("Block Bro&wser"), this);
+    blockAction->setStatusTip(tr("Explore the BlockChain"));
+    blockAction->setToolTip(blockAction->statusTip());
 
     blocksIconAction = new QAction(QIcon(""), tr("Current &Block Info"), this);
     blocksIconAction->setStatusTip(tr("Get Current Block Information"));
@@ -474,7 +471,6 @@ void BitcoinGUI::createToolBars()
     toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
     toolbar2->addAction(exportAction);
     toolbar2->addAction(openRPCConsoleAction);
-    toolbar2->addAction(blockAction);
 }
 
 void BitcoinGUI::setClientModel(ClientModel *clientModel)

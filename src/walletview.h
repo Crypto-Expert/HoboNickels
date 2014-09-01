@@ -99,7 +99,6 @@ private:
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
-    QAction *blockAction;
     QAction *charityAction;
 
     TransactionView *transactionView;
@@ -119,7 +118,7 @@ public slots:
     void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
-    /** Switch to block explorer page */
+    /** Switch to block browser page */
     void gotoBlockBrowser();
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */

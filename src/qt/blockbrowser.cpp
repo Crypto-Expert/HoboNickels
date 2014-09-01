@@ -324,12 +324,12 @@ double getTxFees(std::string txid)
 
 
 BlockBrowser::BlockBrowser(QWidget *parent) :
-    QWidget(parent),
+    QDialog(parent, Qt::WindowMinMaxButtonsHint),
     ui(new Ui::BlockBrowser)
 {
     ui->setupUi(this);
 
-    setFixedSize(400, 420);
+    setBaseSize(850, 500);
 
     connect(ui->blockButton, SIGNAL(pressed()), this, SLOT(blockClicked()));
     connect(ui->txButton, SIGNAL(pressed()), this, SLOT(txClicked()));
