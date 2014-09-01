@@ -324,7 +324,7 @@ double getTxFees(std::string txid)
 
 
 BlockBrowser::BlockBrowser(QWidget *parent) :
-    QDialog(parent, Qt::WindowMinMaxButtonsHint),
+    QDialog(parent, (Qt::WindowMinMaxButtonsHint|Qt::WindowCloseButtonHint)),
     ui(new Ui::BlockBrowser)
 {
     ui->setupUi(this);
