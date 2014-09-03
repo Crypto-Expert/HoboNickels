@@ -31,7 +31,6 @@ std::string getBlockHash(int64);
 std::string getBlockMerkle(int64);
 bool addnode(std::string);
 const CBlockIndex* getBlockIndex(int64);
-int64 getInputValue(CTransaction, CScript);
 
 
 namespace Ui {
