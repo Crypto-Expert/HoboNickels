@@ -4,7 +4,6 @@
 #include "wallet.h"
 #include "base58.h"
 #include "clientmodel.h"
-#include "bitcoinrpc.h"
 #include "transactionrecord.h"
 #include "txdb.h"
 
@@ -192,7 +191,6 @@ double convertCoins(int64 amount)
 
 std::string getOutputs(std::string txid)
 {
-    //Tranz This needs major work.
     uint256 hash;
     hash.SetHex(txid);
 
@@ -201,20 +199,18 @@ std::string getOutputs(std::string txid)
     if (!GetTransaction(hash, tx, hashBlock))
         return "N/A";
 
-    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-    ssTx << tx;
-
     std::string str = "";
-    for (unsigned int i = 0; i < tx.vout.size(); i++)
+    for (unsigned int i = (tx.IsCoinStake() ? 1 : 0); i < tx.vout.size(); i++)
     {
         const CTxOut& txout = tx.vout[i];
-        CTxDestination source;
-        ExtractDestination(txout.scriptPubKey, source);
-        CBitcoinAddress addressSource(source);
-        std::string lol7 = addressSource.ToString();
+
+        CTxDestination address;
+        if (!ExtractDestination(txout.scriptPubKey, address) )
+            address = CNoDestination();
+
         double buffer = convertCoins(txout.nValue);
         std::string amount = boost::to_string(buffer);
-        str.append(lol7);
+        str.append(CBitcoinAddress(address).ToString());
         str.append(": ");
         str.append(amount);
         str.append(" HBN");
