@@ -20,7 +20,6 @@
 double getBlockHardness(int64);
 double getTxTotalValue(std::string);
 double convertCoins(int64);
-double getTxFees(std::string);
 int64 getBlockTime(int64);
 int64 getBlocknBits(int64);
 int64 getBlockNonce(int64);
@@ -51,11 +50,14 @@ public:
     void setTransactionId(const QString &transactionId);
     void setModel(ClientModel *model);
 
+
 public slots:
 
     void blockClicked();
     void txClicked();
     void updateExplorer(bool);
+    double getTxFees(std::string);
+
 
 private slots:
 

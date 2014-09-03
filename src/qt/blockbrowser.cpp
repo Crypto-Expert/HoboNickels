@@ -6,9 +6,13 @@
 #include "clientmodel.h"
 #include "bitcoinrpc.h"
 #include "transactionrecord.h"
+#include "txdb.h"
 
 #include <sstream>
 #include <string>
+
+using namespace std;
+
 double getBlockHardness(int64 height)
 {
     const CBlockIndex* blockindex = getBlockIndex(height);
@@ -267,6 +271,7 @@ std::string getInputs(std::string txid)
 
 int64 getInputValue(CTransaction tx, CScript target)
 {
+
     //Tranz needs work
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
@@ -276,55 +281,38 @@ int64 getInputValue(CTransaction tx, CScript target)
             return txout.nValue;
         }
     }
-    return 0;
+    //return 0;
 }
 
-double getTxFees(std::string txid)
+double BlockBrowser::getTxFees(std::string txid)
 {
-    //Tranz needs work.
     uint256 hash;
     hash.SetHex(txid);
 
-
     CTransaction tx;
     uint256 hashBlock = 0;
+    CTxDB txdb("r");
+
     if (!GetTransaction(hash, tx, hashBlock))
-        return 0.0001;
+        return convertCoins(MIN_TX_FEE);
 
-    CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-    ssTx << tx;
+    MapPrevTx mapInputs;
+    map<uint256, CTxIndex> mapUnused;
+    bool fInvalid;
 
-    double value = 0;
-    double buffer = 0;
-    for (unsigned int i = 0; i < tx.vout.size(); i++)
-    {
-        const CTxOut& txout = tx.vout[i];
+    if (!tx.FetchInputs(txdb, mapUnused, false, false, mapInputs, fInvalid))
+        return convertCoins(MIN_TX_FEE);
 
-        buffer = value + convertCoins(txout.nValue);
-        value = buffer;
+    int64 nTxFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
+
+    if(tx.IsCoinStake() || tx.IsCoinBase()) {
+        ui->feesLabel->setText(QString("Reward"));
+        nTxFees *= -1;
     }
+    else
+        ui->feesLabel->setText(QString("Fees"));
 
-    double value0 = 0;
-    double buffer0 = 0;
-    double swp = 0;
-    for (unsigned int i = 0; i < tx.vin.size(); i++)
-    {
-        uint256 hash0;
-        const CTxIn& vin = tx.vin[i];
-        hash0.SetHex(vin.prevout.hash.ToString());
-        CTransaction wtxPrev;
-        uint256 hashBlock0 = 0;
-        if (!GetTransaction(hash0, wtxPrev, hashBlock0))
-             return 0;
-        CDataStream ssTx(SER_NETWORK, PROTOCOL_VERSION);
-        ssTx << wtxPrev;
-        const CScript target = wtxPrev.vout[vin.prevout.n].scriptPubKey;
-        swp = convertCoins(getInputValue(wtxPrev, target));
-        buffer0 = value0 + convertCoins(getInputValue(wtxPrev, target));
-        value0 = buffer0;
-    }
-
-    return value0 - value;
+    return convertCoins(nTxFees);
 }
 
 
