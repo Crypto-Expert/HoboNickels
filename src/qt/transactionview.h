@@ -61,6 +61,7 @@ private slots:
     void contextualMenu(const QPoint &);
     void dateRangeChanged();
     void showDetails();
+    void showBroswer();
     void copyAddress();
     void editLabel();
     void copyLabel();
@@ -69,6 +70,7 @@ private slots:
 
 signals:
     void doubleClicked(const QModelIndex&);
+    void blockBrowserSignal(QString transactionId);
 
 public slots:
     void chooseDate(int idx);

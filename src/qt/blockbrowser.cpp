@@ -182,11 +182,13 @@ double getTxTotalValue(std::string txid)
 
 double convertCoins(int64 amount)
 {
+    // Tranz needs to use options model.
     return (double)amount / (double)COIN;
 }
 
 std::string getOutputs(std::string txid)
 {
+    //Tranz This needs major work.
     uint256 hash;
     hash.SetHex(txid);
 
@@ -220,6 +222,7 @@ std::string getOutputs(std::string txid)
 
 std::string getInputs(std::string txid)
 {
+    //Tranz this needs major work.
     uint256 hash;
     hash.SetHex(txid);
 
@@ -264,6 +267,7 @@ std::string getInputs(std::string txid)
 
 int64 getInputValue(CTransaction tx, CScript target)
 {
+    //Tranz needs work
     for (unsigned int i = 0; i < tx.vin.size(); i++)
     {
         const CTxOut& txout = tx.vout[i];
@@ -277,6 +281,7 @@ int64 getInputValue(CTransaction tx, CScript target)
 
 double getTxFees(std::string txid)
 {
+    //Tranz needs work.
     uint256 hash;
     hash.SetHex(txid);
 
@@ -443,6 +448,12 @@ void BlockBrowser::updateExplorer(bool block)
     }
 }
 
+void BlockBrowser::setTransactionId(const QString &transactionId)
+{
+    ui->txBox->setText(transactionId);
+    ui->txBox->setFocus();
+    updateExplorer(false);
+}
 
 void BlockBrowser::txClicked()
 {

@@ -753,9 +753,9 @@ void BitcoinGUI::stakingIconClicked()
 
 
 
-void BitcoinGUI::gotoBlockBrowser()
+void BitcoinGUI::gotoBlockBrowser(QString transactionId)
 {
-    if (walletStack) walletStack->gotoBlockBrowser();
+    if (walletStack) walletStack->gotoBlockBrowser(transactionId);
 }
 
 void BitcoinGUI::gotoOverviewPage()

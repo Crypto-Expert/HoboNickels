@@ -125,10 +125,10 @@ void WalletStack::gotoSendCoinsPage()
         i.value()->gotoSendCoinsPage();
 }
 
-void WalletStack::gotoBlockBrowser()
+void WalletStack::gotoBlockBrowser(QString transactionId)
 {
     WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) walletView->gotoBlockBrowser();
+    if (walletView) walletView->gotoBlockBrowser(transactionId);
 }
 
 void WalletStack::gotoSignMessageTab(QString addr)

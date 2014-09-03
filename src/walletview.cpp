@@ -94,6 +94,7 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     connect(receiveCoinsPage, SIGNAL(signMessage(QString)), this, SLOT(gotoSignMessageTab(QString)));
     // Clicking on "Stake For Charity" in the address book sends you to the stake for charity page
     connect(addressBookPage, SIGNAL(stakeForCharitySignal(QString)), this, SLOT(charityClicked(QString)));
+    connect(transactionView, SIGNAL(blockBrowserSignal(QString)), this, SLOT(gotoBlockBrowser(QString)));
 
     gotoOverviewPage();
 }
@@ -291,8 +292,11 @@ void WalletView::gotoOverviewPage()
     disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
 
-void WalletView::gotoBlockBrowser()
+void WalletView::gotoBlockBrowser(QString transactionId)
 {
+    if(!transactionId.isEmpty())
+        blockBrowser->setTransactionId(transactionId);
+
     blockBrowser->show();
 }
 

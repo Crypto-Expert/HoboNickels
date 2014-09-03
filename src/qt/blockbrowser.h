@@ -19,7 +19,7 @@
 
 double getBlockHardness(int64);
 double getTxTotalValue(std::string);
-double convertCoins(int64_t);
+double convertCoins(int64);
 double getTxFees(std::string);
 int64 getBlockTime(int64);
 int64 getBlocknBits(int64);
@@ -48,6 +48,7 @@ public:
     explicit BlockBrowser(QWidget *parent = 0);
     ~BlockBrowser();
 
+    void setTransactionId(const QString &transactionId);
     void setModel(ClientModel *model);
 
 public slots:
