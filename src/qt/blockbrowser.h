@@ -17,7 +17,6 @@
 #include <QSettings>
 #include <QSlider>
 
-double getBlockHardness(int64);
 double getTxTotalValue(std::string);
 double convertCoins(int64);
 int64 getBlockTime(int64);
