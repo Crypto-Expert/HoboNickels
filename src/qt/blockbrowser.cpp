@@ -415,6 +415,20 @@ void BlockBrowser::setTransactionId(const QString &transactionId)
     ui->txBox->setText(transactionId);
     ui->txBox->setFocus();
     updateExplorer(false);
+
+    uint256 hash;
+    hash.SetHex(transactionId.toStdString());
+
+    CTransaction tx;
+    uint256 hashBlock = 0;
+    if (GetTransaction(hash, tx, hashBlock))
+    {
+        CBlockIndex* pblockindex = mapBlockIndex[hashBlock];
+        pblockindex->nHeight;
+
+        ui->heightBox->setValue(pblockindex->nHeight);
+        updateExplorer(true);
+    }
 }
 
 void BlockBrowser::txClicked()
