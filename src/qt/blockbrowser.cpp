@@ -10,6 +10,10 @@
 #include <sstream>
 #include <string>
 
+double GetPoSKernelPS(const CBlockIndex* blockindex);
+double GetDifficulty(const CBlockIndex* blockindex);
+double GetPoWMHashPS(const CBlockIndex* blockindex);
+
 using namespace std;
 
 double getBlockHardness(int64 height)
@@ -33,17 +37,6 @@ double getBlockHardness(int64 height)
     }
 
     return dDiff;
-}
-
-int64 getBlockHashrate(int64 height)
-{
-    // Tranz: Need to change between Hash rate and NetStakeWeight
-    int64 lookup = height;
-
-    double timeDiff = getBlockTime(height) - getBlockTime(1);
-    double timePerBlock = timeDiff / lookup;
-
-    return (boost::int64_t)(((double)getBlockHardness(height) * pow(2.0, 32)) / timePerBlock);
 }
 
 const CBlockIndex* getBlockIndex(int64 height)
@@ -77,7 +70,6 @@ int64 getBlockTime(int64 Height)
     if (mapBlockIndex.count(hash) == 0)
         return 0;
 
-    CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     return pblockindex->nTime;
 }
@@ -306,6 +298,15 @@ void BlockBrowser::updateExplorer(bool block)
 {
     if(block)
     {
+        int64 height = ui->heightBox->value();
+        if (height > pindexBest->nHeight)
+        {
+            ui->heightBox->setValue(pindexBest->nHeight);
+            height = pindexBest->nHeight;
+        }
+
+        const CBlockIndex* pindex = getBlockIndex(height);
+
         ui->heightLabelBE1->show();
         ui->heightLabelBE1->setTextInteractionFlags(Qt::TextSelectableByMouse);
         ui->heightLabelBE2->show();
@@ -338,40 +339,25 @@ void BlockBrowser::updateExplorer(bool block)
         ui->pawLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         ui->pawBox->show();
         ui->pawBox->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        int64 height = ui->heightBox->value();
-        if (height > pindexBest->nHeight)
-        {
-            ui->heightBox->setValue(pindexBest->nHeight);
-            height = pindexBest->nHeight;
+        ui->heightLabelBE1->setText(QString::number(height));
+        ui->hashBox->setText(QString::fromUtf8(getBlockHash(height).c_str()));
+        ui->merkleBox->setText(QString::fromUtf8(getBlockMerkle(height).c_str()));
+        ui->bitsBox->setText(QString::number(getBlocknBits(height)));
+        ui->nonceBox->setText(QString::number(getBlockNonce(height)));
+        ui->timeBox->setText(QString::fromUtf8(DateTimeStrFormat(getBlockTime(height)).c_str()));
+        ui->hardBox->setText(QString::number(GetDifficulty(pindex), 'f', 6)); // Tranz change name
+        if (pindex->IsProofOfStake()) {
+            ui->pawLabel->setText("Block Network Stake Weight");
+            ui->pawBox->setText(QString::number(GetPoSKernelPS(pindex), 'f', 3) + " "); //Tranz change name
         }
-        int64 Pawrate = getBlockHashrate(height);
-        double Pawrate2 = 0.000;
-        Pawrate2 = ((double)Pawrate / 1000000);
-        std::string hash = getBlockHash(height);
-        std::string merkle = getBlockMerkle(height);
-        int64 nBits = getBlocknBits(height);
-        int64 nNonce = getBlockNonce(height);
-        int64 atime = getBlockTime(height);
-        double hardness = getBlockHardness(height);
-        QString QHeight = QString::number(height);
-        QString QHash = QString::fromUtf8(hash.c_str());
-        QString QMerkle = QString::fromUtf8(merkle.c_str());
-        QString QBits = QString::number(nBits);
-        QString QNonce = QString::number(nNonce);
-        QString QTime = QString::number(atime);
-        QString QHardness = QString::number(hardness, 'f', 6);
-        QString QPawrate = QString::number(Pawrate2, 'f', 3);
-        ui->heightLabelBE1->setText(QHeight);
-        ui->hashBox->setText(QHash);
-        ui->merkleBox->setText(QMerkle);
-        ui->bitsBox->setText(QBits);
-        ui->nonceBox->setText(QNonce);
-        ui->timeBox->setText(QTime);
-        ui->hardBox->setText(QHardness);
-        ui->pawBox->setText(QPawrate + " MH/s");
+        else {
+            ui->pawLabel->setText("Block Hash Rate");
+            ui->pawBox->setText(QString::number(GetPoWMHashPS(pindex), 'f', 3) + " MH/s");
+        }
     }
 
     if(block == false) {
+        std::string txid = ui->txBox->text().toUtf8().constData();
         ui->txID->show();
         ui->txID->setTextInteractionFlags(Qt::TextSelectableByMouse);
         ui->txLabel->show();
@@ -392,21 +378,12 @@ void BlockBrowser::updateExplorer(bool block)
         ui->feesLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
         ui->feesBox->show();
         ui->feesBox->setTextInteractionFlags(Qt::TextSelectableByMouse);
-        std::string txid = ui->txBox->text().toUtf8().constData();
-        double value = getTxTotalValue(txid);
-        double fees = getTxFees(txid);
-        std::string outputs = getOutputs(txid);
-        std::string inputs = getInputs(txid);
-        QString QValue = QString::number(value, 'f', 6);
-        QString QID = QString::fromUtf8(txid.c_str());
-        QString QOutputs = QString::fromUtf8(outputs.c_str());
-        QString QInputs = QString::fromUtf8(inputs.c_str());
-        QString QFees = QString::number(fees, 'f', 6);
-        ui->valueBox->setText(QValue + " HBN");
-        ui->txID->setText(QID);
-        ui->outputBox->setText(QOutputs);
-        ui->inputBox->setText(QInputs);
-        ui->feesBox->setText(QFees + " HBN");
+
+        ui->valueBox->setText(QString::number(getTxTotalValue(txid), 'f', 6) + " HBN");
+        ui->txID->setText(QString::fromUtf8(txid.c_str()));
+        ui->outputBox->setText(QString::fromUtf8(getOutputs(txid).c_str()));
+        ui->inputBox->setText(QString::fromUtf8(getInputs(txid).c_str()));
+        ui->feesBox->setText(QString::number(getTxFees(txid), 'f', 6) + " HBN");
     }
 }
 
@@ -424,8 +401,6 @@ void BlockBrowser::setTransactionId(const QString &transactionId)
     if (GetTransaction(hash, tx, hashBlock))
     {
         CBlockIndex* pblockindex = mapBlockIndex[hashBlock];
-        pblockindex->nHeight;
-
         ui->heightBox->setValue(pblockindex->nHeight);
         updateExplorer(true);
     }
