@@ -1,21 +1,15 @@
 #include "blockbrowser.h"
 #include "ui_blockbrowser.h"
 #include "main.h"
-#include "wallet.h"
 #include "base58.h"
 #include "clientmodel.h"
-#include "transactionrecord.h"
 #include "txdb.h"
-
-#include <sstream>
-#include <string>
 
 double GetPoSKernelPS(const CBlockIndex* blockindex);
 double GetDifficulty(const CBlockIndex* blockindex);
 double GetPoWMHashPS(const CBlockIndex* blockindex);
 
 using namespace std;
-
 
 const CBlockIndex* getBlockIndex(int64 height)
 {
@@ -89,29 +83,6 @@ int64 getBlockNonce(int64 Height)
     CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     return pblockindex->nNonce;
-}
-
-int64 blocksInPastHours(int64 hours)
-{
-    int64 wayback = hours * 3600;
-    bool check = true;
-    int64 height = pindexBest->nHeight;
-    int64 heightHour = pindexBest->nHeight;
-    int64 utime = (int64)time(NULL);
-    int64 target = utime - wayback;
-
-    while(check)
-    {
-        if(getBlockTime(heightHour) < target)
-        {
-            check = false;
-            return height - heightHour;
-        } else {
-            heightHour = heightHour - 1;
-        }
-    }
-
-    return 0;
 }
 
 double getTxTotalValue(std::string txid)
@@ -257,6 +228,7 @@ BlockBrowser::BlockBrowser(QWidget *parent) :
 
     connect(ui->blockButton, SIGNAL(pressed()), this, SLOT(blockClicked()));
     connect(ui->txButton, SIGNAL(pressed()), this, SLOT(txClicked()));
+    connect(ui->closeButton, SIGNAL(pressed()), this, SLOT(close()));
 }
 
 void BlockBrowser::updateExplorer(bool block)
@@ -280,16 +252,17 @@ void BlockBrowser::updateExplorer(bool block)
         ui->timeBox->setText(QString::fromUtf8(DateTimeStrFormat(getBlockTime(height)).c_str()));
         ui->diffBox->setText(QString::number(GetDifficulty(pindex), 'f', 6));
         if (pindex->IsProofOfStake()) {
-            ui->hashRateLabel->setText("Block Network Stake Weight");
+            ui->hashRateLabel->setText("Block Network Stake Weight:");
+            ui->diffLabel->setText("PoS Block Difficulty:");
             ui->hashRateBox->setText(QString::number(GetPoSKernelPS(pindex), 'f', 3) + " ");
         }
         else {
-            ui->hashRateLabel->setText("Block Hash Rate");
+            ui->hashRateLabel->setText("Block Hash Rate:");
+            ui->diffLabel->setText("PoW Block Difficulty:");
             ui->hashRateBox->setText(QString::number(GetPoWMHashPS(pindex), 'f', 3) + " MH/s");
         }
     }
-
-    if(block == false) {
+    else {
         std::string txid = ui->txBox->text().toUtf8().constData();
 
         ui->valueBox->setText(QString::number(getTxTotalValue(txid), 'f', 6) + " HBN");

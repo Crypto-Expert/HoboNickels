@@ -3,34 +3,8 @@
 
 #include "clientmodel.h"
 #include "main.h"
-#include "wallet.h"
-#include "base58.h"
+
 #include <QDialog>
-
-#include <QDir>
-#include <QFile>
-#include <QProcess>
-#include <QTime>
-#include <QTimer>
-#include <QStringList>
-#include <QMap>
-#include <QSettings>
-#include <QSlider>
-
-double getTxTotalValue(std::string);
-double convertCoins(int64);
-int64 getBlockTime(int64);
-int64 getBlocknBits(int64);
-int64 getBlockNonce(int64);
-int64 blocksInPastHours(int64);
-int64 getBlockHashrate(int64);
-std::string getInputs(std::string);
-std::string getOutputs(std::string);
-std::string getBlockHash(int64);
-std::string getBlockMerkle(int64);
-bool addnode(std::string);
-const CBlockIndex* getBlockIndex(int64);
-
 
 namespace Ui {
 class BlockBrowser;
@@ -64,5 +38,18 @@ private:
     ClientModel *model;
 
 };
+
+double getTxTotalValue(std::string);
+double convertCoins(int64);
+int64 getBlockTime(int64);
+int64 getBlocknBits(int64);
+int64 getBlockNonce(int64);
+int64 getBlockHashrate(int64);
+std::string getInputs(std::string);
+std::string getOutputs(std::string);
+std::string getBlockHash(int64);
+std::string getBlockMerkle(int64);
+bool addnode(std::string);
+const CBlockIndex* getBlockIndex(int64);
 
 #endif // BLOCKBROWSER_H
