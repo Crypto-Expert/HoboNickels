@@ -390,12 +390,16 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharit
     {
         CWalletDB walletdb(wallet->strWalletFile);
         if (fStakeForCharity) {
-            walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
-            walletdb.WriteStakeForCharity(strStakeForCharityAddress.ToString(), nStakeForCharityPercent );
+            if(wallet->fFileBacked) {
+                walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
+                walletdb.WriteStakeForCharity(strStakeForCharityAddress.ToString(), nStakeForCharityPercent );
+            }
         }
         else {
-            walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
-            walletdb.EraseStakeForCharity(strStakeForCharityAddress.ToString());
+            if(wallet->fFileBacked) {
+                walletdb.EraseStakeForCharity(wallet->strStakeForCharityAddress.ToString());
+                walletdb.EraseStakeForCharity(strStakeForCharityAddress.ToString());
+            }
         }
 
         if(fDebug)

@@ -278,7 +278,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
             pWallet->nStakeForCharityMin = nMinAmount;
             pWallet->nStakeForCharityMax = nMaxAmount;
 
-            walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
+            if(pWallet->fFileBacked)
+                walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
 
             pWallet->strStakeForCharityAddress = "";
 
@@ -290,7 +291,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
            nPer = 50;
 
         // Future: These will be an array of addr/per/wallet
-        walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
+        if(pWallet->fFileBacked)
+            walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
 
         pWallet->strStakeForCharityAddress = address;
         pWallet->nStakeForCharityPercent = nPer;
@@ -299,7 +301,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         pWallet->fStakeForCharity = true;
         fGlobalStakeForCharity = true;
 
-        walletdb.WriteStakeForCharity(address.ToString(), nPer);
+        if(pWallet->fFileBacked)
+            walletdb.WriteStakeForCharity(address.ToString(), nPer);
     }
 
     return Value::null;
