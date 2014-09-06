@@ -269,6 +269,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 
     LOCK(pWallet->cs_wallet);
     {
+        bool fFileBacked = pWallet->fFileBacked;
         // Turn off if we set to zero.
         // Future: After we allow multiple addresses, only turn of this address
         if(nPer == 0)
@@ -278,7 +279,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
             pWallet->nStakeForCharityMin = nMinAmount;
             pWallet->nStakeForCharityMax = nMaxAmount;
 
-            if(pWallet->fFileBacked)
+            if(fFileBacked)
                 walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
 
             pWallet->strStakeForCharityAddress = "";
@@ -291,7 +292,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
            nPer = 50;
 
         // Future: These will be an array of addr/per/wallet
-        if(pWallet->fFileBacked)
+        if(fFileBacked)
             walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
 
         pWallet->strStakeForCharityAddress = address;
@@ -301,7 +302,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         pWallet->fStakeForCharity = true;
         fGlobalStakeForCharity = true;
 
-        if(pWallet->fFileBacked)
+        if(fFileBacked)
             walletdb.WriteStakeForCharity(address.ToString(), nPer);
     }
 
