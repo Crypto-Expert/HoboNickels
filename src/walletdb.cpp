@@ -429,6 +429,7 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
             {
                 pwallet->fStakeForCharity = true;
                 pwallet->strStakeForCharityAddress = CBitcoinAddress(strS4CAccount).Get();
+                fGlobalStakeForCharity = true;
             }
             ssValue >> pwallet->nStakeForCharityPercent;
         }
