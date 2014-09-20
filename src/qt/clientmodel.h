@@ -48,6 +48,9 @@ public:
     double getPosKernalPS();
     int getStakeTargetSpacing();
 
+    quint64 getTotalBytesRecv() const;
+    quint64 getTotalBytesSent() const;
+
 
     QDateTime getLastBlockDate(bool fProofofStake=false) const;
 
@@ -83,6 +86,7 @@ private:
 signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count, int countOfPeers);
+    void bytesChanged(quint64 totalBytesIn, quint64 totalBytesOut);
     void alertsChanged(const QString &warnings);
     void walletAdded(const QString &name);
     void walletRemoved(const QString &name);

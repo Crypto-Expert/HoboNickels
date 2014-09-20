@@ -51,6 +51,7 @@
         <file alias="transaction_conflicted">res/icons/transaction_conflicted.png</file>
         <file alias="blexp">res/icons/blexp.png</file>
         <file alias="info">res/icons/info.png</file>
+        <file alias="traffic">res/icons/traffic.png</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="about">res/images/about.png</file>

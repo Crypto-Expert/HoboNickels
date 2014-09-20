@@ -195,6 +195,7 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     rpcConsole = new RPCConsole(this);
 
+    connect(openTrafficAction, SIGNAL(triggered()), rpcConsole, SLOT(showTab_Stats()));
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
@@ -375,6 +376,10 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction->setStatusTip(tr("Open debugging and diagnostic console"));
     openRPCConsoleAction->setToolTip(openRPCConsoleAction->statusTip());
 
+    openTrafficAction = new QAction(QIcon(":/icons/traffic"), tr("&Traffic window"), this);
+    openTrafficAction->setStatusTip(tr("Open Network Traffic Graph"));
+    openTrafficAction->setToolTip(openTrafficAction->statusTip());
+
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
@@ -441,6 +446,7 @@ void BitcoinGUI::createMenuBar()
 
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
+    network->addAction(openTrafficAction);
     network->addSeparator();
     network->addAction(blocksIconAction);
     network->addAction(stakingIconAction);
@@ -657,14 +663,12 @@ void BitcoinGUI::connectionIconClicked()
 {
     QString strAllPeer;
     QVector<CNodeStats> qvNodeStats = clientModel->getPeerStats();
-    uint64 nTotSendBytes = 0, nTotRecvBytes = 0 ,nTotBlocksRequested = 0;
+    uint64 nTotBlocksRequested = 0;
     int nTotPeers = clientModel->getNumConnections();
     double dTotPingTime = 0.0;
 
     BOOST_FOREACH(const CNodeStats& stats, qvNodeStats) {
         QString strPeer;
-        nTotSendBytes+=stats.nSendBytes;
-        nTotRecvBytes+=stats.nRecvBytes;
         nTotBlocksRequested+=stats.nBlocksRequested;
         dTotPingTime+=stats.dPingTime;
 
@@ -696,8 +700,8 @@ void BitcoinGUI::connectionIconClicked()
                "\tPlease click \"Show Details\" for more information.\n")
             .arg(nTotPeers)
             .arg(dTotPingTime/nTotPeers)
-            .arg(nTotRecvBytes)
-            .arg(nTotSendBytes)
+            .arg(clientModel->getTotalBytesRecv())
+            .arg(clientModel->getTotalBytesSent())
             .arg(nTotBlocksRequested),
             CClientUIInterface::MODAL,
             tr("%1")
@@ -803,7 +807,7 @@ void BitcoinGUI::gotoSignMessageTab(QString addr)
 
 void BitcoinGUI::gotoVerifyMessageTab(QString addr)
 {
-    if (walletStack) walletStack->gotoSignMessageTab(addr);
+    if (walletStack) walletStack->gotoVerifyMessageTab(addr);
 }
 
 void BitcoinGUI::setNumConnections(int count)

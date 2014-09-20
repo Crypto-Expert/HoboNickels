@@ -98,7 +98,6 @@ private:
     QAction *backupAllWalletsAction;
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
-    QAction *openRPCConsoleAction;
     QAction *charityAction;
 
     TransactionView *transactionView;
