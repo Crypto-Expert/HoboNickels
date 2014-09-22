@@ -4,6 +4,8 @@
 #include "bitcoinunits.h"
 #include "util.h"
 #include "init.h"
+#include "protocol.h"
+
 
 #include <QString>
 #include <QDateTime>
@@ -22,6 +24,8 @@
 #include <QFileDialog>
 #include <QDesktopServices>
 #include <QThread>
+#include <QSettings>
+#include <QDesktopWidget>
 
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -296,6 +300,120 @@ bool ToolTipToRichTextFilter::eventFilter(QObject *obj, QEvent *evt)
     return QObject::eventFilter(obj, evt);
 }
 
+void TableViewLastColumnResizingFixer::connectViewHeadersSignals()
+{
+    connect(tableView->horizontalHeader(), SIGNAL(sectionResized(int,int,int)), this, SLOT(on_sectionResized(int,int,int)));
+    connect(tableView->horizontalHeader(), SIGNAL(geometriesChanged()), this, SLOT(on_geometriesChanged()));
+}
+
+//we need to disconnect these while handling the resize events, otherwise we can enter infinite loops
+void TableViewLastColumnResizingFixer::disconnectViewHeadersSignals()
+{
+    disconnect(tableView->horizontalHeader(), SIGNAL(sectionResized(int,int,int)), this, SLOT(on_sectionResized(int,int,int)));
+    disconnect(tableView->horizontalHeader(), SIGNAL(geometriesChanged()), this, SLOT(on_geometriesChanged()));
+}
+
+//setup the resize mode, handles compatibility for QT5 and below as the method signatures changed. (refactored here for readability)
+void TableViewLastColumnResizingFixer::setViewHeaderResizeMode(int logicalIndex, QHeaderView::ResizeMode resizeMode)
+{
+#if QT_VERSION < 0x050000
+    tableView->horizontalHeader()->setResizeMode(logicalIndex, resizeMode);
+#else
+    tableView->horizontalHeader()->setSectionResizeMode(logicalIndex, resizeMode);
+#endif
+}
+
+void TableViewLastColumnResizingFixer::resizeColumn(int nColumnIndex, int width) {
+    tableView->setColumnWidth(nColumnIndex, width);
+    tableView->horizontalHeader()->resizeSection(nColumnIndex, width);
+}
+
+int TableViewLastColumnResizingFixer::getColumnsWidth()
+{
+    int nColumnsWidthSum = 0;
+    for (int i = 0; i < columnCount; i++)
+    {
+        nColumnsWidthSum += tableView->horizontalHeader()->sectionSize(i);
+    }
+    return nColumnsWidthSum;
+}
+
+int TableViewLastColumnResizingFixer::getAvailableWidthForColumn(int column)
+{
+    int nResult = lastColumnMinimumWidth;
+    int nTableWidth = tableView->horizontalHeader()->width();
+
+    if (nTableWidth > 0)
+    {
+        int nOtherColsWidth = getColumnsWidth() - tableView->horizontalHeader()->sectionSize(column);
+        nResult = std::max(nResult, nTableWidth - nOtherColsWidth);
+    }
+
+    return nResult;
+}
+
+//make sure we don't make the columns wider than the table's viewport's width.
+void TableViewLastColumnResizingFixer::adjustTableColumnsWidth()
+{
+    disconnectViewHeadersSignals();
+    resizeColumn(lastColumnIndex, getAvailableWidthForColumn(lastColumnIndex));
+    connectViewHeadersSignals();
+
+    int nTableWidth = tableView->horizontalHeader()->width();
+    int nColsWidth = getColumnsWidth();
+    if (nColsWidth > nTableWidth)
+    {
+        resizeColumn(secondToLastColumnIndex,getAvailableWidthForColumn(secondToLastColumnIndex));
+    }
+}
+
+//make column use all the space available, useful during window resizing.
+void TableViewLastColumnResizingFixer::stretchColumnWidth(int column) {
+    disconnectViewHeadersSignals();
+    resizeColumn(column, getAvailableWidthForColumn(column));
+    connectViewHeadersSignals();
+}
+
+//when a section is resized this is a slot-proxy for ajustAmountColumnWidth()
+void TableViewLastColumnResizingFixer::on_sectionResized(int logicalIndex, int oldSize, int newSize)
+{
+    adjustTableColumnsWidth();
+    int remainingWidth = getAvailableWidthForColumn(logicalIndex);
+    if (newSize > remainingWidth)
+    {
+       resizeColumn(logicalIndex, remainingWidth);
+    }
+}
+
+//when the table's geometry is ready, we manually perform the Stretch of the "Message" column
+//as the "Stretch" resize mode does not allow for interactive resizing.
+void TableViewLastColumnResizingFixer::on_geometriesChanged()
+{
+    if ((getColumnsWidth() - this->tableView->horizontalHeader()->width()) != 0)
+    {
+        disconnectViewHeadersSignals();
+        resizeColumn(secondToLastColumnIndex, getAvailableWidthForColumn(secondToLastColumnIndex));
+        connectViewHeadersSignals();
+    }
+}
+
+/**
+ * Initializes all internal variables and prepares the
+ * the resize modes of the last 2 columns of the table and
+ */
+TableViewLastColumnResizingFixer::TableViewLastColumnResizingFixer(QTableView* table, int lastColMinimumWidth, int allColsMinimumWidth) :
+        tableView(table),
+        lastColumnMinimumWidth(lastColMinimumWidth),
+        allColumnsMinimumWidth(allColsMinimumWidth)
+{
+    columnCount = tableView->horizontalHeader()->count();
+    lastColumnIndex = columnCount - 1;
+    secondToLastColumnIndex = columnCount - 2;
+    tableView->horizontalHeader()->setMinimumSectionSize(allColumnsMinimumWidth);
+    setViewHeaderResizeMode(secondToLastColumnIndex, QHeaderView::Interactive);
+    setViewHeaderResizeMode(lastColumnIndex, QHeaderView::Interactive);
+}
+
 #ifdef WIN32
 boost::filesystem::path static StartupShortcutPath()
 {
@@ -440,6 +558,28 @@ bool SetStartOnSystemStartup(bool fAutoStart) { return false; }
 
 #endif
 
+void saveWindowGeometry(const QString& strSetting, QWidget *parent)
+{
+    QSettings settings;
+    settings.setValue(strSetting + "Pos", parent->pos());
+    settings.setValue(strSetting + "Size", parent->size());
+}
+void restoreWindowGeometry(const QString& strSetting, const QSize& defaultSize, QWidget *parent)
+{
+    QSettings settings;
+    QPoint pos = settings.value(strSetting + "Pos").toPoint();
+    QSize size = settings.value(strSetting + "Size", defaultSize).toSize();
+
+    if (!pos.x() && !pos.y()) {
+        QRect screen = QApplication::desktop()->screenGeometry();
+        pos.setX((screen.width() - size.width()) / 2);
+        pos.setY((screen.height() - size.height()) / 2);
+    }
+
+    parent->resize(size);
+    parent->move(pos);
+}
+
 HelpMessageBox::HelpMessageBox(QWidget *parent) :
     QMessageBox(parent)
 {
@@ -496,7 +636,60 @@ ClickableLabel::ClickableLabel( const QString& text, QWidget * parent ) :
   {
       emit clicked();
   }
+  QString formatDurationStr(int secs)
+  {
+      QStringList strList;
+      int years = secs / (86400 * 365);
+      int days = (secs % (86400 * 365) / 86400);
+      int hours = (secs % 86400) / 3600;
+      int mins = (secs % 3600) / 60;
+      int seconds = secs % 60;
 
+      if (years)
+          strList.append(QString(QObject::tr("%1 y")).arg(years));
+      if (days)
+          strList.append(QString(QObject::tr("%1 d")).arg(days));
+      if (hours)
+          strList.append(QString(QObject::tr("%1 h")).arg(hours));
+      if (mins)
+          strList.append(QString(QObject::tr("%1 m")).arg(mins));
+      if (seconds || (!days && !hours && !mins))
+          strList.append(QString(QObject::tr("%1 s")).arg(seconds));
+
+      return strList.join(" ");
+  }
+
+  QString formatServicesStr(uint64 mask)
+  {
+      QStringList strList;
+
+      // Just scan the last 8 bits for now.
+      for (int i=0; i < 8; i++) {
+          uint64_t check = 1 << i;
+          if (mask & check)
+          {
+              switch (check)
+              {
+              case NODE_NETWORK:
+                  strList.append(QObject::tr("NETWORK"));
+                  break;
+              default:
+                  strList.append(QString("%1[%2]").arg(QObject::tr("UNKNOWN")).arg(check));
+              }
+          }
+      }
+
+      if (strList.size())
+          return strList.join(" & ");
+      else
+          return QObject::tr("None");
+
+  }
+
+  QString formatPingTime(double dPingTime)
+  {
+      return dPingTime == 0 ? QObject::tr("N/A") : QString(QObject::tr("%1 s")).arg(QString::number(dPingTime, 'f', 3));
+  }
 
 } // namespace GUIUtil
 

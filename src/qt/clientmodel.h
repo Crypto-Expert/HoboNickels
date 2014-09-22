@@ -4,10 +4,10 @@
 #include <QObject>
 
 class OptionsModel;
+class PeerTableModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
-class CNodeStats;
 
 
 QT_BEGIN_NAMESPACE
@@ -31,6 +31,7 @@ public:
     ~ClientModel();
 
     OptionsModel *getOptionsModel();
+    PeerTableModel *getPeerTableModel();
 
     int getNumConnections() const;
     int getNumBlocks() const;
@@ -40,10 +41,6 @@ public:
     double getPoWMHashPS();
     double getProofOfStakeReward();
     int getLastPoSBlock();
-
-    QVector<CNodeStats> getPeerStats();
-
-
     int getNumBlocksAtStartup();
     double getPosKernalPS();
     int getStakeTargetSpacing();
@@ -73,6 +70,7 @@ public:
 
 private:
     OptionsModel *optionsModel;
+    PeerTableModel *peerTableModel;
 
     int cachedNumBlocks;
     int cachedNumBlocksOfPeers;

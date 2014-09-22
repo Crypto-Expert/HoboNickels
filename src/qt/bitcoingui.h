@@ -211,8 +211,6 @@ private slots:
     void blocksIconClicked();
     /** Allow user to lock/unlock wallet from click */
     void lockIconClicked();
-    /** Show information about peers */
-    void connectionIconClicked();
     /** Show information about stakes */
     void stakingIconClicked();
 #ifndef Q_OS_MAC

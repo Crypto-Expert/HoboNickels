@@ -3,6 +3,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 
 #include "net.h"
+#include "main.h"
 #include "bitcoinrpc.h"
 #include "alert.h"
 #include "wallet.h"
@@ -68,6 +69,8 @@ Value getpeerinfo(CWallet* pWallet, const Array& params, bool fHelp)
 
     BOOST_FOREACH(const CNodeStats& stats, vstats) {
         Object obj;
+        CNodeStateStats statestats;
+        bool fStateStats = GetNodeStateStats(stats.nodeid, statestats);
 
         obj.push_back(Pair("addr", stats.addrName));
         obj.push_back(Pair("services", strprintf("%08"PRI64x, stats.nServices)));
@@ -81,10 +84,17 @@ Value getpeerinfo(CWallet* pWallet, const Array& params, bool fHelp)
         obj.push_back(Pair("bytesrecv", (boost::int64_t)stats.nRecvBytes));
         obj.push_back(Pair("blocksrequested", (boost::int64_t)stats.nBlocksRequested));
         obj.push_back(Pair("version", stats.nVersion));
-        obj.push_back(Pair("subver", stats.strSubVer));
+        // Use the sanitized form of subver here, to avoid tricksy remote peers from
+        // corrupting or modifiying the JSON output by putting special characters in
+        obj.push_back(Pair("subver", stats.cleanSubVer));
         obj.push_back(Pair("inbound", stats.fInbound));
         obj.push_back(Pair("startingheight", stats.nStartingHeight));
-        obj.push_back(Pair("banscore", stats.nMisbehavior));
+        if (fStateStats) {
+            obj.push_back(Pair("banscore", statestats.nMisbehavior));
+        }
+        if (stats.fSyncNode) {
+            obj.push_back(Pair("syncnode", true));
+        }
 
         ret.push_back(obj);
     }

@@ -156,11 +156,11 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     labelEncryptionIcon = new GUIUtil::ClickableLabel();
     labelStakingIcon = new GUIUtil::ClickableLabel();
     labelConnectionsIcon = new GUIUtil::ClickableLabel();
-    connect(labelConnectionsIcon, SIGNAL(clicked()),this,SLOT(connectionIconClicked()));
-    connect(labelStakingIcon, SIGNAL(clicked()), this, SLOT(stakingIconClicked()));
-
     labelBlocksIcon = new GUIUtil::ClickableLabel();
+
+    connect(labelStakingIcon, SIGNAL(clicked()), this, SLOT(stakingIconClicked()));
     connect(labelBlocksIcon, SIGNAL(clicked()),this,SLOT(blocksIconClicked()));
+
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelEncryptionIcon);
     frameBlocksLayout->addStretch();
@@ -196,6 +196,8 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     rpcConsole = new RPCConsole(this);
 
     connect(openTrafficAction, SIGNAL(triggered()), rpcConsole, SLOT(showTab_Stats()));
+    connect(connectionIconAction, SIGNAL(triggered()), rpcConsole, SLOT(showTab_Peers()));
+    connect(labelConnectionsIcon, SIGNAL(clicked()), rpcConsole, SLOT(showTab_Peers()));
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
@@ -276,9 +278,6 @@ void BitcoinGUI::createActions()
     stakingIconAction->setStatusTip(tr("Get Current PoS Block Information"));
     stakingIconAction->setToolTip(stakingIconAction->statusTip());
 
-    connectionIconAction = new QAction(QIcon(":/icons/info"), tr("Current &Node Info"), this);
-    connectionIconAction->setStatusTip(tr("Get Current Peer Information"));
-    connectionIconAction->setToolTip(connectionIconAction->statusTip());
 
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
@@ -380,6 +379,10 @@ void BitcoinGUI::createActions()
     openTrafficAction->setStatusTip(tr("Open Network Traffic Graph"));
     openTrafficAction->setToolTip(openTrafficAction->statusTip());
 
+    connectionIconAction = new QAction(QIcon(":/icons/p2p"), tr("Current &Peer Info"), this);
+    connectionIconAction->setStatusTip(tr("Get Current Peer Information"));
+    connectionIconAction->setToolTip(connectionIconAction->statusTip());
+
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
@@ -399,7 +402,6 @@ void BitcoinGUI::createActions()
     connect(lockWalletAction, SIGNAL(triggered()), this, SLOT(lockWallet()));
     connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
     connect(blocksIconAction, SIGNAL(triggered()), this, SLOT(blocksIconClicked()));
-    connect(connectionIconAction, SIGNAL(triggered()), this, SLOT(connectionIconClicked()));
     connect(stakingIconAction, SIGNAL(triggered()), this, SLOT(stakingIconClicked()));
     connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 }
@@ -447,10 +449,11 @@ void BitcoinGUI::createMenuBar()
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
     network->addAction(openTrafficAction);
+    network->addAction(connectionIconAction);
     network->addSeparator();
     network->addAction(blocksIconAction);
     network->addAction(stakingIconAction);
-    network->addAction(connectionIconAction);
+
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
     help->addAction(openRPCConsoleAction);
@@ -659,55 +662,6 @@ void BitcoinGUI::lockIconClicked()
         unlockWalletForMint();
 }
 
-void BitcoinGUI::connectionIconClicked()
-{
-    QString strAllPeer;
-    QVector<CNodeStats> qvNodeStats = clientModel->getPeerStats();
-    uint64 nTotBlocksRequested = 0;
-    int nTotPeers = clientModel->getNumConnections();
-    double dTotPingTime = 0.0;
-
-    BOOST_FOREACH(const CNodeStats& stats, qvNodeStats) {
-        QString strPeer;
-        nTotBlocksRequested+=stats.nBlocksRequested;
-        dTotPingTime+=stats.dPingTime;
-
-        strPeer=tr("Peer IP: %1\n") .arg(stats.addrName.c_str());
-        strPeer=strPeer+tr("Time Connected: %1\n") .arg(QDateTime::fromTime_t(QDateTime::currentDateTimeUtc().toTime_t() - stats.nTimeConnected).toUTC().toString("hh:mm:ss"));
-        strPeer=strPeer+tr("Time of Last Send: %1\n") .arg(QDateTime::fromTime_t(stats.nLastSend).toString());
-        strPeer=strPeer+tr("Time of Last Recv: %1\n") .arg(QDateTime::fromTime_t(stats.nLastRecv).toString());
-        strPeer=strPeer+tr("Bytes Sent: %1\n") .arg(stats.nSendBytes);
-        strPeer=strPeer+tr("Bytes Recv: %1\n") .arg(stats.nRecvBytes);
-        strPeer=strPeer+tr("Ping Time: %1\n") .arg(stats.dPingTime);
-        if (stats.dPingWait > 0.0)
-            strPeer=strPeer+tr("Ping Wait Time: %1\n") .arg(stats.dPingWait);
-         strPeer=strPeer+tr("Blocks Requested: %1\n") .arg(stats.nBlocksRequested);
-        strPeer=strPeer+tr("Version: %1\n") .arg(stats.nVersion);
-        strPeer=strPeer+tr("SubVersion: %1\n") .arg(stats.strSubVer.c_str());
-        strPeer=strPeer+tr("Inbound?: %1\n") .arg(stats.fInbound ? "N": "Y");
-        strPeer=strPeer+tr("Starting Block: %1\n") .arg(stats.nStartingHeight);
-        strPeer=strPeer+tr("Ban Score(100 max): %1\n\n") .arg(stats.nMisbehavior);
-
-        strAllPeer=strAllPeer+strPeer;
-     }
-
-     message(tr("Extended Peer Information"),
-            tr("\tNumber of Connections: %1\n"
-               "\tAverage Ping Time: %2\n\n"
-               "\tTotal Bytes Recv: %3\n"
-               "\tTotal Bytes Sent: %4\n"
-               "\tTotal Blocks Requested: %5\n\n"
-               "\tPlease click \"Show Details\" for more information.\n")
-            .arg(nTotPeers)
-            .arg(dTotPingTime/nTotPeers)
-            .arg(clientModel->getTotalBytesRecv())
-            .arg(clientModel->getTotalBytesSent())
-            .arg(nTotBlocksRequested),
-            CClientUIInterface::MODAL,
-            tr("%1")
-             .arg(strAllPeer));
-}
-
 void BitcoinGUI::stakingIconClicked()
 {
    TRY_LOCK(cs_main, lockMain);
@@ -886,14 +840,8 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     if(secs <= 0) {
       // Fully up to date. Leave text empty.
     }
-    else if(secs < 60)
-       text = tr("%n second(s) ago","",secs);
-    else if(secs < 60*60)
-       text = tr("%n minute(s) ago","",secs/60);
-    else if(secs < 24*60*60)
-       text = tr("%n hour(s) ago","",secs/(60*60));
     else
-       text = tr("%n day(s) ago","",secs/(60*60*24));
+        text=(GUIUtil::formatDurationStr(secs));
 
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60 && count >= nTotalBlocks)
@@ -1338,15 +1286,7 @@ void BitcoinGUI::updateStakingIcon()
         {
             uint64 nNetworkWeight = clientModel->getPosKernalPS();
             int nEstimateTime = clientModel->getStakeTargetSpacing() * 10 * nNetworkWeight / nWeight;
-            QString text;
-            if (nEstimateTime < 60)
-                text = tr("%n second(s)", "", nEstimateTime);
-            else if (nEstimateTime < 60*60)
-                text = tr("%n minute(s)", "", nEstimateTime/60);
-            else if (nEstimateTime < 24*60*60)
-                text = tr("%n hour(s)", "", nEstimateTime/(60*60));
-            else
-                text = tr("%n day(s)", "", nEstimateTime/(60*60*24));
+            QString text = (GUIUtil::formatDurationStr(nEstimateTime));
 
             labelStakingIcon->setPixmap(QIcon(":/icons/staking_on").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
             labelStakingIcon->setToolTip(tr("Staking.\n Your weight is %1\n Network weight is %2\n You have 50\% chance of producing a stake within %3").arg(nWeight).arg(nNetworkWeight).arg(text));

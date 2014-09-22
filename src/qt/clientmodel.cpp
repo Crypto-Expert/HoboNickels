@@ -1,5 +1,6 @@
 #include "clientmodel.h"
 #include "guiconstants.h"
+#include "peertablemodel.h"
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
 #include "transactiontablemodel.h"
@@ -8,7 +9,6 @@
 #include "main.h"
 #include "ui_interface.h"
 
-#include <QVector>
 #include <QDateTime>
 #include <QTimer>
 
@@ -18,10 +18,11 @@ double GetDifficulty(const CBlockIndex* blockindex);
 double GetPoWMHashPS(const CBlockIndex* blockindex = NULL);
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
-    QObject(parent), optionsModel(optionsModel),
+    QObject(parent), optionsModel(optionsModel), peerTableModel(0),
     cachedNumBlocks(0), cachedNumBlocksOfPeers(0), numBlocksAtStartup(-1), pollTimer(0)
 {
 
+    peerTableModel = new PeerTableModel(this);
     pollTimer = new QTimer(this);
     pollTimer->setInterval(MODEL_UPDATE_DELAY);
     pollTimer->start();
@@ -38,24 +39,6 @@ ClientModel::~ClientModel()
 int ClientModel::getNumConnections() const
 {
     return vNodes.size();
-}
-
-QVector<CNodeStats> ClientModel::getPeerStats()
-{
-    QVector<CNodeStats> qvNodeStats;
-    CNode *pnode;
-
-    {
-        LOCK(cs_vNodes);
-        qvNodeStats.reserve(vNodes.size());
-        BOOST_FOREACH(pnode, vNodes) {
-            CNodeStats stats;
-            pnode->copyStats(stats);
-            qvNodeStats.push_back(stats);
-        }
-    }
-
-    return qvNodeStats;
 }
 
 int ClientModel::getNumBlocks() const
@@ -221,6 +204,11 @@ QString ClientModel::getStatusBarWarnings() const
 OptionsModel *ClientModel::getOptionsModel()
 {
     return optionsModel;
+}
+
+PeerTableModel *ClientModel::getPeerTableModel()
+{
+    return peerTableModel;
 }
 
 QString ClientModel::formatFullVersion() const
