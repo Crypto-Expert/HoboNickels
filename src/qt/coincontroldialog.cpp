@@ -671,6 +671,8 @@ void CoinControlDialog::updateView()
     map<QString, vector<COutput> > mapCoins;
     model->listCoins(mapCoins);
 
+    int64 nYearlyPercent = GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true);
+
     BOOST_FOREACH(PAIRTYPE(QString, vector<COutput>) coins, mapCoins)
     {
         QTreeWidgetItem *itemWalletAddress = new QTreeWidgetItem();
@@ -792,7 +794,6 @@ void CoinControlDialog::updateView()
             itemOutput->setText(COLUMN_AGE_INT64, strPad(QString::number(nCoinAge), 15, " "));
 
             // Potential Stake
-            int64 nYearlyPercent = GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true);
             int64 nStakeAge = nAge - nStakeMinAge < 0 ? 0 : nCoinAge;
             int64 nPotentialStake = (((nYearlyPercent * 1.001) / (365 * COIN)) * nStakeAge * nValue) / COIN;
             itemOutput->setText(COLUMN_POTENTIALSTAKE, BitcoinUnits::formatAge(nDisplayUnit, nPotentialStake));
