@@ -46,7 +46,6 @@ SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
     ui->lineEditCoinControlChange->setFont(GUIUtil::bitcoinAddressFont());
     connect(ui->pushButtonCoinControl, SIGNAL(clicked()), this, SLOT(coinControlButtonClicked()));
     connect(ui->checkBoxCoinControlChange, SIGNAL(stateChanged(int)), this, SLOT(coinControlChangeChecked(int)));
-    connect(ui->lineEditCoinControlChange, SIGNAL(textEdited(const QString &)), this, SLOT(coinControlChangeEdited(const QString &)));
 
     // Coin Control: clipboard actions
     QAction *clipboardQuantityAction = new QAction(tr("Copy quantity"), this);
@@ -117,6 +116,19 @@ void SendCoinsDialog::on_sendButton_clicked()
 
     if(!model)
         return;
+
+    if (ui->lineEditCoinControlChange->isEnabled())
+    {
+        if(!ui->lineEditCoinControlChange->hasAcceptableInput() ||
+        (model && !model->validateAddress(ui->lineEditCoinControlChange->text())))
+        {
+             CoinControlDialog::coinControl->destChange = CNoDestination();
+             ui->lineEditCoinControlChange->setValid(false);
+             valid = false;
+        }
+        else
+            CoinControlDialog::coinControl->destChange = CBitcoinAddress(ui->lineEditCoinControlChange->text().toStdString()).Get();
+    }
 
     for(int i = 0; i < ui->entries->count(); ++i)
     {
@@ -447,44 +459,25 @@ void SendCoinsDialog::coinControlChangeChecked(int state)
     }
 
     ui->lineEditCoinControlChange->setEnabled((state == Qt::Checked));
-    ui->labelCoinControlChangeLabel->setEnabled((state == Qt::Checked));
+    ui->addressBookButton->setEnabled((state == Qt::Checked));
+    ui->pasteButton->setEnabled((state == Qt::Checked));
 }
 
-// Coin Control: custom change address changed
-void SendCoinsDialog::coinControlChangeEdited(const QString & text)
+void SendCoinsDialog::on_pasteButton_clicked()
 {
-    if (model)
-    {
-        CoinControlDialog::coinControl->destChange = CBitcoinAddress(text.toStdString()).Get();
+    // Paste text from clipboard into recipient field
+    ui->lineEditCoinControlChange->setText(QApplication::clipboard()->text());
+}
 
-        // label for the change address
-        ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:black;}");
-        if (text.isEmpty())
-            ui->labelCoinControlChangeLabel->setText("");
-        else if (!CBitcoinAddress(text.toStdString()).IsValid())
-        {
-            ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
-            ui->labelCoinControlChangeLabel->setText(tr("Warning: Invalid HoboNickels address"));
-        }
-        else
-        {
-            QString associatedLabel = model->getAddressTableModel()->labelForAddress(text);
-            if (!associatedLabel.isEmpty())
-                ui->labelCoinControlChangeLabel->setText(associatedLabel);
-            else
-            {
-                CPubKey pubkey;
-                CKeyID keyid;
-                CBitcoinAddress(text.toStdString()).GetKeyID(keyid);
-                if (model->getPubKey(keyid, pubkey))
-                    ui->labelCoinControlChangeLabel->setText(tr("(no label)"));
-                else
-                {
-                    ui->labelCoinControlChangeLabel->setStyleSheet("QLabel{color:red;}");
-                    ui->labelCoinControlChangeLabel->setText(tr("Warning: unknown change address"));
-                }
-            }
-        }
+void SendCoinsDialog::on_addressBookButton_clicked()
+{
+    if(!model)
+        return;
+    AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::ReceivingTab, this);
+    dlg.setModel(model->getAddressTableModel());
+    if(dlg.exec())
+    {
+        ui->lineEditCoinControlChange->setText(dlg.getReturnValue());
     }
 }
 

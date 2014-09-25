@@ -27,7 +27,6 @@ std::string getBlockHash(int64 Height)
     if (desiredheight < 0 || desiredheight > nBestHeight)
         return 0;
 
-    CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hashBestChain];
     while (pblockindex->nHeight > desiredheight)
         pblockindex = pblockindex->pprev;
@@ -54,7 +53,6 @@ std::string getBlockMerkle(int64 Height)
     if (mapBlockIndex.count(hash) == 0)
         return 0;
 
-    CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     return pblockindex->hashMerkleRoot.ToString();//.substr(0,10).c_str();
 }
@@ -67,7 +65,6 @@ int64 getBlocknBits(int64 Height)
     if (mapBlockIndex.count(hash) == 0)
         return 0;
 
-    CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     return pblockindex->nBits;
 }
@@ -80,7 +77,6 @@ int64 getBlockNonce(int64 Height)
     if (mapBlockIndex.count(hash) == 0)
         return 0;
 
-    CBlock block;
     CBlockIndex* pblockindex = mapBlockIndex[hash];
     return pblockindex->nNonce;
 }

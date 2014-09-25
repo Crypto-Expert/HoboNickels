@@ -8,6 +8,7 @@
 #include "optionsmodel.h"
 #include "coincontrol.h"
 #include "guiutil.h"
+#include "qcomboboxfiltercoins.h"
 
 #include <QApplication>
 #include <QCheckBox>
@@ -104,14 +105,21 @@ CoinControlDialog::CoinControlDialog(QWidget *parent) :
     // (un)select all
     connect(ui->pushButtonSelectAll, SIGNAL(clicked()), this, SLOT(buttonSelectAllClicked()));
 
-    ui->treeWidget->setColumnWidth(COLUMN_CHECKBOX, 84);
+    // custom Coin Control Selection Button (select less than)
+    connect(ui->pushButtonCustomCC, SIGNAL(clicked()), this, SLOT(customSelectCoins()));
+
+    ui->treeWidget->setColumnWidth(COLUMN_CHECKBOX, 80);
     ui->treeWidget->setColumnWidth(COLUMN_AMOUNT, 100);
-    ui->treeWidget->setColumnWidth(COLUMN_LABEL, 170);
-    ui->treeWidget->setColumnWidth(COLUMN_ADDRESS, 250);
+    ui->treeWidget->setColumnWidth(COLUMN_POTENTIALSTAKE, 90);
+    ui->treeWidget->setColumnWidth(COLUMN_LABEL, 75);
+    ui->treeWidget->setColumnWidth(COLUMN_ADDRESS, 240);
     ui->treeWidget->setColumnWidth(COLUMN_DATE, 90);
     ui->treeWidget->setColumnWidth(COLUMN_CONFIRMATIONS, 70);
-    ui->treeWidget->setColumnWidth(COLUMN_PRIORITY, 100);
-    ui->treeWidget->setColumnWidth(COLUMN_WEIGHT, 100);
+    ui->treeWidget->setColumnWidth(COLUMN_PRIORITY, 90);
+    ui->treeWidget->setColumnWidth(COLUMN_AGE, 50);
+    ui->treeWidget->setColumnWidth(COLUMN_WEIGHT, 90);
+    ui->treeWidget->setColumnHidden(COLUMN_AGE_INT64, true);
+    ui->treeWidget->setColumnHidden(COLUMN_POTENTIALSTAKE_INT64, true);
     ui->treeWidget->setColumnHidden(COLUMN_TXHASH, true);         // store transacton hash in this column, but dont show it
     ui->treeWidget->setColumnHidden(COLUMN_VOUT_INDEX, true);     // store vout index in this column, but dont show it
     ui->treeWidget->setColumnHidden(COLUMN_AMOUNT_INT64, true);   // store amount int64 in this column, but dont show it
@@ -119,6 +127,14 @@ CoinControlDialog::CoinControlDialog(QWidget *parent) :
 
     // default view is sorted by amount desc
     sortView(COLUMN_AMOUNT_INT64, Qt::DescendingOrder);
+
+    // combo box to select coin filter
+    ui->QComboBoxFilterCoins->addItem("Amount <");
+    ui->QComboBoxFilterCoins->addItem("Amount >");
+    ui->QComboBoxFilterCoins->addItem("Weight <");
+    ui->QComboBoxFilterCoins->addItem("Weight >");
+    ui->QComboBoxFilterCoins->addItem("Age <");
+    ui->QComboBoxFilterCoins->addItem("Age >");
 }
 
 CoinControlDialog::~CoinControlDialog()
@@ -171,6 +187,116 @@ void CoinControlDialog::buttonSelectAllClicked()
                 ui->treeWidget->topLevelItem(i)->setCheckState(COLUMN_CHECKBOX, state);
     ui->treeWidget->setEnabled(true);
     CoinControlDialog::updateLabels(model, this);
+}
+
+void CoinControlDialog::customSelectCoins()
+{
+    QString strUserAmount = ui->lineEditCustomCC->text();
+    QString strComboText = ui->QComboBoxFilterCoins->currentText();
+    double dUserAmount = QString(strUserAmount).toDouble();
+
+    bool treeMode = ui->radioTreeMode->isChecked();
+
+    QFlags<Qt::ItemFlag> flgCheckbox=Qt::ItemIsSelectable | Qt::ItemIsEnabled | Qt::ItemIsUserCheckable;
+
+    map<QString, vector<COutput> > mapCoins;
+    model->listCoins(mapCoins);
+
+    BOOST_FOREACH(PAIRTYPE(QString, vector<COutput>) coins, mapCoins)
+    {
+        QTreeWidgetItem *itemWalletAddress = new QTreeWidgetItem();
+        QTreeWidgetItem *itemOutput;
+
+        if (treeMode)
+            itemOutput = new QTreeWidgetItem(itemWalletAddress);
+        else
+            itemOutput = new QTreeWidgetItem(ui->treeWidget);
+
+        itemOutput->setFlags(flgCheckbox);
+        itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+
+        BOOST_FOREACH(const COutput& out, coins.second)
+        {
+            // transaction hash
+            uint256 txhash = out.tx->GetHash();
+
+            //Getting the coin amount
+            double dCoinAmount = out.tx->vout[out.i].nValue;
+
+	    //Coin Weight
+	    uint64 nTxWeight = 0;
+	    model->getStakeWeightFromValue(out.tx->GetTxTime(), out.tx->vout[out.i].nValue, nTxWeight);
+
+            //Age
+            double dAge = (GetTime() - out.tx->GetTxTime()) / (double)(1440 * 60);
+
+            COutPoint outpt(txhash, out.i);
+
+            //selecting the coins
+            if (strComboText == "Amount <") {
+                if (dCoinAmount < dUserAmount * COIN) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+            else if (strComboText == "Amount >") {
+                if (dCoinAmount > dUserAmount * COIN) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+            else if (strComboText == "Weight <") {
+                if (nTxWeight < dUserAmount) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+            else if (strComboText == "Weight >") {
+                if (nTxWeight > dUserAmount) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+            else if (strComboText == "Age <") {
+                if (dAge < dUserAmount) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+            else if (strComboText == "Age >") {
+                if (dAge > dUserAmount) {
+                    coinControl->Select(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Checked);
+                }
+                else {
+                    coinControl->UnSelect(outpt);
+                    itemOutput->setCheckState(COLUMN_CHECKBOX,Qt::Unchecked);
+                }
+            }
+        }
+    }
+    CoinControlDialog::updateLabels(model, this);
+    updateView();
 }
 
 // context menu
@@ -276,7 +402,7 @@ void CoinControlDialog::sortView(int column, Qt::SortOrder order)
     sortColumn = column;
     sortOrder = order;
     ui->treeWidget->sortItems(column, order);
-    ui->treeWidget->header()->setSortIndicator((sortColumn == COLUMN_AMOUNT_INT64 ? COLUMN_AMOUNT : (sortColumn == COLUMN_PRIORITY_INT64 ? COLUMN_PRIORITY : sortColumn)), sortOrder);
+    ui->treeWidget->header()->setSortIndicator((sortColumn == COLUMN_AMOUNT_INT64 ? COLUMN_AMOUNT : (sortColumn == COLUMN_PRIORITY_INT64 ? COLUMN_PRIORITY : (sortColumn == COLUMN_POTENTIALSTAKE_INT64 ? COLUMN_POTENTIALSTAKE :(sortColumn == COLUMN_AGE_INT64 ? COLUMN_AGE : sortColumn)))), sortOrder);
 }
 
 // treeview: clicked on header
@@ -291,6 +417,12 @@ void CoinControlDialog::headerSectionClicked(int logicalIndex)
         if (logicalIndex == COLUMN_AMOUNT) // sort by amount
             logicalIndex = COLUMN_AMOUNT_INT64;
 
+        if (logicalIndex == COLUMN_AGE) // sort by age
+            logicalIndex = COLUMN_AGE_INT64;
+
+        if (logicalIndex == COLUMN_POTENTIALSTAKE) // sort by potential stake
+            logicalIndex = COLUMN_POTENTIALSTAKE_INT64;
+
         if (logicalIndex == COLUMN_PRIORITY) // sort by priority
             logicalIndex = COLUMN_PRIORITY_INT64;
 
@@ -299,7 +431,7 @@ void CoinControlDialog::headerSectionClicked(int logicalIndex)
         else
         {
             sortColumn = logicalIndex;
-            sortOrder = ((sortColumn == COLUMN_AMOUNT_INT64 || sortColumn == COLUMN_PRIORITY_INT64 || sortColumn == COLUMN_DATE || sortColumn == COLUMN_CONFIRMATIONS || sortColumn == COLUMN_WEIGHT) ? Qt::DescendingOrder : Qt::AscendingOrder); // if amount,date,conf,priority then default => desc, else default => asc
+            sortOrder = ((sortColumn == COLUMN_AMOUNT_INT64 || sortColumn == COLUMN_PRIORITY_INT64 || sortColumn == COLUMN_DATE || sortColumn == COLUMN_CONFIRMATIONS || sortColumn == COLUMN_AGE_INT64 || sortColumn == COLUMN_POTENTIALSTAKE_INT64) ? Qt::DescendingOrder : Qt::AscendingOrder); // if amount,date,conf,priority then default => desc, else default => asc
         }
 
         sortView(sortColumn, sortOrder);
@@ -535,7 +667,7 @@ void CoinControlDialog::updateView()
     int nDisplayUnit = BitcoinUnits::BTC;
     if (model && model->getOptionsModel())
         nDisplayUnit = model->getOptionsModel()->getDisplayUnit();
-        
+
     map<QString, vector<COutput> > mapCoins;
     model->listCoins(mapCoins);
 
@@ -570,18 +702,21 @@ void CoinControlDialog::updateView()
         }
 
         int64 nSum = 0;
+        int64 nValue = 0;
         double dPrioritySum = 0;
         int nChildren = 0;
         int nInputSum = 0;
-        uint64 nTxWeight = 0, nTxWeightSum = 0;
+        uint64 nTxWeight = 0, nTxWeightSum = 0, nPotentialStakeSum = 0;
+        int64 nTime = GetTime();
 
         BOOST_FOREACH(const COutput& out, coins.second)
         {
             int nInputSize = 148; // 180 if uncompressed public key
-            nSum += out.tx->vout[out.i].nValue;
+            nValue = out.tx->vout[out.i].nValue;
+            nSum += nValue;
             nChildren++;
 
-            model->getStakeWeightFromValue(out.tx->GetTxTime(), out.tx->vout[out.i].nValue, nTxWeight);
+            model->getStakeWeightFromValue(out.tx->GetTxTime(), nValue, nTxWeight);
             nTxWeightSum += nTxWeight;
             
             QTreeWidgetItem *itemOutput;
@@ -625,8 +760,8 @@ void CoinControlDialog::updateView()
             }
 
             // amount
-            itemOutput->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, out.tx->vout[out.i].nValue));
-            itemOutput->setText(COLUMN_AMOUNT_INT64, strPad(QString::number(out.tx->vout[out.i].nValue), 15, " ")); // padding so that sorting works correctly
+            itemOutput->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nValue));
+            itemOutput->setText(COLUMN_AMOUNT_INT64, strPad(QString::number(nValue), 15, " ")); // padding so that sorting works correctly
 
             // date
             itemOutput->setText(COLUMN_DATE, QDateTime::fromTime_t(out.tx->GetTxTime()).toString("yy-MM-dd hh:mm"));
@@ -641,14 +776,30 @@ void CoinControlDialog::updateView()
             itemOutput->setText(COLUMN_CONFIRMATIONS, strPad(QString::number(out.nDepth), 8, " "));
             
             // priority
-            double dPriority = ((double)out.tx->vout[out.i].nValue  / (nInputSize + 78)) * (out.nDepth+1); // 78 = 2 * 34 + 10
+            double dPriority = ((double)nValue  / (nInputSize + 78)) * (out.nDepth+1); // 78 = 2 * 34 + 10
             itemOutput->setText(COLUMN_PRIORITY, CoinControlDialog::getPriorityLabel(dPriority));
             itemOutput->setText(COLUMN_PRIORITY_INT64, strPad(QString::number((int64)dPriority), 20, " "));
-            dPrioritySum += (double)out.tx->vout[out.i].nValue  * (out.nDepth+1);
+            dPrioritySum += (double)nValue  * (out.nDepth+1);
             nInputSum    += nInputSize;
 
             // List Mode Weight
             itemOutput->setText(COLUMN_WEIGHT, strPad(QString::number(nTxWeight), 8, " "));
+
+            // Age
+            int64 nAge = (nTime - out.tx->GetTxTime());
+            int64 nCoinAge = COIN * nAge / (1440 * 60);
+            itemOutput->setText(COLUMN_AGE, BitcoinUnits::formatAge(nDisplayUnit, nCoinAge));
+            itemOutput->setText(COLUMN_AGE_INT64, strPad(QString::number(nCoinAge), 15, " "));
+
+            // Potential Stake
+            int64 nYearlyPercent = GetProofOfStakeReward(0, GetLastBlockIndex(pindexBest, true)->nBits, GetLastBlockIndex(pindexBest, true)->nTime, true);
+            int64 nStakeAge = nAge - nStakeMinAge < 0 ? 0 : nCoinAge;
+            int64 nPotentialStake = (((nYearlyPercent * 1.001) / (365 * COIN)) * nStakeAge * nValue) / COIN;
+            itemOutput->setText(COLUMN_POTENTIALSTAKE, BitcoinUnits::formatAge(nDisplayUnit, nPotentialStake));
+            itemOutput->setText(COLUMN_POTENTIALSTAKE_INT64, strPad(QString::number(nPotentialStake), 15, " "));
+
+            // Potential Stake Sum for Tree View
+            nPotentialStakeSum += nPotentialStake;
             
             // transaction hash
             uint256 txhash = out.tx->GetHash();
@@ -669,6 +820,8 @@ void CoinControlDialog::updateView()
             itemWalletAddress->setText(COLUMN_CHECKBOX, "(" + QString::number(nChildren) + ")");
             itemWalletAddress->setText(COLUMN_AMOUNT, BitcoinUnits::format(nDisplayUnit, nSum));
             itemWalletAddress->setText(COLUMN_AMOUNT_INT64, strPad(QString::number(nSum), 15, " "));
+            itemWalletAddress->setText(COLUMN_POTENTIALSTAKE, BitcoinUnits::formatAge(nDisplayUnit, nPotentialStakeSum));
+            itemWalletAddress->setText(COLUMN_POTENTIALSTAKE_INT64, strPad(QString::number(nPotentialStakeSum), 20, " "));
             itemWalletAddress->setText(COLUMN_PRIORITY, CoinControlDialog::getPriorityLabel(dPrioritySum));
             itemWalletAddress->setText(COLUMN_PRIORITY_INT64, strPad(QString::number((int64)dPrioritySum), 20, " "));
             // Tree Mode Weight
