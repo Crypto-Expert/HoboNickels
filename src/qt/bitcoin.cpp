@@ -7,6 +7,7 @@
 #include "optionsmodel.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "winshutdownmonitor.h"
 
 #include "init.h"
 #include "ui_interface.h"
@@ -155,7 +156,7 @@ int main(int argc, char *argv[])
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
     app.setOrganizationName("HoboNickels");
-    app.setOrganizationDomain("HoboNickels.su");
+    app.setOrganizationDomain("HoboNickels.info");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
         app.setApplicationName("HoboNickels-Qt-testnet");
     else
@@ -252,6 +253,11 @@ int main(int argc, char *argv[])
                 }
                 window.setCurrentWallet("~Default");
 
+#if defined(Q_OS_WIN) && QT_VERSION >= 0x050000
+                app.installNativeEventFilter(new WinShutdownMonitor());
+#endif
+
+
                 // If -min option passed, start window minimized.
                 if(GetBoolArg("-min"))
                 {
@@ -264,6 +270,10 @@ int main(int argc, char *argv[])
 
                 // Place this here as guiref has to be defined if we don't want to lose URIs
                 ipcInit(argc, argv);
+
+#if defined(Q_OS_WIN) && QT_VERSION >= 0x050000
+                 WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("HoboNickels shutting down. Please wait..."), (HWND)window.getMainWinId());
+#endif
 
                 app.exec();
 

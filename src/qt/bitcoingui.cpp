@@ -1293,3 +1293,8 @@ void BitcoinGUI::updateStakingIcon()
           }
      }
 }
+
+WId BitcoinGUI::getMainWinId() const
+{
+    return winId();
+}

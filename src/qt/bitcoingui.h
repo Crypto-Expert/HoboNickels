@@ -62,6 +62,9 @@ public:
 
     QAction *exportAction;
 
+   /// Get window identifier of QMainWindow (BitcoinGUI)
+   WId getMainWinId() const;
+
 protected:
     void changeEvent(QEvent *e);
     void closeEvent(QCloseEvent *event);
