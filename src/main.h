@@ -55,6 +55,10 @@ static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;// Incorrect value 
 static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just right
 /** Transactions smaller then this are ignored */
 static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
+/** Split/Combine Threshold Max */
+static const int64 MAX_SPLIT_AMOUNT = 20 * COIN;
+static const int64 MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT;
+
 
 /** Hard Fork Change Times */
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
@@ -111,6 +115,8 @@ extern bool fReindex;
 // Settings
 extern int64 nTransactionFee;
 extern int64 nMinimumInputValue;
+extern int64 nCombineThreshold;
+extern int64 nSplitThreshold;
 extern bool fUseFastIndex;
 
 // Minimum disk space required - used in CheckDiskSpace()

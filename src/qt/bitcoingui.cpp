@@ -685,11 +685,13 @@ void BitcoinGUI::stakingIconClicked()
          "Current Wallet Version: %9\n"
          "Current Wallet PoS Weight: %10\n"
          "Current Wallet Reserve Balance: %11\n\n"
-         "Stake for Charity Address: %12\n"
-         "Stake for Charity Percentage: %13\n\n"
-         "Total Wallets Loaded: %14\n"
-         "Total Wallets PoS Weight: %15\n\n"
-         "Network Money Supply: %16\n")
+         "Stake Split Threshold %12\n"
+         "Stake Combine Threshold %13\n\n"
+         "Stake for Charity Address: %14\n"
+         "Stake for Charity Percentage: %15\n\n"
+         "Total Wallets Loaded: %16\n"
+         "Total Wallets PoS Weight: %17\n\n"
+         "Network Money Supply: %18\n")
          .arg(clientModel->formatFullVersion())
          .arg(clientModel->getProtocolVersion())
          .arg(clientModel->getLastPoSBlock())
@@ -701,6 +703,8 @@ void BitcoinGUI::stakingIconClicked()
          .arg(walletStack->getWalletVersion())
          .arg(nWeight)
          .arg(BitcoinUnits::formatWithUnit(unit, walletStack->getReserveBalance()))
+         .arg(BitcoinUnits::formatWithUnit(unit, nSplitThreshold, false))
+         .arg(BitcoinUnits::formatWithUnit(unit, nCombineThreshold, false))
          .arg(walletStack->getStakeForCharityAddress())
          .arg(walletStack->getStakeForCharityPercent())
          .arg(walletManager->GetWalletCount())

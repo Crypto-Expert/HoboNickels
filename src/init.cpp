@@ -304,6 +304,8 @@ std::string HelpMessage()
         "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n" +
         "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n" +
         "  -zapwallettxes         " + _("Clear list of wallet transactions (diagnostic tool; implies -rescan)") + "\n" +
+        "  -splitthreshold=<n>    " + _("Set stake split threshold within range (default 5),(max 20))") + "\n" +
+        "  -combinethreshold=<n>  " + _("Set stake combine threshold within range (default 5),(max 20))") + "\n" +
         "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n" +
         "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n" +
         "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n" +
@@ -584,7 +586,7 @@ bool AppInit2()
     if (mapArgs.count("-mininput"))
     {
        if (!ParseMoney(mapArgs["-mininput"], nMinimumInputValue))
-       return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
+           return InitError(strprintf(_("Invalid amount for -mininput=<amount>: '%s'"), mapArgs["-mininput"].c_str()));
     }
 
     // ********************************************************* Step 4: application initialization: dir lock, daemonize, pidfile, debug log
@@ -672,6 +674,28 @@ bool AppInit2()
         }
         if (r == CDBEnv::RECOVER_FAIL)
             return InitError(_("wallet.dat corrupt, salvage failed"));
+    }
+
+    if (mapArgs.count("-splitthreshold"))
+    {
+       if (!ParseMoney(mapArgs["-splitthreshold"], nSplitThreshold))
+           return InitError(strprintf(_("Invalid amount for -splitthreshold=<amount>: '%s'"), mapArgs["-splitthreshold"].c_str()));
+       else {
+           if (nSplitThreshold > MAX_SPLIT_AMOUNT)
+               nSplitThreshold = MAX_SPLIT_AMOUNT;
+       }
+       printf("splitthreshold set to %"PRI64d"\n",nSplitThreshold);
+    }
+
+    if (mapArgs.count("-combinethreshold"))
+    {
+       if (!ParseMoney(mapArgs["-combinethreshold"], nCombineThreshold))
+           return InitError(strprintf(_("Invalid amount for -combinethreshold=<amount>: '%s'"), mapArgs["-combinethreshold"].c_str()));
+       else {
+           if (nCombineThreshold > MAX_COMBINE_AMOUNT)
+               nCombineThreshold = MAX_COMBINE_AMOUNT;
+       }
+       printf("combinethreshold set to %"PRI64d"\n",nCombineThreshold);
     }
 
     // ********************************************************* Step 6: network initialization
