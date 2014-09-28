@@ -22,6 +22,7 @@ class Notificator;
 class RPCConsole;
 class BlockBrowser;
 class StakeForCharityDialog;
+class CBitcoinAddress;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
@@ -161,8 +162,11 @@ public slots:
     /** Give user information about reserve balance */
     quint64 getReserveBalance();
     /** Give user information about Stake For Charity */
-    int getStakeForCharityPercent();
-    QString getStakeForCharityAddress();
+    void getStakeForCharity(int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
     /** Report Current Wallet Version */
     int getWalletVersion() const;
     /** Report from View about Wallet Encryptions */

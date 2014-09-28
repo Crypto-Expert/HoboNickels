@@ -221,12 +221,12 @@ Value getaccountaddress(CWallet* pWallet, const Array& params, bool fHelp)
 Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 {
 
-    if (fHelp || params.size() < 2 || params.size() > 4)
+    if (fHelp || params.size() < 2 || params.size() > 5)
         throw runtime_error(
-            "stakeforcharity <HoboNickelsaddress> <percent> [min amount] [max amount]\n"
+            "stakeforcharity <HoboNickelsaddress> <percent> [Change Address] [min amount] [max amount]\n"
             "Gives a percentage of a found stake to a different address, after stake matures\n"
             "Percent is a whole number 1 to 50. Set to 0 to turn off.\n"
-            "Min and Max Amount are optional\n"
+            "Change Address, Min and Max Amount are optional\n"
             "Set percentage to zero to turn off"
             + HelpRequiringPassphrase(pWallet));
 
@@ -245,10 +245,22 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     int64 nMinAmount = MIN_TXOUT_AMOUNT;
     int64 nMaxAmount = MAX_MONEY;
 
+    // Optional Change Address
+    CBitcoinAddress changeAddress;
+    if (params.size() > 2) {
+        changeAddress = params[2].get_str();
+        if (!changeAddress.IsValid())
+            throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid HoboNickels change address");
+        else {
+            if(!IsMine(*pWallet, changeAddress.Get()))
+                throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "HoboNickels change address not owned");
+        }
+    }
+
     // Optional Min Amount
-    if (params.size() > 2)
+    if (params.size() > 3)
     {
-        int64 nAmount = AmountFromValue(params[2]);
+        int64 nAmount = AmountFromValue(params[3]);
         if (nAmount < MIN_TXOUT_AMOUNT)
             throw JSONRPCError(-101, "Send amount too small");
         else
@@ -256,9 +268,9 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     }
 
     // Optional Max Amount
-    if (params.size() > 3)
+    if (params.size() > 4)
     {
-        int64 nAmount = AmountFromValue(params[3]);
+        int64 nAmount = AmountFromValue(params[4]);
 
         if (nAmount < MIN_TXOUT_AMOUNT)
             throw JSONRPCError(-101, "Send amount too small");
@@ -283,6 +295,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
                 walletdb.EraseStakeForCharity(pWallet->strStakeForCharityAddress.ToString());
 
             pWallet->strStakeForCharityAddress = "";
+            pWallet->strStakeForCharityChangeAddress = "";
 
             return Value::null;
         }
@@ -297,13 +310,14 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
 
         pWallet->strStakeForCharityAddress = address;
         pWallet->nStakeForCharityPercent = nPer;
+        pWallet->strStakeForCharityChangeAddress = changeAddress;
         pWallet->nStakeForCharityMin = nMinAmount;
         pWallet->nStakeForCharityMax = nMaxAmount;
         pWallet->fStakeForCharity = true;
         fGlobalStakeForCharity = true;
 
         if(fFileBacked)
-            walletdb.WriteStakeForCharity(address.ToString(), nPer);
+            walletdb.WriteStakeForCharity(address.ToString(), nPer, changeAddress.ToString(),nMinAmount,nMaxAmount);
     }
 
     return Value::null;

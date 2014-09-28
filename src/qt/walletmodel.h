@@ -113,12 +113,16 @@ public:
     quint64 getReserveBalance();
     // PoS Information about value and time
     void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
-    // Wallet Information about Stake For Charity
-    int getStakeForCharityPercent();
-    QString getStakeForCharityAddress();
     // setStakeForCharity Wallet Settings
     void setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
                             CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
+    // Wallet Information about Stake For Charity
+    void getStakeForCharity(int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
                             qint64& nStakeForCharityMinAmount,
                             qint64& nStakeForCharityMaxAmount);
 
@@ -151,6 +155,7 @@ public:
     void lockCoin(COutPoint& output);
     void unlockCoin(COutPoint& output);
     void listLockedCoins(std::vector<COutPoint>& vOutpts);
+    bool isMine(const CBitcoinAddress &address);
 
 private:
     CWallet *wallet;

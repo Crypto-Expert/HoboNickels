@@ -293,16 +293,16 @@ bool WalletStack::isWalletLocked()
     return false;
 }
 
-int WalletStack::getStakeForCharityPercent()
+void WalletStack::getStakeForCharity(int& nStakeForCharityPercent,
+                        CBitcoinAddress& strStakeForCharityAddress,
+                        CBitcoinAddress& strStakeForCharityChangeAddress,
+                        qint64& nStakeForCharityMinAmount,
+                        qint64& nStakeForCharityMaxAmount)
 {
     WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) return walletView->getStakeForCharityPercent();
-    return 0;
-}
-
-QString WalletStack::getStakeForCharityAddress()
-{
-    WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) return walletView->getStakeForCharityAddress();
-    return "";
+    if (walletView) return walletView->getStakeForCharity(nStakeForCharityPercent,
+                                                          strStakeForCharityAddress,
+                                                          strStakeForCharityChangeAddress,
+                                                          nStakeForCharityMinAmount,
+                                                          nStakeForCharityMaxAmount);
 }

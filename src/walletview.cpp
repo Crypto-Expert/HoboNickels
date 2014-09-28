@@ -717,16 +717,16 @@ bool WalletView::isWalletLocked()
 
 }
 
-int WalletView::getStakeForCharityPercent()
+void WalletView::getStakeForCharity(int& nStakeForCharityPercent,
+                        CBitcoinAddress& strStakeForCharityAddress,
+                        CBitcoinAddress& strStakeForCharityChangeAddress,
+                        qint64& nStakeForCharityMinAmount,
+                        qint64& nStakeForCharityMaxAmount)
 {
-    if(!walletModel)
-        return false;
-    return (walletModel->getStakeForCharityPercent());
-}
+    walletModel->getStakeForCharity(nStakeForCharityPercent,
+                                    strStakeForCharityAddress,
+                                    strStakeForCharityChangeAddress,
+                                    nStakeForCharityMinAmount,
+                                    nStakeForCharityMaxAmount);
 
-QString WalletView::getStakeForCharityAddress()
-{
-    if(!walletModel)
-      return "";
-    return (walletModel->getStakeForCharityAddress());
 }

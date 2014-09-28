@@ -664,16 +664,24 @@ void BitcoinGUI::lockIconClicked()
 
 void BitcoinGUI::stakingIconClicked()
 {
-   TRY_LOCK(cs_main, lockMain);
-   if(!lockMain)
-       return;
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
 
-   uint64 nMinWeight = 0, nMaxWeight = 0;
-   walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+    uint64 nMinWeight = 0, nMaxWeight = 0;
+    walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
-   int unit = clientModel->getOptionsModel()->getDisplayUnit();
+    CBitcoinAddress strAddress;
+    CBitcoinAddress strChangeAddress;
+    int nPer;
+    int64 nMin;
+    int64 nMax;
 
-   message(tr("Extended Staking Information"),
+    walletStack->getStakeForCharity(nPer, strAddress, strChangeAddress, nMin, nMax);
+
+    int unit = clientModel->getOptionsModel()->getDisplayUnit();
+
+    message(tr("Extended Staking Information"),
       tr("Client Version: %1\n"
          "Protocol Version: %2\n\n"
          "Last PoS Block Number: %3\n"
@@ -705,8 +713,8 @@ void BitcoinGUI::stakingIconClicked()
          .arg(BitcoinUnits::formatWithUnit(unit, walletStack->getReserveBalance()))
          .arg(BitcoinUnits::formatWithUnit(unit, nSplitThreshold, false))
          .arg(BitcoinUnits::formatWithUnit(unit, nCombineThreshold, false))
-         .arg(walletStack->getStakeForCharityAddress())
-         .arg(walletStack->getStakeForCharityPercent())
+         .arg(strAddress.ToString().c_str())
+         .arg(nPer)
          .arg(walletManager->GetWalletCount())
          .arg(walletStack->getTotStakeWeight())
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
