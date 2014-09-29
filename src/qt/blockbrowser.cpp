@@ -283,7 +283,10 @@ void BlockBrowser::setTransactionId(const QString &transactionId)
     if (GetTransaction(hash, tx, hashBlock))
     {
         CBlockIndex* pblockindex = mapBlockIndex[hashBlock];
-        ui->heightBox->setValue(pblockindex->nHeight);
+        if (!pblockindex)
+            ui->heightBox->setValue(nBestHeight);
+        else
+            ui->heightBox->setValue(pblockindex->nHeight);
         updateExplorer(true);
     }
 }
