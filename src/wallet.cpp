@@ -1217,6 +1217,8 @@ int64 CWallet::GetNewMint() const
 
 
 bool fGlobalStakeForCharity = false;
+int64 nPrevS4CNet = 0;
+int nPrevS4CHeight = 0;
 
 bool CWallet::StakeForCharity()
 {
@@ -1243,9 +1245,19 @@ bool CWallet::StakeForCharity()
                     printf("StakeForCharity: Amount: %s is not in range of Min: %s and Max:%s\n",FormatMoney(nNet).c_str(),FormatMoney(nStakeForCharityMin).c_str(),FormatMoney(nStakeForCharityMax).c_str());
                     return false;
                 }
-
-                printf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet).c_str(), strStakeForCharityAddress.ToString().c_str());
-                SendMoneyToDestination(strStakeForCharityAddress.Get(), nNet, wtx, false, true);
+                if (nPrevS4CNet == nNet && nBestHeight <= nPrevS4CHeight ) {
+                    printf("StakeForCharity Warning. nNet: %s equals nPrevS4CNet: %s. and nBestHeight %d less or equal to nPreveS4CHeight %d.\n",
+                           FormatMoney(nNet).c_str(),
+                           FormatMoney(nPrevS4CNet).c_str(),
+                           nBestHeight,
+                           nPrevS4CHeight);
+                    return false;
+                } else {
+                    printf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet).c_str(), strStakeForCharityAddress.ToString().c_str());
+                    SendMoneyToDestination(strStakeForCharityAddress.Get(), nNet, wtx, false, true);
+                    nPrevS4CNet = nNet;
+                    nPrevS4CHeight = nBestHeight;
+                }
             }
 
         }
