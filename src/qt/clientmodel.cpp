@@ -12,7 +12,7 @@
 #include <QDateTime>
 #include <QTimer>
 
-static const int64 nClientStartupTime = GetTime();
+static const qint64 nClientStartupTime = GetTime();
 double GetPoSKernelPS(const CBlockIndex* blockindex = NULL);
 double GetDifficulty(const CBlockIndex* blockindex);
 double GetPoWMHashPS(const CBlockIndex* blockindex = NULL);
@@ -70,7 +70,7 @@ int ClientModel::getLastPoSBlock()
     return GetLastBlockIndex(pindexBest,true)->nHeight;
 }
 
-int64 ClientModel::getMoneySupply()
+qint64 ClientModel::getMoneySupply()
 {
    return pindexBest->nMoneySupply;
 }

@@ -477,7 +477,7 @@ void WalletView::checkWallet()
 void WalletView::repairWallet()
 {
     int nMismatchSpent;
-    int64 nBalanceInQuestion;
+    qint64 nBalanceInQuestion;
     int nOrphansFound;
 
     if(!walletModel)
@@ -680,7 +680,7 @@ void WalletView::charityClicked(QString addr)
     disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
 }
 
-void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+void WalletView::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
 {
     if(!walletModel)
        return;

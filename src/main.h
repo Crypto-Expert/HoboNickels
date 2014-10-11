@@ -40,24 +40,24 @@ static const unsigned int MAX_ORPHAN_TRANSACTIONS = MAX_BLOCK_SIZE/100;
 /** The maximum number of entries in an 'inv' protocol message */
 static const unsigned int MAX_INV_SZ = 50000;
 /** Fees smaller than this (in satoshi) are considered zero fee (for transaction creation) */
-static const int64 MIN_TX_FEE = 0.1 * CENT;
+static const int64_t MIN_TX_FEE = 0.1 * CENT;
 /** Fees smaller than this (in satoshi) are considered zero fee (for relaying) */
-static const int64 MIN_RELAY_TX_FEE = 0.1 * CENT;
+static const int64_t MIN_RELAY_TX_FEE = 0.1 * CENT;
 /** No amount larger than this (in satoshi) is valid */
-static const int64 MAX_MONEY = 120000000 * COIN;
+static const int64_t MAX_MONEY = 120000000 * COIN;
 /** Base Rate for Proof of Work Reward */
-static const int64 MAX_MINT_PROOF_OF_WORK = 5 * COIN;
+static const int64_t MAX_MINT_PROOF_OF_WORK = 5 * COIN;
 /** Base Rate for Proof of Stake Reward(Incorrect), kept for sync */
-static const int64 MAX_MINT_PROOF_OF_STAKE = 10 * CENT; // Incorrect value Too small
+static const int64_t MAX_MINT_PROOF_OF_STAKE = 10 * CENT; // Incorrect value Too small
 /** Base Rate for Proof of Stake Reward(Incorrect), kept for sync */
-static const int64 MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;// Incorrect value Too big
+static const int64_t MAX_MINT_PROOF_OF_STAKE_FIX = 1000 * CENT;// Incorrect value Too big
 /** Base Rate for Proof of Stake Reward 100% per year */
-static const int64 MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just right
+static const int64_t MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just right
 /** Transactions smaller then this are ignored */
-static const int64 MIN_TXOUT_AMOUNT = MIN_TX_FEE;
+static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 /** Split/Combine Threshold Max */
-static const int64 MAX_SPLIT_AMOUNT = 20 * COIN;
-static const int64 MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT;
+static const int64_t MAX_SPLIT_AMOUNT = 20 * COIN;
+static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT;
 
 
 /** Hard Fork Change Times */
@@ -68,15 +68,15 @@ static const unsigned int POS_REWARD_FIX_TIME = 1383177600; // 31 OCT 2013 00:00
 static const unsigned int POS_REWARD_FIX_TIME2 = 1383606000; // 04 Nov 2013 23:00:00
 
 
-inline bool MoneyRange(int64 nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
+inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
 
 static const uint256 hashGenesisBlockOfficial("0x000009ea5ef5019446b315e7e581fc2ea184315ed46c9ddeadc8aa9442deedc9");
 static const uint256 hashGenesisBlockTestNet("0x0000f9e0292f278190e4d58cd1e1e9a32b7466c8092bd2371ffc80b06f8eca4a");
 
-inline int64 PastDrift(int64 nTime)   { return nTime - 2 * 60 * 60; } // up to 2 hours from the past
-inline int64 FutureDrift(int64 nTime) { return nTime + 2 * 60 * 60; } // up to 2 hours from the future
+inline int64_t PastDrift(int64_t nTime)   { return nTime - 2 * 60 * 60; } // up to 2 hours from the past
+inline int64_t FutureDrift(int64_t nTime) { return nTime + 2 * 60 * 60; } // up to 2 hours from the future
 
 extern CScript COINBASE_FLAGS;
 
@@ -98,13 +98,13 @@ extern uint256 nBestInvalidTrust;
 extern uint256 hashBestChain;
 extern CBlockIndex* pindexBest;
 extern unsigned int nTransactionsUpdated;
-extern uint64 nLastBlockTx;
-extern uint64 nLastBlockSize;
-extern int64 nLastCoinStakeSearchInterval;
+extern uint64_t nLastBlockTx;
+extern uint64_t nLastBlockSize;
+extern int64_t nLastCoinStakeSearchInterval;
 extern const std::string strMessageMagic;
 extern double dHashesPerSec;
-extern int64 nHPSTimerStart;
-extern int64 nTimeBestReceived;
+extern int64_t nHPSTimerStart;
+extern int64_t nTimeBestReceived;
 extern CCriticalSection cs_setpwalletRegistered;
 extern std::set<CWallet*> setpwalletRegistered;
 extern unsigned char pchMessageStart[4];
@@ -113,14 +113,14 @@ extern bool fImporting;
 extern bool fReindex;
 
 // Settings
-extern int64 nTransactionFee;
-extern int64 nMinimumInputValue;
-extern int64 nCombineThreshold;
-extern int64 nSplitThreshold;
+extern int64_t nTransactionFee;
+extern int64_t nMinimumInputValue;
+extern int64_t nCombineThreshold;
+extern int64_t nSplitThreshold;
 extern bool fUseFastIndex;
 
 // Minimum disk space required - used in CheckDiskSpace()
-static const uint64 nMinDiskSpace = 52428800;
+static const uint64_t nMinDiskSpace = 52428800;
 
 
 class CReserveKey;
@@ -138,7 +138,7 @@ void RegisterNodeSignals(CNodeSignals& nodeSignals);
 /** Unregister a network node */
 void UnregisterNodeSignals(CNodeSignals& nodeSignals);
 bool ProcessBlock(CNode* pfrom, CBlock* pblock);
-bool CheckDiskSpace(uint64 nAdditionalBytes=0);
+bool CheckDiskSpace(uint64_t nAdditionalBytes=0);
 FILE* OpenBlockFile(unsigned int nFile, unsigned int nBlockPos, const char* pszMode="rb");
 FILE* AppendBlockFile(unsigned int& nFileRet);
 bool LoadBlockIndex(bool fAllowNew=true);
@@ -150,10 +150,10 @@ bool LoadExternalBlockFile(FILE* fileIn);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
-int64 GetProofOfWorkReward();
-int64 GetProofOfStakeReward(int64 nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
-unsigned int ComputeMinWork(unsigned int nBase, int64 nTime);
-unsigned int ComputeMinStake(unsigned int nBase, int64 nTime, unsigned int nBlockTime);
+int64_t GetProofOfWorkReward();
+int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
+unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
+unsigned int ComputeMinStake(unsigned int nBase, int64_t nTime, unsigned int nBlockTime);
 
 int GetNumBlocksOfPeers();
 bool IsInitialBlockDownload();
@@ -377,7 +377,7 @@ public:
 class CTxOut
 {
 public:
-    int64 nValue;
+    int64_t nValue;
     CScript scriptPubKey;
 
     CTxOut()
@@ -385,7 +385,7 @@ public:
         SetNull();
     }
 
-    CTxOut(int64 nValueIn, CScript scriptPubKeyIn)
+    CTxOut(int64_t nValueIn, CScript scriptPubKeyIn)
     {
         nValue = nValueIn;
         scriptPubKey = scriptPubKeyIn;
@@ -552,9 +552,9 @@ public:
     /** Amount of bitcoins spent by this transaction.
         @return sum of all outputs (note: does not include fees)
      */
-    int64 GetValueOut() const
+    int64_t GetValueOut() const
     {
-        int64 nValueOut = 0;
+        int64_t nValueOut = 0;
         BOOST_FOREACH(const CTxOut& txout, vout)
         {
             nValueOut += txout.nValue;
@@ -572,7 +572,7 @@ public:
         @return	Sum of value of all inputs (scriptSigs)
         @see CTransaction::FetchInputs
      */
-    int64 GetValueIn(const MapPrevTx& mapInputs) const;
+    int64_t GetValueIn(const MapPrevTx& mapInputs) const;
 
     static bool AllowFree(double dPriority)
     {
@@ -581,7 +581,7 @@ public:
         return dPriority > COIN * 2880 / 250;
     }
 
-    int64 GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes = 0) const;
+    int64_t GetMinFee(unsigned int nBlockSize=1, bool fAllowFree=false, enum GetMinFee_mode mode=GMF_BLOCK, unsigned int nBytes = 0) const;
 
     bool ReadFromDisk(CDiskTxPos pos, FILE** pfileRet=NULL)
     {
@@ -688,7 +688,7 @@ public:
                        std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
                        const CBlockIndex* pindexBlock, bool fBlock, bool fMiner);
     bool CheckTransaction() const;
-    bool GetCoinAge(CTxDB& txdb, uint64& nCoinAge) const;  // ppcoin: get transaction coin age
+    bool GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const;  // ppcoin: get transaction coin age
 
 protected:
     const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
@@ -912,9 +912,9 @@ public:
         return thash;
     }
 
-    int64 GetBlockTime() const
+    int64_t GetBlockTime() const
     {
-        return (int64)nTime;
+        return (int64_t)nTime;
     }
 
     void UpdateTime(const CBlockIndex* pindexPrev);
@@ -959,11 +959,11 @@ public:
     }
 
     // ppcoin: get max transaction timestamp
-    int64 GetMaxTransactionTime() const
+    int64_t GetMaxTransactionTime() const
     {
-        int64 maxTransactionTime = 0;
+        int64_t maxTransactionTime = 0;
         BOOST_FOREACH(const CTransaction& tx, vtx)
-            maxTransactionTime = std::max(maxTransactionTime, (int64)tx.nTime);
+            maxTransactionTime = std::max(maxTransactionTime, (int64_t)tx.nTime);
         return maxTransactionTime;
     }
 
@@ -1101,7 +1101,7 @@ public:
     bool AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const uint256& hashProofOfStake);
     bool CheckBlock(bool fCheckPOW=true, bool fCheckMerkleRoot=true, bool fCheckSig=true) const;
     bool AcceptBlock();
-    bool GetCoinAge(uint64& nCoinAge) const; // ppcoin: calculate total coin age spent in block
+    bool GetCoinAge(uint64_t& nCoinAge) const; // ppcoin: calculate total coin age spent in block
     bool SignBlock(const CKeyStore& keystore);
     bool SignPoSBlock(CWallet& wallet);
     bool CheckBlockSignature(bool fProofOfStake) const;
@@ -1133,8 +1133,8 @@ public:
     uint256 nChainTrust; // ppcoin: trust score of block chain
     int nHeight;
 
-    int64 nMint;
-    int64 nMoneySupply;
+    int64_t nMint;
+    int64_t nMoneySupply;
 
     unsigned int nFlags;  // ppcoin: block index flags
     enum  
@@ -1144,7 +1144,7 @@ public:
         BLOCK_STAKE_MODIFIER = (1 << 2), // regenerated stake modifier
     };
 
-    uint64 nStakeModifier; // hash modifier for proof-of-stake
+    uint64_t nStakeModifier; // hash modifier for proof-of-stake
     unsigned int nStakeModifierChecksum; // checksum of index; in-memeory only
 
     // proof-of-stake specific fields
@@ -1236,9 +1236,9 @@ public:
         return *phashBlock;
     }
 
-    int64 GetBlockTime() const
+    int64_t GetBlockTime() const
     {
-        return (int64)nTime;
+        return (int64_t)nTime;
     }
 
     uint256 GetBlockTrust() const;
@@ -1253,18 +1253,18 @@ public:
         return true;
     }
 
-    int64 GetPastTimeLimit() const
+    int64_t GetPastTimeLimit() const
     {
         return GetMedianTimePast();
     }
 
     enum { nMedianTimeSpan=11 };
 
-    int64 GetMedianTimePast() const
+    int64_t GetMedianTimePast() const
     {
-        int64 pmedian[nMedianTimeSpan];
-        int64* pbegin = &pmedian[nMedianTimeSpan];
-        int64* pend = &pmedian[nMedianTimeSpan];
+        int64_t pmedian[nMedianTimeSpan];
+        int64_t* pbegin = &pmedian[nMedianTimeSpan];
+        int64_t* pend = &pmedian[nMedianTimeSpan];
 
         const CBlockIndex* pindex = this;
         for (int i = 0; i < nMedianTimeSpan && pindex; i++, pindex = pindex->pprev)
@@ -1315,7 +1315,7 @@ public:
         return (nFlags & BLOCK_STAKE_MODIFIER);
     }
 
-    void SetStakeModifier(uint64 nModifier, bool fGeneratedStakeModifier)
+    void SetStakeModifier(uint64_t nModifier, bool fGeneratedStakeModifier)
     {
         nStakeModifier = nModifier;
         if (fGeneratedStakeModifier)

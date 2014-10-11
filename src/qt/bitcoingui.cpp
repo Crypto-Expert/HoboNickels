@@ -668,14 +668,14 @@ void BitcoinGUI::stakingIconClicked()
     if(!lockMain)
         return;
 
-    uint64 nMinWeight = 0, nMaxWeight = 0;
+    quint64 nMinWeight = 0, nMaxWeight = 0;
     walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
     CBitcoinAddress strAddress;
     CBitcoinAddress strChangeAddress;
     int nPer;
-    int64 nMin;
-    int64 nMax;
+    qint64 nMin;
+    qint64 nMax;
 
     walletStack->getStakeForCharity(nPer, strAddress, strChangeAddress, nMin, nMax);
 
@@ -1289,14 +1289,14 @@ void BitcoinGUI::updateStakingIcon()
         labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
     else
     {
-        uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+        quint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
 
         walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
         if (!nWeight)
             labelStakingIcon->setToolTip(tr("Not staking because you don't have mature coins"));
         else
         {
-            uint64 nNetworkWeight = clientModel->getPosKernalPS();
+            quint64 nNetworkWeight = clientModel->getPosKernalPS();
             int nEstimateTime = clientModel->getStakeTargetSpacing() * 10 * nNetworkWeight / nWeight;
             QString text = (GUIUtil::formatDurationStr(nEstimateTime));
 

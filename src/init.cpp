@@ -640,7 +640,7 @@ bool AppInit2()
     if (fDaemon)
         fprintf(stdout, "HoboNickels server starting\n");
 
-    int64 nStart;
+    int64_t nStart;
 
     // ********************************************************* Step 5: verify database integrity
 
@@ -880,7 +880,7 @@ bool AppInit2()
 
     if (mapArgs.count("-reservebalance"))
     {
-        int64 nReserveBalance = 0;
+        int64_t nReserveBalance = 0;
         if (!ParseMoney(mapArgs["-reservebalance"], nReserveBalance))
             InitError(_("Invalid amount for -reservebalance=<amount>"));
         else

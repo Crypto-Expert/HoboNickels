@@ -4,6 +4,7 @@
 // file COPYING or http://www.opensource.org/licenses/mit-license.php.
 #include <boost/foreach.hpp>
 #include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 
 using namespace std;
 using namespace boost;
@@ -1152,12 +1153,12 @@ public:
         // (~200 bytes per cache entry times 50,000 entries)
         // Since there are a maximum of 20,000 signature operations per block
         // 50,000 is a reasonable default.
-        int64 nMaxCacheSize = GetArg("-maxsigcachesize", 50000);
+        int64_t nMaxCacheSize = GetArg("-maxsigcachesize", 50000);
         if (nMaxCacheSize <= 0) return;
 
         LOCK(cs_sigcache);
 
-        while (static_cast<int64>(setValid.size()) > nMaxCacheSize)
+        while (static_cast<int64_t>(setValid.size()) > nMaxCacheSize)
         {
             // Evict a random entry. Random because that helps
             // foil would-be DoS attackers who might try to pre-generate

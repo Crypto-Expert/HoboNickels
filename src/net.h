@@ -134,8 +134,8 @@ enum threadId
 
 extern bool fDiscover;
 extern bool fUseUPnP;
-extern uint64 nLocalServices;
-extern uint64 nLocalHostNonce;
+extern uint64_t nLocalServices;
+extern uint64_t nLocalHostNonce;
 extern CAddress addrSeenByPeer;
 extern boost::array<int, THREAD_MAX> vnThreadsRunning;
 extern CAddrMan addrman;
@@ -143,9 +143,9 @@ extern CAddrMan addrman;
 extern std::vector<CNode*> vNodes;
 extern CCriticalSection cs_vNodes;
 extern std::map<CInv, CDataStream> mapRelay;
-extern std::deque<std::pair<int64, CInv> > vRelayExpiration;
+extern std::deque<std::pair<int64_t, CInv> > vRelayExpiration;
 extern CCriticalSection cs_mapRelay;
-extern std::map<CInv, int64> mapAlreadyAskedFor;
+extern std::map<CInv, int64_t> mapAlreadyAskedFor;
 
 extern std::vector<std::string> vAddedNodes;
 extern CCriticalSection cs_vAddedNodes;
@@ -158,19 +158,19 @@ class CNodeStats
 {
 public:
     NodeId nodeid;
-    uint64 nServices;
-    int64 nLastSend;
-    int64 nLastRecv;
-    int64 nTimeConnected;
+    uint64_t nServices;
+    int64_t nLastSend;
+    int64_t nLastRecv;
+    int64_t nTimeConnected;
     std::string addrName;
     int nVersion;
     std::string cleanSubVer;
     bool fInbound;
     int nStartingHeight;
-    uint64 nSendBytes;
-    uint64 nRecvBytes;
+    uint64_t nSendBytes;
+    uint64_t nRecvBytes;
     bool fSyncNode;
-    uint64 nBlocksRequested;
+    uint64_t nBlocksRequested;
     double dPingTime;
     double dPingWait;
 };
@@ -188,7 +188,7 @@ public:
     CDataStream vRecv; // received message data
     unsigned int nDataPos;
 
-    int64 nTime; // time (in microseconds) of message receipt.
+    int64_t nTime; // time (in microseconds) of message receipt.
 
     CNetMessage(int nTypeIn, int nVersionIn) : hdrbuf(nTypeIn, nVersionIn), vRecv(nTypeIn, nVersionIn) {
         hdrbuf.resize(24);
@@ -224,7 +224,7 @@ class CNode
 {
 public:
     // socket
-    uint64 nServices;
+    uint64_t nServices;
     SOCKET hSocket;
     CDataStream ssSend;
     size_t nSendSize; // total size of all vSendMsg entries
@@ -236,12 +236,12 @@ public:
     CCriticalSection cs_vRecvMsg;
     int nRecvVersion;
 
-    int64 nLastSend;
-    int64 nLastRecv;
-    int64 nTimeConnected;
-    uint64 nBlocksRequested;
-    uint64 nRecvBytes;
-    uint64 nSendBytes;
+    int64_t nLastSend;
+    int64_t nLastRecv;
+    int64_t nTimeConnected;
+    uint64_t nBlocksRequested;
+    uint64_t nRecvBytes;
+    uint64_t nSendBytes;
     CAddress addr;
     std::string addrName;
     CService addrLocal;
@@ -264,7 +264,7 @@ protected:
 
     // Denial-of-service detection/prevention
     // Key is IP address, value is banned-until-time
-    static std::map<CNetAddr, int64> setBanned;
+    static std::map<CNetAddr, int64_t> setBanned;
     static CCriticalSection cs_setBanned;
 
 public:
@@ -287,15 +287,15 @@ public:
     mruset<CInv> setInventoryKnown;
     std::vector<CInv> vInventoryToSend;
     CCriticalSection cs_inventory;
-    std::multimap<int64, CInv> mapAskFor;
+    std::multimap<int64_t, CInv> mapAskFor;
 
     // Ping time measurement:
     // The pong reply we're expecting, or 0 if no pong expected.
-    uint64 nPingNonceSent;
+    uint64_t nPingNonceSent;
     // Time (in usec) the last ping was sent, or 0 if no ping was ever sent.
-    int64 nPingUsecStart;
+    int64_t nPingUsecStart;
     // Last measured round-trip time.
-    int64 nPingUsecTime;
+    int64_t nPingUsecTime;
     // Whether a ping is requested.
     bool fPingQueued;
 
@@ -363,8 +363,8 @@ private:
     // Network usage totals
     static CCriticalSection cs_totalBytesRecv;
     static CCriticalSection cs_totalBytesSent;
-    static uint64 nTotalBytesRecv;
-    static uint64 nTotalBytesSent;
+    static uint64_t nTotalBytesRecv;
+    static uint64_t nTotalBytesSent;
 
     CNode(const CNode&);
     void operator=(const CNode&);
@@ -449,13 +449,13 @@ public:
     {
         // We're using mapAskFor as a priority queue,
         // the key is the earliest time the request can be sent
-        int64& nRequestTime = mapAlreadyAskedFor[inv];
+        int64_t& nRequestTime = mapAlreadyAskedFor[inv];
         if (fDebugNet)
             printf("askfor %s   %"PRI64d" (%s)\n", inv.ToString().c_str(), nRequestTime, DateTimeStrFormat("%H:%M:%S", nRequestTime/1000000).c_str());
 
         // Make sure not to reuse time indexes to keep things in the same order
-        int64 nNow = (GetTime() - 1) * 1000000;
-        static int64 nLastTime;
+        int64_t nNow = (GetTime() - 1) * 1000000;
+        static int64_t nLastTime;
         ++nLastTime;
         nNow = std::max(nNow, nLastTime);
         nLastTime = nNow;
@@ -761,11 +761,11 @@ public:
     void copyStats(CNodeStats &stats);
 
     // Network stats
-    static void RecordBytesRecv(uint64 bytes);
-    static void RecordBytesSent(uint64 bytes);
+    static void RecordBytesRecv(uint64_t bytes);
+    static void RecordBytesSent(uint64_t bytes);
 
-    static uint64 GetTotalBytesRecv();
-    static uint64 GetTotalBytesSent();
+    static uint64_t GetTotalBytesRecv();
+    static uint64_t GetTotalBytesSent();
 };
 
 

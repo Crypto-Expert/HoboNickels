@@ -40,16 +40,16 @@ private:
 };
 
 double getTxTotalValue(std::string);
-double convertCoins(int64);
-int64 getBlockTime(int64);
-int64 getBlocknBits(int64);
-int64 getBlockNonce(int64);
-int64 getBlockHashrate(int64);
+double convertCoins(qint64);
+qint64 getBlockTime(qint64);
+qint64 getBlocknBits(qint64);
+qint64 getBlockNonce(qint64);
+qint64 getBlockHashrate(qint64);
 std::string getInputs(std::string);
 std::string getOutputs(std::string);
-std::string getBlockHash(int64);
-std::string getBlockMerkle(int64);
+std::string getBlockHash(qint64);
+std::string getBlockMerkle(qint64);
 bool addnode(std::string);
-const CBlockIndex* getBlockIndex(int64);
+const CBlockIndex* getBlockIndex(qint64);
 
 #endif // BLOCKBROWSER_H

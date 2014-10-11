@@ -83,9 +83,9 @@ public:
 };
 
 
-uint64 nLastBlockTx = 0;
-uint64 nLastBlockSize = 0;
-int64 nLastCoinStakeSearchInterval = 0;
+uint64_t nLastBlockTx = 0;
+uint64_t nLastBlockSize = 0;
+int64_t nLastCoinStakeSearchInterval = 0;
 
 // We want to sort transactions by priority and fee, so:
 typedef boost::tuple<double, double, CTransaction*> TxPriority;
@@ -159,7 +159,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     // a transaction spammer can cheaply fill blocks using
     // 1-satoshi-fee transactions. It should be set above the real
     // cost to you of processing a transaction.
-    int64 nMinTxFee = MIN_TX_FEE;
+    int64_t nMinTxFee = MIN_TX_FEE;
     if (mapArgs.count("-mintxfee"))
         ParseMoney(mapArgs["-mintxfee"], nMinTxFee);
 
@@ -168,7 +168,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
     pblock->nBits = GetNextTargetRequired(pindexPrev, fProofOfStake);
 
     // Collect memory pool transactions into the block
-    int64 nFees = 0;
+    int64_t nFees = 0;
     {
         LOCK2(cs_main, mempool.cs);
         CBlockIndex* pindexPrev = pindexBest;
@@ -189,7 +189,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
 
             COrphan* porphan = NULL;
             double dPriority = 0;
-            int64 nTotalIn = 0;
+            int64_t nTotalIn = 0;
             bool fMissingInputs = false;
             BOOST_FOREACH(const CTxIn& txin, tx.vin)
             {
@@ -223,7 +223,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                     nTotalIn += mempool.mapTx[txin.prevout.hash].vout[txin.prevout.n].nValue;
                     continue;
                 }
-                int64 nValueIn = txPrev.vout[txin.prevout.n].nValue;
+                int64_t nValueIn = txPrev.vout[txin.prevout.n].nValue;
                 nTotalIn += nValueIn;
 
                 int nConf = txindex.GetDepthInMainChain();
@@ -251,8 +251,8 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
 
         // Collect transactions into block
         map<uint256, CTxIndex> mapTestPool;
-        uint64 nBlockSize = 1000;
-        uint64 nBlockTx = 0;
+        uint64_t nBlockSize = 1000;
+        uint64_t nBlockTx = 0;
         int nBlockSigOps = 100;
         bool fSortedByFee = (nBlockPrioritySize <= 0);
 
@@ -284,7 +284,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
                 continue;
 
             // Simplify transaction fee - allow free = false
-            int64 nMinFee = tx.GetMinFee(nBlockSize, false, GMF_BLOCK);
+            int64_t nMinFee = tx.GetMinFee(nBlockSize, false, GMF_BLOCK);
 
             // Skip free transactions if we're past the minimum block size:
             if (fSortedByFee && (dFeePerKb < nMinTxFee) && (nBlockSize + nTxSize >= nBlockMinSize))
@@ -308,7 +308,7 @@ CBlock* CreateNewBlock(CWallet* pwallet, bool fProofOfStake)
             if (!tx.FetchInputs(txdb, mapTestPoolTmp, false, true, mapInputs, fInvalid))
                 continue;
 
-            int64 nTxFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
+            int64_t nTxFees = tx.GetValueIn(mapInputs)-tx.GetValueOut();
             if (nTxFees < nMinFee)
                 continue;
 
@@ -588,7 +588,7 @@ void BitcoinMiner(CWallet *pwallet)
         //
         // Search
         //
-        int64 nStart = GetTime();
+        int64_t nStart = GetTime();
         uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
 
         unsigned int max_nonce = 0xffff0000;
@@ -631,7 +631,7 @@ void BitcoinMiner(CWallet *pwallet)
             }
 
             // Meter hashes/sec
-            static int64 nHashCounter;
+            static int64_t nHashCounter;
             if (nHPSTimerStart == 0)
             {
                 nHPSTimerStart = GetTimeMillis();
@@ -649,7 +649,7 @@ void BitcoinMiner(CWallet *pwallet)
                         dHashesPerSec = 1000.0 * nHashCounter / (GetTimeMillis() - nHPSTimerStart);
                         nHPSTimerStart = GetTimeMillis();
                         nHashCounter = 0;
-                        static int64 nLogTime;
+                        static int64_t nLogTime;
                         if (GetTime() - nLogTime > 30 * 60)
                         {
                             nLogTime = GetTime();
@@ -681,7 +681,7 @@ void BitcoinMiner(CWallet *pwallet)
             pblock->UpdateTime(pindexPrev);
             nBlockTime = ByteReverse(pblock->nTime);
 
-            if (pblock->GetBlockTime() >= FutureDrift((int64)pblock->vtx[0].nTime))
+            if (pblock->GetBlockTime() >= FutureDrift((int64_t)pblock->vtx[0].nTime))
                 break; // need to update coinbase timestamp
         }
     }

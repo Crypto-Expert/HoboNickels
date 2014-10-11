@@ -40,7 +40,7 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 {
     if (coinControl)
     {
-        int64 nBalance = 0;
+        qint64 nBalance = 0;
         std::vector<COutput> vCoins;
         wallet->AvailableCoins(vCoins, true, coinControl);
         BOOST_FOREACH(const COutput& out, vCoins)
@@ -53,7 +53,7 @@ qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 
 qint64 WalletModel::getTotBalance() const
 {
-    int64 nTotBalance = 0;
+    qint64 nTotBalance = 0;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
        CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
@@ -201,7 +201,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         return DuplicateAddress;
     }
 
-    int64 nBalance = getBalance(coinControl);
+    qint64 nBalance = getBalance(coinControl);
 
     if(total > nBalance)
     {
@@ -217,7 +217,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
         LOCK2(cs_main, wallet->cs_wallet);
 
         // Sendmany
-        std::vector<std::pair<CScript, int64> > vecSend;
+        std::vector<std::pair<CScript, qint64> > vecSend;
         foreach(const SendCoinsRecipient &rcp, recipients)
         {
             CScript scriptPubKey;
@@ -227,7 +227,7 @@ WalletModel::SendCoinsReturn WalletModel::sendCoins(const QList<SendCoinsRecipie
 
         CWalletTx wtx;
         CReserveKey keyChange(wallet);
-        int64 nFeeRequired = 0;
+        qint64 nFeeRequired = 0;
         bool fCreated = wallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, false, coinControl);
 
         if(!fCreated)
@@ -383,8 +383,8 @@ bool WalletModel::backupAllWallets(const QString &filename)
 void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
                                      CBitcoinAddress& strStakeForCharityAddress,
                                      CBitcoinAddress& strStakeForCharityChangeAddress,
-                                     int64& nStakeForCharityMinAmout,
-                                     int64& nStakeForCharityMaxAmount)
+                                     qint64& nStakeForCharityMinAmout,
+                                     qint64& nStakeForCharityMaxAmount)
 {
     // This function assumes the values were checked before being called
     if (wallet->fFileBacked) // Tranz add option to not save.
@@ -421,8 +421,8 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharit
 void  WalletModel::getStakeForCharity(int& nStakeForCharityPercent,
                                       CBitcoinAddress& strStakeForCharityAddress,
                                       CBitcoinAddress& strStakeForCharityChangeAddress,
-                                      int64& nStakeForCharityMinAmout,
-                                      int64& nStakeForCharityMaxAmount)
+                                      qint64& nStakeForCharityMinAmout,
+                                      qint64& nStakeForCharityMaxAmount)
 {
      nStakeForCharityPercent = wallet->nStakeForCharityPercent;
      strStakeForCharityAddress = wallet->strStakeForCharityAddress;
@@ -442,7 +442,7 @@ bool WalletModel::importWallet(const QString &filename)
     return ImportWallet(wallet, filename.toLocal8Bit().data());
 }
 
-void WalletModel::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+void WalletModel::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
 {
     TRY_LOCK(cs_main, lockMain);
     if (!lockMain)
@@ -460,14 +460,14 @@ quint64 WalletModel::getReserveBalance()
     return wallet->nReserveBalance;
 }
 
-uint64 WalletModel::getTotStakeWeight()
+quint64 WalletModel::getTotStakeWeight()
 {
 
-    uint64 nTotWeight = 0;
+    quint64 nTotWeight = 0;
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
     {
         CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
-        uint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
+        quint64 nMinWeight = 0 ,nMaxWeight =  0, nWeight = 0;
         pwallet->GetStakeWeight(*pwallet, nMinWeight,nMaxWeight,nWeight);
 
         nTotWeight+=nWeight;
@@ -475,17 +475,17 @@ uint64 WalletModel::getTotStakeWeight()
     return nTotWeight;
 }
 
-void WalletModel::getStakeWeightFromValue(const int64& nTime, const int64& nValue, uint64& nWeight)
+void WalletModel::getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight)
 {
     wallet->GetStakeWeightFromValue(nTime, nValue, nWeight);
 }
 
-void WalletModel::checkWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+void WalletModel::checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound)
 {
     wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound, true);
 }
 
-void WalletModel::repairWallet(int& nMismatchSpent, int64& nBalanceInQuestion, int& nOrphansFound)
+void WalletModel::repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound)
 {
     wallet->FixSpentCoins(nMismatchSpent, nBalanceInQuestion, nOrphansFound);
 }

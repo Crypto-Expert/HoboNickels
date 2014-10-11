@@ -31,8 +31,8 @@ void StakeForCharityDialog::setModel(WalletModel *model)
     CBitcoinAddress strAddress;
     CBitcoinAddress strChangeAddress;
     int nPer;
-    int64 nMin;
-    int64 nMax;
+    qint64 nMin;
+    qint64 nMax;
 
     model->getStakeForCharity(nPer, strAddress, strChangeAddress, nMin, nMax);
 
@@ -94,8 +94,8 @@ void StakeForCharityDialog::on_enableButton_clicked()
     }
 
     bool fValidConversion = false;
-    int64 nMinAmount = MIN_TXOUT_AMOUNT;
-    int64 nMaxAmount = MAX_MONEY;
+    qint64 nMinAmount = MIN_TXOUT_AMOUNT;
+    qint64 nMaxAmount = MAX_MONEY;
     CBitcoinAddress changeAddress = "";
 
     CBitcoinAddress address = ui->charityAddressEdit->text().toStdString();
@@ -180,8 +180,8 @@ void StakeForCharityDialog::on_disableButton_clicked()
     int nCharityPercent = 0;
     CBitcoinAddress address = "";
     CBitcoinAddress changeAddress = "";
-    int64 nMinAmount = MIN_TXOUT_AMOUNT;
-    int64 nMaxAmount = MAX_MONEY;
+    qint64 nMinAmount = MIN_TXOUT_AMOUNT;
+    qint64 nMaxAmount = MAX_MONEY;
 
     model->setStakeForCharity(false, nCharityPercent, address, changeAddress, nMinAmount, nMaxAmount);
     ui->charityAddressEdit->clear();
