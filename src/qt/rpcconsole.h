@@ -16,7 +16,7 @@ class QItemSelection;
 class CNodeCombinedStats;
 
 /** Local Bitcoin RPC console. */
-class RPCConsole: public QDialog
+class RPCConsole : public QDialog
 {
     Q_OBJECT
 
@@ -74,6 +74,7 @@ public slots:
     void peerSelected(const QItemSelection &selected, const QItemSelection &deselected);
     /** Handle updated peer information */
     void peerLayoutChanged();
+
 signals:
     // For RPC command executor
     void stopExecutor();

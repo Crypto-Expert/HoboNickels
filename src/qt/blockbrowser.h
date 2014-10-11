@@ -1,10 +1,11 @@
 #ifndef BLOCKBROWSER_H
 #define BLOCKBROWSER_H
 
-#include "clientmodel.h"
-#include "main.h"
-
 #include <QDialog>
+
+#include "clientmodel.h"
+
+#include "main.h"
 
 namespace Ui {
 class BlockBrowser;
@@ -29,9 +30,6 @@ public slots:
     void txClicked();
     void updateExplorer(bool);
     double getTxFees(std::string);
-
-
-private slots:
 
 private:
     Ui::BlockBrowser *ui;

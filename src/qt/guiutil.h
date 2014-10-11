@@ -8,6 +8,8 @@
 #include <QMessageBox>
 #include <QLabel>
 
+class SendCoinsRecipient;
+
 QT_BEGIN_NAMESPACE
 class QFont;
 class QLineEdit;
@@ -17,7 +19,6 @@ class QUrl;
 class QAbstractItemView;
 class QLabel;
 QT_END_NAMESPACE
-class SendCoinsRecipient;
 
 /** Utility functions used by the Bitcoin Qt UI.
  */

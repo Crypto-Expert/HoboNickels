@@ -23,6 +23,7 @@ QT_END_NAMESPACE
 class TransactionView : public QWidget
 {
     Q_OBJECT
+
 public:
     explicit TransactionView(QWidget *parent = 0);
 

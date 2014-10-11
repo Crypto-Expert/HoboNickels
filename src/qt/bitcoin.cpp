@@ -1,6 +1,9 @@
 /*
  * W.J. van der Laan 2011-2012
  */
+
+#include <QApplication>
+
 #include "bitcoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
@@ -13,7 +16,7 @@
 #include "ui_interface.h"
 #include "qtipcserver.h"
 
-#include <QApplication>
+
 #include <QMessageBox>
 #if QT_VERSION < 0x050000
 #include <QTextCodec>
@@ -118,12 +121,12 @@ static void handleRunawayException(std::exception *e)
 #if QT_VERSION < 0x050000
 void DebugMessageHandler(QtMsgType type, const char * msg)
 {
-    OutputDebugStringF("%s\n", msg);
+    OutputDebugStringF("Bitcoin-Qt: %s\n", msg);
 }
 #else
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
-    OutputDebugStringF("%s\n", qPrintable(msg));
+    OutputDebugStringF("Bitcoin-Qt: %s\n", qPrintable(msg));
 }
 #endif
 
@@ -154,6 +157,13 @@ int main(int argc, char *argv[])
 
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
+
+    // Install qDebug() message handler to route to debug.log:
+#if QT_VERSION < 0x050000
+    qInstallMsgHandler(DebugMessageHandler);
+#else
+    qInstallMessageHandler(DebugMessageHandler);
+#endif
 
     // ... then bitcoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
@@ -222,12 +232,6 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    // Install qDebug() message handler to route to debug.log:
-#if QT_VERSION < 0x050000
-    qInstallMsgHandler(DebugMessageHandler);
-#else
-    qInstallMessageHandler(DebugMessageHandler);
-#endif
 
     QSplashScreen splash(QPixmap(":/images/splash"), 0);
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min"))

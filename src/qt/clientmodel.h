@@ -26,6 +26,7 @@ enum BlockSource {
 class ClientModel : public QObject
 {
     Q_OBJECT
+
 public:
     explicit ClientModel(OptionsModel *optionsModel, QObject *parent = 0);
     ~ClientModel();

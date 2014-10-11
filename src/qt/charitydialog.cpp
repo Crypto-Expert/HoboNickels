@@ -2,12 +2,12 @@
 #include "ui_charitydialog.h"
 
 #include "walletmodel.h"
-#include "base58.h"
 #include "addressbookpage.h"
+
 #include "init.h"
+#include "base58.h"
 
 #include <QLineEdit>
-
 
 StakeForCharityDialog::StakeForCharityDialog(QWidget *parent) :
     QWidget(parent),
