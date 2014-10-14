@@ -269,7 +269,7 @@ BOOST_AUTO_TEST_CASE(DoS_checkSig)
     boost::posix_time::ptime mst2 = boost::posix_time::microsec_clock::local_time();
     boost::posix_time::time_duration msdiff = mst2 - mst1;
     long nOneValidate = msdiff.total_milliseconds();
-    if (fDebug) printf("DoS_Checksig sign: %ld\n", nOneValidate);
+    if (fDebug) LogPrintf("DoS_Checksig sign: %ld\n", nOneValidate);
 
     // ... now validating repeatedly should be quick:
     // 2.8GHz machine, -g build: Sign takes ~760ms,
@@ -282,7 +282,7 @@ BOOST_AUTO_TEST_CASE(DoS_checkSig)
     mst2 = boost::posix_time::microsec_clock::local_time();
     msdiff = mst2 - mst1;
     long nManyValidate = msdiff.total_milliseconds();
-    if (fDebug) printf("DoS_Checksig five: %ld\n", nManyValidate);
+    if (fDebug) LogPrintf("DoS_Checksig five: %ld\n", nManyValidate);
 
     BOOST_CHECK_MESSAGE(nManyValidate < nOneValidate, "Signature cache timing failed");
 

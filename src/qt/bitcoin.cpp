@@ -57,7 +57,7 @@ static void ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
     else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption, message);
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
     }
 }
@@ -93,6 +93,7 @@ static void InitMessage(const std::string &message)
         splashref->showMessage(QString::fromStdString(message+'\n'+'\n') + QString::fromStdString(FormatFullVersion().c_str()), Qt::AlignBottom|Qt::AlignHCenter, QColor(255,255,200));
         QApplication::instance()->processEvents();
     }
+    LogPrintf("init message: %s\n", message);
 }
 
 static void QueueShutdown()
@@ -121,18 +122,19 @@ static void handleRunawayException(std::exception *e)
 #if QT_VERSION < 0x050000
 void DebugMessageHandler(QtMsgType type, const char * msg)
 {
-    OutputDebugStringF("Bitcoin-Qt: %s\n", msg);
+    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
 }
 #else
 void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
 {
-    OutputDebugStringF("Bitcoin-Qt: %s\n", qPrintable(msg));
+    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
 }
 #endif
 
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
+    fHaveGUI = true;
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);

@@ -11,6 +11,7 @@
 #include "wallet.h"
 
 #include <QClipboard>
+#include <QDebug>
 
 #include <string>
 #include <vector>
@@ -138,7 +139,7 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
       pwalletMain = pWalletManager->GetWallet(item.first.c_str()).get();
 
       if (!pwalletMain->GetKey(keyID, tkey))
-          printf("Address Not Found For %s\n",pwalletMain->strWalletFile.c_str());
+          qDebug() << "Address Not Found For " + QString(pwalletMain->strWalletFile.c_str());
       else
       {
           if (!pwalletMain->GetKey(keyID, key))

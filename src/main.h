@@ -111,6 +111,7 @@ extern unsigned char pchMessageStart[4];
 extern std::map<uint256, CBlock*> mapOrphanBlocks;
 extern bool fImporting;
 extern bool fReindex;
+extern bool fHaveGUI;
 
 // Settings
 extern int64_t nTransactionFee;
@@ -222,11 +223,6 @@ public:
         else
             return strprintf("(nFile=%u, nBlockPos=%u, nTxPos=%u)", nFile, nBlockPos, nTxPos);
     }
-
-    void print() const
-    {
-        printf("%s", ToString().c_str());
-    }
 };
 
 
@@ -276,12 +272,7 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10).c_str(), n);
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
+        return strprintf("COutPoint(%s, %u)", hash.ToString().substr(0,10), n);
     }
 };
 
@@ -342,29 +333,19 @@ public:
         return !(a == b);
     }
 
-    std::string ToStringShort() const
-    {
-        return strprintf(" %s %d", prevout.hash.ToString().c_str(), prevout.n);
-    }
-
     std::string ToString() const
     {
         std::string str;
         str += "CTxIn(";
         str += prevout.ToString();
         if (prevout.IsNull())
-            str += strprintf(", coinbase %s", HexStr(scriptSig).c_str());
+            str += strprintf(", coinbase %s", HexStr(scriptSig));
         else
-            str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24).c_str());
+            str += strprintf(", scriptSig=%s", scriptSig.ToString().substr(0,24));
         if (nSequence != std::numeric_limits<unsigned int>::max())
             str += strprintf(", nSequence=%u", nSequence);
         str += ")";
         return str;
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
     }
 };
 
@@ -435,21 +416,11 @@ public:
         return !(a == b);
     }
 
-    std::string ToStringShort() const
-    {
-        return strprintf(" out %s %s", FormatMoney(nValue).c_str(), scriptPubKey.ToString(true).c_str());
-    }
-
     std::string ToString() const
     {
         if (IsEmpty()) return "CTxOut(empty)";
 
-        return strprintf("CTxOut(nValue=%s, scriptPubKey=%s)", FormatMoney(nValue).c_str(), scriptPubKey.ToString().c_str());
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
+        return strprintf("CTxOut(nValue=%s, scriptPubKey=%s)", FormatMoney(nValue), scriptPubKey.ToString());
     }
 };
 
@@ -624,19 +595,12 @@ public:
         return !(a == b);
     }
 
-    std::string ToStringShort() const
-    {
-        std::string str;
-        str += strprintf("%s %s", GetHash().ToString().c_str(), IsCoinBase()? "base" : (IsCoinStake()? "stake" : "user"));
-        return str;
-    }
-
     std::string ToString() const
     {
         std::string str;
         str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
         str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%d)\n",
-            GetHash().ToString().substr(0,10).c_str(),
+            GetHash().ToString().substr(0,10),
             nTime,
             nVersion,
             vin.size(),
@@ -648,12 +612,6 @@ public:
             str += "    " + vout[i].ToString() + "\n";
         return str;
     }
-
-    void print() const
-    {
-        printf("%s", ToString().c_str());
-    }
-
 
     bool ReadFromDisk(CTxDB& txdb, COutPoint prevout, CTxIndex& txindexRet);
     bool ReadFromDisk(CTxDB& txdb, COutPoint prevout);
@@ -928,17 +886,14 @@ public:
         {
             // Take last bit of block hash as entropy bit
             unsigned int nEntropyBit = ((GetHash().Get64()) & 1llu);
-            if (fDebug && fPrintStakeModifer)
-                printf("GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString().c_str(), nEntropyBit);
+            LogPrint("stakemodifier", "GetStakeEntropyBit: nHeight=%u hashBlock=%s nEntropyBit=%u\n", nHeight, GetHash().ToString(), nEntropyBit);
             return nEntropyBit;
         }
         // Before HoboNickels block #9689 - old protocol
         uint160 hashSig = Hash160(vchBlockSig);
-        if (fDebug && fPrintStakeModifer)
-            printf("GetStakeEntropyBit: hashSig=%s", hashSig.ToString().c_str());
+        LogPrint("stakemodifier", "GetStakeEntropyBit: hashSig=%s", hashSig.ToString());
         hashSig >>= 159; // take the first bit of the hash
-        if (fDebug && fPrintStakeModifer)
-            printf(" entropybit=%"PRI64d"\n", hashSig.Get64());
+        LogPrint("stakemodifier", " entropybit=%d\n", hashSig.Get64());
         return hashSig.Get64();
     }
 
@@ -1072,25 +1027,26 @@ public:
 
 
 
-    void print() const
+    std::string ToString() const
     {
-        printf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu", vchBlockSig=%s)\n",
-            GetHash().ToString().c_str(),
+        std::stringstream s;
+        s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu", vchBlockSig=%s)\n",
+            GetHash().ToString(),
             nVersion,
-            hashPrevBlock.ToString().c_str(),
-            hashMerkleRoot.ToString().c_str(),
+            hashPrevBlock.ToString(),
+            hashMerkleRoot.ToString(),
             nTime, nBits, nNonce,
             vtx.size(),
-            HexStr(vchBlockSig.begin(), vchBlockSig.end()).c_str());
+            HexStr(vchBlockSig.begin(), vchBlockSig.end()));
         for (unsigned int i = 0; i < vtx.size(); i++)
         {
-            printf("  ");
-            vtx[i].print();
+            s << " " << vtx[i].ToString() << "\n";
         }
-        printf("  vMerkleTree: ");
+        s << " vMerkleTree: ";
         for (unsigned int i = 0; i < vMerkleTree.size(); i++)
-            printf("%s ", vMerkleTree[i].ToString().substr(0,10).c_str());
-        printf("\n");
+            s << " " << vMerkleTree[i].ToString();
+        s << "\n";
+        return s.str();
     }
 
 
@@ -1324,20 +1280,14 @@ public:
 
     std::string ToString() const
     {
-        return strprintf("CBlockIndex(nprev=%p, pnext=%p, nFile=%u, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016"PRI64x", nStakeModifierChecksum=%08x, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
+        return strprintf("CBlockIndex(nprev=%p, pnext=%p, nFile=%u, nBlockPos=%-6d nHeight=%d, nMint=%s, nMoneySupply=%s, nFlags=(%s)(%d)(%s), nStakeModifier=%016, hashProofOfStake=%s, prevoutStake=(%s), nStakeTime=%d merkle=%s, hashBlock=%s)",
             pprev, pnext, nFile, nBlockPos, nHeight,
-            FormatMoney(nMint).c_str(), FormatMoney(nMoneySupply).c_str(),
+            FormatMoney(nMint), FormatMoney(nMoneySupply),
             GeneratedStakeModifier() ? "MOD" : "-", GetStakeEntropyBit(), IsProofOfStake()? "PoS" : "PoW",
-            nStakeModifier, nStakeModifierChecksum, 
-            hashProofOfStake.ToString().c_str(),
-            prevoutStake.ToString().c_str(), nStakeTime,
-            hashMerkleRoot.ToString().c_str(),
-            GetBlockHash().ToString().c_str());
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
+            nStakeModifier, hashProofOfStake.ToString(),
+            prevoutStake.ToString(), nStakeTime,
+            hashMerkleRoot.ToString(),
+            GetBlockHash().ToString());
     }
 };
 
@@ -1425,15 +1375,10 @@ public:
         std::string str = "CDiskBlockIndex(";
         str += CBlockIndex::ToString();
         str += strprintf("\n                hashBlock=%s, hashPrev=%s, hashNext=%s)",
-            GetBlockHash().ToString().c_str(),
-            hashPrev.ToString().c_str(),
-            hashNext.ToString().c_str());
+            GetBlockHash().ToString(),
+            hashPrev.ToString(),
+            hashNext.ToString());
         return str;
-    }
-
-    void print() const
-    {
-        printf("%s\n", ToString().c_str());
     }
 };
 

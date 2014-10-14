@@ -7,8 +7,6 @@
 #include "base58.h"
 #include "init.h"
 
-#define printf OutputDebugStringF
-
 using namespace json_spirit;
 using namespace std;
 

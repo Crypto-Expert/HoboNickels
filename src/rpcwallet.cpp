@@ -899,11 +899,11 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
             CKeyID keyID;
             if (!address.GetKeyID(keyID))
                 throw runtime_error(
-                    strprintf("%s does not refer to a key",ks.c_str()));
+                    strprintf("%s does not refer to a key",ks));
             CPubKey vchPubKey;
             if (!pWallet->GetPubKey(keyID, vchPubKey))
                 throw runtime_error(
-                    strprintf("no full public key for address %s",ks.c_str()));
+                    strprintf("no full public key for address %s",ks));
             if (!vchPubKey.IsValid() || !pubkeys[i].SetPubKey(vchPubKey))
                 throw runtime_error(" Invalid public key: "+ks);
         }
@@ -924,7 +924,7 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     result.SetMultisig(nRequired, pubkeys);
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
         throw runtime_error(
-                 strprintf("redeemScript exceeds size limit: %d > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
+                 strprintf("redeemScript exceeds size limit: %"PRIszu" > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
     return result;
 }
 
@@ -1599,7 +1599,7 @@ Value walletpassphrase(CWallet* pWallet, const Array& params, bool fHelp)
     pWallet->TimedLock(nUnlockTime);
 
     if (!NewThread(ThreadStakeMinter, pWallet))
-       printf("Error: NewThread(ThreadStakeMinter) failed\n");
+       LogPrintf("Error: NewThread(ThreadStakeMinter) failed\n");
 
     return Value::null;
 }
@@ -1648,7 +1648,7 @@ Value walletlock(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (!fShutdown)
     {
-      printf ("Halting Stake Mining while we lock wallet(s)\n");
+      LogPrintf ("Halting Stake Mining while we lock wallet(s)\n");
       fStopStaking = true;
       MilliSleep(1000);
     }
@@ -2117,10 +2117,10 @@ Value loadwallet(CWallet* pWallet, const Array& params, bool fHelp)
     if ( !pWallet->IsCrypted() )
     {
        if (!NewThread(ThreadStakeMinter, pWallet))
-          printf("Error: NewThread(ThreadStakeMinter) failed\n");
+          LogPrintf("Error: NewThread(ThreadStakeMinter) failed\n");
     }
     else
-      printf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", pWallet->strWalletFile.c_str());
+      LogPrintf("Skipped ThreadStakeMinter for wallet: %s due to encryption\n", pWallet->strWalletFile);
 
     return string("Wallet ") + strWalletName + " loaded.";
 }

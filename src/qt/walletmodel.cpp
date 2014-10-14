@@ -405,7 +405,7 @@ void WalletModel::setStakeForCharity(bool fStakeForCharity, int& nStakeForCharit
         }
 
         if(fDebug)
-             printf("setStakeForCharity: %s %d\n", strStakeForCharityAddress.ToString().c_str(), nStakeForCharityPercent);
+            qDebug() << "setStakeForCharity:" + QString(strStakeForCharityAddress.ToString().c_str()) + QString(nStakeForCharityPercent);
     }
 
     {
