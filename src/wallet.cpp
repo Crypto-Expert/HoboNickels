@@ -1217,7 +1217,6 @@ int64_t CWallet::GetNewMint() const
 
 
 bool fGlobalStakeForCharity = false;
-int64_t nPrevS4CNet = 0;
 int nPrevS4CHeight = 0;
 
 bool CWallet::StakeForCharity()
@@ -1239,23 +1238,24 @@ bool CWallet::StakeForCharity()
                 // Calculate Amount for Charity
                 nNet = ( ( pcoin->GetCredit() - pcoin->GetDebit() ) * nStakeForCharityPercent )/100;
 
-                // Do not send if amount is too low/high
-                if (nNet <= nStakeForCharityMin || nNet >= nStakeForCharityMax )
-                {
-                    LogPrintf("StakeForCharity: Amount: %s is not in range of Min: %s and Max:%s\n",FormatMoney(nNet),FormatMoney(nStakeForCharityMin),FormatMoney(nStakeForCharityMax));
+                // Do not send if amount is too low
+                if (nNet < nStakeForCharityMin ) {
+                    LogPrintf("StakeForCharity: Amount %s is less than Min %s. Not sending. \n",FormatMoney(nNet),FormatMoney(nStakeForCharityMin));
                     return false;
                 }
-                if (nPrevS4CNet == nNet && nBestHeight <= nPrevS4CHeight ) {
-                    LogPrintf("StakeForCharity Warning. nNet: %s equals nPrevS4CNet: %s. and nBestHeight %d less or equal to nPreveS4CHeight %d.\n",
-                           FormatMoney(nNet),
-                           FormatMoney(nPrevS4CNet),
+                // Truncate to max if amount is too great
+                if (nNet > nStakeForCharityMax ) {
+                    LogPrintf("StakeForCharity: Amount %s is greater than Max %s. Truncated to Max.\n",FormatMoney(nNet),FormatMoney(nStakeForCharityMax));
+                    nNet = nStakeForCharityMax;
+                }
+                if (nBestHeight <= nPrevS4CHeight ) {
+                    LogPrintf("StakeForCharity: Warning! nBestHeight %d less or equal to nPreveS4CHeight %d.\n",
                            nBestHeight,
                            nPrevS4CHeight);
                     return false;
                 } else {
-                    LogPrintf("StakeForCharity Sending: %s to Address: %s\n", FormatMoney(nNet), strStakeForCharityAddress.ToString());
+                    LogPrintf("StakeForCharity: Sending %s to Address %s\n", FormatMoney(nNet), strStakeForCharityAddress.ToString());
                     SendMoneyToDestination(strStakeForCharityAddress.Get(), nNet, wtx, false, true);
-                    nPrevS4CNet = nNet;
                     nPrevS4CHeight = nBestHeight;
                 }
             }
