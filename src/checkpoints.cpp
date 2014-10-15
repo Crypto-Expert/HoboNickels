@@ -186,7 +186,7 @@ namespace Checkpoints
             hashPendingCheckpoint = 0;
             checkpointMessage = checkpointMessagePending;
             checkpointMessagePending.SetNull();
-            LogPrintf("AcceptPendingSyncCheckpoint : sync-checkpoint at %s\n", hashSyncCheckpoint.ToString());
+            LogPrint("checkpoint", "AcceptPendingSyncCheckpoint : sync-checkpoint at %s\n", hashSyncCheckpoint.ToString());
             // relay the checkpoint
             if (!checkpointMessage.IsNull())
             {
@@ -407,10 +407,13 @@ bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
     LOCK(Checkpoints::cs_hashSyncCheckpoint);
     if (!mapBlockIndex.count(hashCheckpoint))
     {
+        if (Checkpoints::hashPendingCheckpoint != hashCheckpoint) {
+            // Only log this message once, we don't need to see it from every peer
+            LogPrint("checkpoint", "ProcessSyncCheckpoint: pending for sync-checkpoint %s\n", hashCheckpoint.ToString());
+        }
         // We haven't received the checkpoint chain, keep the checkpoint as pending
         Checkpoints::hashPendingCheckpoint = hashCheckpoint;
         Checkpoints::checkpointMessagePending = *this;
-        LogPrintf("ProcessSyncCheckpoint: pending for sync-checkpoint %s\n", hashCheckpoint.ToString());
         // Ask this guy to fill in what we're missing
         if (pfrom)
         {
@@ -449,6 +452,6 @@ bool CSyncCheckpoint::ProcessSyncCheckpoint(CNode* pfrom)
     Checkpoints::checkpointMessage = *this;
     Checkpoints::hashPendingCheckpoint = 0;
     Checkpoints::checkpointMessagePending.SetNull();
-    LogPrintf("ProcessSyncCheckpoint: sync-checkpoint at %s\n", hashCheckpoint.ToString());
+    LogPrint("checkpoint", "ProcessSyncCheckpoint: sync-checkpoint at %s\n", hashCheckpoint.ToString());
     return true;
 }

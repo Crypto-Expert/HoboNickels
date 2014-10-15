@@ -285,7 +285,7 @@ std::string HelpMessage()
         strUsage += "                             " + _("If <category> is not supplied, output all debugging information.") + "\n";
         strUsage += "                             " + _("<category> can be:");
         strUsage +=                               " addrman, alert, db, lock, rand, rpc, selectcoins, mempool, net, keypool,";
-        strUsage +=                               " coinage, coinstake, creation, stakemodifier, stakechecksum, priority";
+        strUsage +=                               " coinage, coinstake, creation, checkpoint, stakemodifier, stakechecksum, priority";
         if (fHaveGUI)
             strUsage += ", qt.\n";
         else
