@@ -80,7 +80,7 @@ int64_t nHPSTimerStart;
 int64_t nTransactionFee = MIN_TX_FEE;
 int64_t nMinimumInputValue = MIN_TX_FEE;
 int64_t nSplitThreshold = GetProofOfWorkReward();
-int64_t nCombineThreshold = GetProofOfWorkReward();
+int64_t nCombineThreshold = GetProofOfWorkReward() * 2;
 extern enum Checkpoints::CPMode CheckpointsMode;
 
 

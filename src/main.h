@@ -57,7 +57,7 @@ static const int64_t MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just 
 static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 /** Split/Combine Threshold Max */
 static const int64_t MAX_SPLIT_AMOUNT = 20 * COIN;
-static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT;
+static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT * 2;
 
 
 /** Hard Fork Change Times */
