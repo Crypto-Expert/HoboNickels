@@ -797,20 +797,10 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     // Prevent orphan statusbar messages (e.g. hover Quit in main menu, wait until chain-sync starts -> garbelled text)
     statusBar()->clearMessage();
 
-    // don't show / hide progress bar and its label if we have no connection to the network
     enum BlockSource blockSource = clientModel ? clientModel->getBlockSource() : BLOCK_SOURCE_NONE;
-    if (blockSource == BLOCK_SOURCE_NONE || (blockSource == BLOCK_SOURCE_NETWORK && clientModel->getNumConnections() == 0))
-    {
-        progressBarLabel->setVisible(false);
-        progressBar->setVisible(false);
-
-        return;
-    }
-
-    bool fShowStatusBar = false;
     QString tooltip;
-
     QString importText;
+
     switch (blockSource) {
     case BLOCK_SOURCE_NONE:
     case BLOCK_SOURCE_NETWORK:
@@ -858,7 +848,6 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         progressBar->setMaximum(totalSecs);
         progressBar->setValue(totalSecs - secs);
         progressBar->setVisible(true);
-        fShowStatusBar = true;
 
         tooltip = tr("Catching up...") + QString("<br>") + tooltip;
         labelBlocksIcon->setMovie(syncIconMovie);
@@ -880,8 +869,6 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     labelBlocksIcon->setToolTip(tooltip);
     progressBarLabel->setToolTip(tooltip);
     progressBar->setToolTip(tooltip);
-
-    statusBar()->setVisible(fShowStatusBar);
 }
 
 void BitcoinGUI::message(const QString &title, const QString &message, unsigned int style, const QString &detail)
