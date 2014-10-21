@@ -9,6 +9,8 @@
 
 #include <QStackedWidget>
 
+#include "util.h"
+
 class BitcoinGUI;
 class TransactionTableModel;
 class ClientModel;

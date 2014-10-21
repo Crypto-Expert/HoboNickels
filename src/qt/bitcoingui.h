@@ -5,6 +5,8 @@
 #include <QSystemTrayIcon>
 #include <QMap>
 
+#include "util.h"
+
 class TransactionTableModel;
 class WalletView;
 class ClientModel;
@@ -132,7 +134,7 @@ private:
     /** Keep track of previous number of blocks, to detect progress */
     int prevBlocks;
 
-    quint64 nWeight;
+    uint64_t nWeight;
 
     /** Create the main UI actions. */
     void createActions();

@@ -1273,7 +1273,7 @@ void BitcoinGUI::updateStakingIcon()
         labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
     else
     {
-        quint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
+        uint64_t nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
 
         walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
         if (!nWeight)

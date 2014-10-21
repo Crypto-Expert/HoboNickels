@@ -8,6 +8,9 @@
 #define WALLETSTACK_H
 
 #include <QStackedWidget>
+
+#include "util.h"
+
 #include <QMap>
 #include <boost/shared_ptr.hpp>
 
