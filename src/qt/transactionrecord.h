@@ -105,11 +105,11 @@ public:
     /** @name Immutable transaction attributes
       @{*/
     uint256 hash;
-    int64_t time;
+    qint64 time;
     Type type;
     std::string address;
-    int64_t debit;
-    int64_t credit;
+    qint64 debit;
+    qint64 credit;
     /**@}*/
 
     /** Subtransaction index, for sort key */

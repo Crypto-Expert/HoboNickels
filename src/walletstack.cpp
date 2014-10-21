@@ -259,7 +259,7 @@ void WalletStack::setCurrentWalletView(const QString& name)
      }
 }
 
-void WalletStack::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
+void WalletStack::getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight)
 {
     WalletView *walletView = (WalletView*)currentWidget();
     if (walletView) walletView->getStakeWeight(nMinWeight,nMaxWeight,nWeight);

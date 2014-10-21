@@ -104,15 +104,15 @@ public:
     bool dumpWallet(const QString &filename);
     bool importWallet(const QString &filename);
     // Wallet Repair
-    void checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
-    void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
+    void checkWallet(int& nMismatchSpent, int64_t& nBalanceInQuestion, int& nOrphansFound);
+    void repairWallet(int& nMismatchSpent, int64_t& nBalanceInQuestion, int& nOrphansFound);
     // PoS Information
-    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    void getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
     quint64 getTotStakeWeight();
     /** Give user information about reserve balance */
     quint64 getReserveBalance();
     // PoS Information about value and time
-    void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
+    void getStakeWeightFromValue(const int64_t& nTime, const int64_t& nValue, uint64_t& nWeight);
     // setStakeForCharity Wallet Settings
     void setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
                             CBitcoinAddress& strStakeForCharityAddress,

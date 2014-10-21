@@ -224,7 +224,7 @@ void CoinControlDialog::customSelectCoins()
             double dCoinAmount = out.tx->vout[out.i].nValue;
 
 	    //Coin Weight
-	    quint64 nTxWeight = 0;
+	    uint64_t nTxWeight = 0;
 	    model->getStakeWeightFromValue(out.tx->GetTxTime(), out.tx->vout[out.i].nValue, nTxWeight);
 
             //Age
@@ -704,11 +704,12 @@ void CoinControlDialog::updateView()
         }
 
         qint64 nSum = 0;
-        qint64 nValue = 0;
+        int64_t nValue = 0;
         double dPrioritySum = 0;
         int nChildren = 0;
         int nInputSum = 0;
-        quint64 nTxWeight = 0, nTxWeightSum = 0, nPotentialStakeSum = 0;
+        uint64_t nTxWeight = 0;
+        quint64 nTxWeightSum = 0, nPotentialStakeSum = 0;
         qint64 nTime = GetTime();
 
         BOOST_FOREACH(const COutput& out, coins.second)
