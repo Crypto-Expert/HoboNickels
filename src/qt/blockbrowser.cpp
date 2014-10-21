@@ -222,6 +222,11 @@ BlockBrowser::BlockBrowser(QWidget *parent) :
 
     setBaseSize(850, 500);
 
+#if QT_VERSION >= 0x040700
+    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
+    ui->txBox->setPlaceholderText(tr("Transaction ID"));
+#endif
+
     connect(ui->blockButton, SIGNAL(pressed()), this, SLOT(blockClicked()));
     connect(ui->txButton, SIGNAL(pressed()), this, SLOT(txClicked()));
     connect(ui->closeButton, SIGNAL(pressed()), this, SLOT(close()));

@@ -28,9 +28,6 @@
    <property name="toolTip">
     <string>Enter whole numbers 1 - 50</string>
    </property>
-   <property name="placeholderText">
-    <string>Enter % to Give (1-50)</string>
-   </property>
   </widget>
   <widget class="QLineEdit" name="charityAddressEdit">
    <property name="geometry">
@@ -43,9 +40,6 @@
    </property>
    <property name="toolTip">
     <string/>
-   </property>
-   <property name="placeholderText">
-    <string>Enter Charity Address</string>
    </property>
   </widget>
   <widget class="QLabel" name="label_2">
@@ -83,9 +77,6 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
    <property name="toolTip">
     <string/>
    </property>
-   <property name="placeholderText">
-    <string>Enter Min Amount (optional)</string>
-   </property>
   </widget>
   <widget class="QLineEdit" name="charityMaxEdit">
    <property name="geometry">
@@ -101,9 +92,6 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
    </property>
    <property name="text">
     <string/>
-   </property>
-   <property name="placeholderText">
-    <string>Enter Max Amount (optional)</string>
    </property>
   </widget>
   <widget class="QLabel" name="message">
@@ -191,9 +179,6 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
    </property>
    <property name="toolTip">
     <string>Change address must be owned by you</string>
-   </property>
-   <property name="placeholderText">
-    <string>Enter Change Address (optional)</string>
    </property>
   </widget>
   <widget class="QPushButton" name="changeAddressBookButton">

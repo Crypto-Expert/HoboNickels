@@ -16,6 +16,15 @@ StakeForCharityDialog::StakeForCharityDialog(QWidget *parent) :
 {
     ui->setupUi(this);
 
+#if (QT_VERSION >= 0x040700)
+    /* Do not move this to the XML file, Qt before 4.7 will choke on it */
+    ui->charityPercentEdit->setPlaceholderText(tr("Enter % to Give (1-50)"));
+    ui->charityAddressEdit->setPlaceholderText(tr("Enter Charity Address"));
+    ui->charityMinEdit->setPlaceholderText(tr("Enter Min Amount (optional)"));
+    ui->charityMaxEdit->setPlaceholderText(tr("Enter Max Amount (optional)"));
+    ui->charityChangeAddressEdit->setPlaceholderText(tr("Enter Change Address (optional)"));
+#endif
+
     ui->label_2->setFocus();
 }
 
