@@ -38,6 +38,7 @@ private:
 };
 
 double getTxTotalValue(std::string);
+double getMoneySupply(qint64 Height);
 double convertCoins(qint64);
 qint64 getBlockTime(qint64);
 qint64 getBlocknBits(qint64);

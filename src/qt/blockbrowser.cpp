@@ -107,6 +107,18 @@ double getTxTotalValue(std::string txid)
     return value;
 }
 
+double getMoneySupply(qint64 Height)
+{
+    std::string strHash = getBlockHash(Height);
+    uint256 hash(strHash);
+
+    if (mapBlockIndex.count(hash) == 0)
+        return 0;
+
+    CBlockIndex* pblockindex = mapBlockIndex[hash];
+    return convertCoins(pblockindex->nMoneySupply);
+}
+
 double convertCoins(qint64 amount)
 {
     // Tranz needs to use options model.
@@ -262,6 +274,7 @@ void BlockBrowser::updateExplorer(bool block)
             ui->diffLabel->setText("PoW Block Difficulty:");
             ui->hashRateBox->setText(QString::number(GetPoWMHashPS(pindex), 'f', 3) + " MH/s");
         }
+        ui->moneySupplyBox->setText(QString::number(getMoneySupply(height), 'f', 6) + " HBN");
     }
     else {
         std::string txid = ui->txBox->text().toUtf8().constData();
