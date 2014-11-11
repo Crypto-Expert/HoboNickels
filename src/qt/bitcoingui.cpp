@@ -815,7 +815,7 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
 
     QDateTime lastBlockDate = clientModel->getLastBlockDate();
     QDateTime currentDate = QDateTime::currentDateTime();
-    int totalSecs = GetTime() - 1393221600;
+    int totalSecs = GetTime() - 1374628210;
     int secs = lastBlockDate.secsTo(currentDate);
 
     if(count < nTotalBlocks) {
