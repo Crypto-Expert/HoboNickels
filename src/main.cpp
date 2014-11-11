@@ -1085,6 +1085,18 @@ int64_t GetProofOfWorkReward()
 // miner's coin stake reward based on nBits and coin age spent (coin-days)
 int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int nTime, bool bCoinYearOnly)
 {
+    int64_t nSubsidy = 0;
+
+    if ( nTime > VERSION1_5_SWITCH_TIME )
+        nSubsidy = GetProofOfStakeRewardV2(nCoinAge, nBits, nTime, bCoinYearOnly);
+    else
+        nSubsidy = GetProofOfStakeRewardV1(nCoinAge, nBits, nTime, bCoinYearOnly);
+
+    return nSubsidy;
+}
+
+int64_t GetProofOfStakeRewardV1(int64_t nCoinAge, unsigned int nBits, unsigned int nTime, bool bCoinYearOnly)
+{
     int64_t nRewardCoinYear;
 
     CBigNum bnRewardCoinYearLimit;
@@ -1175,6 +1187,54 @@ int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int
 
     return nSubsidy;
 }
+
+int64_t GetProofOfStakeRewardV2(int64_t nCoinAge, unsigned int nBits, unsigned int nTime, bool bCoinYearOnly)
+{
+    CBigNum bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2; // Base stake mint rate, 100% year interest
+    int64_t nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2;
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
+    CBigNum bnTargetLimit = bnProofOfStakeLimit;
+    bnTargetLimit.SetCompact(bnTargetLimit.GetCompact());
+    int64_t nSubsidyLimit = 250 * COIN;
+
+    // HoboNickels: reward for coin-year is cut in half every 64x multiply of PoS difficulty
+    // A reasonably continuous curve is used to avoid shock to market
+    // (bnRewardCoinYearLimit / nRewardCoinYear) ** 4 == bnProofOfStakeLimit / bnTarget
+    //
+    // Human readable form:
+    //
+    // nRewardCoinYear = 1 / (posdiff ^ 1/4)
+
+    CBigNum bnLowerBound = 10 * CENT; // Lower interest bound is 10% per year
+    CBigNum bnUpperBound = bnRewardCoinYearLimit;
+    while (bnLowerBound + CENT <= bnUpperBound)
+    {
+        CBigNum bnMidValue = (bnLowerBound + bnUpperBound) / 2;
+
+        LogPrint("creation", "GetProofOfStakeReward() : lower=%d upper=%d mid=%d\n", bnLowerBound.getuint64(), bnUpperBound.getuint64(), bnMidValue.getuint64());
+
+        if (bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnTargetLimit > bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnTarget)
+            bnUpperBound = bnMidValue;
+        else
+            bnLowerBound = bnMidValue;
+    }
+
+    int64_t nRewardCoinYear = bnUpperBound.getuint64();
+    nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, nRewardCoinYearLimit);
+
+    if(bCoinYearOnly)
+        return nRewardCoinYear;
+
+    int64_t nSubsidy = (nCoinAge * 33 * nRewardCoinYear) / (365 * 33 + 8);
+
+    LogPrint("creation","GetProofOfStakeReward(): create=%s nCoinAge=%d nBits=%d, Amount Truncated %s\n", FormatMoney(nSubsidy), nCoinAge, nBits, nSubsidyLimit < nSubsidy ? FormatMoney(nSubsidy - nSubsidyLimit) : FormatMoney(0));
+
+    nSubsidy = min(nSubsidy, nSubsidyLimit);
+
+    return nSubsidy;
+}
+
 static const int64_t nTargetTimespan = 0.16 * 24 * 60 * 60;  // 4-hour
 static const int64_t nTargetSpacingWorkMax = 12 * nStakeTargetSpacing; // 2-hour
 
@@ -1224,6 +1284,14 @@ const CBlockIndex* GetLastBlockIndex(const CBlockIndex* pindex, bool fProofOfSta
 
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
+    if (pindexLast->nHeight + 1 > VERSION1_5_SWITCH_BLOCK)
+        return GetNextTargetRequiredV2(pindexLast, fProofOfStake);
+    else
+        return GetNextTargetRequiredV1(pindexLast, fProofOfStake);
+}
+
+unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofOfStake)
+{
   CBigNum bnTargetLimit = !fProofOfStake ? bnProofOfWorkLimit : bnProofOfStakeLimit;
 
     if(fProofOfStake)
@@ -1252,15 +1320,44 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
 
     int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
 
-    // Tranz saved for later.
-    // int nHeight = pindexPrev->nHeight+1;
-    // if (nHeight >= ???? & nActualSpacing < 0) nActualSpacing = 0;  //Sanity Check on nActualSpacing, corrects negative block values
-
     // ppcoin: target change every block
     // ppcoin: retarget with exponential moving toward target spacing
     CBigNum bnNew;
     bnNew.SetCompact(pindexPrev->nBits);
     int64_t nTargetSpacing = fProofOfStake? nStakeTargetSpacing : min(nTargetSpacingWorkMax, (int64_t) nStakeTargetSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
+    int64_t nInterval = nTargetTimespan / nTargetSpacing;
+    bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
+    bnNew /= ((nInterval + 1) * nTargetSpacing);
+
+    if (bnNew > bnTargetLimit)
+        bnNew = bnTargetLimit;
+
+    return bnNew.GetCompact();
+}
+
+unsigned int GetNextTargetRequiredV2(const CBlockIndex* pindexLast, bool fProofOfStake)
+{
+    CBigNum bnTargetLimit = !fProofOfStake ? bnProofOfWorkLimit : bnProofOfStakeLimit;
+
+    if (pindexLast == NULL)
+        return bnTargetLimit.GetCompact(); // genesis block
+
+    const CBlockIndex* pindexPrev = GetLastBlockIndex(pindexLast, fProofOfStake);
+    if (pindexPrev->pprev == NULL)
+        return bnTargetLimit.GetCompact(); // first block
+    const CBlockIndex* pindexPrevPrev = GetLastBlockIndex(pindexPrev->pprev, fProofOfStake);
+    if (pindexPrevPrev->pprev == NULL)
+        return bnTargetLimit.GetCompact(); // second block
+
+    int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
+    int64_t nTargetSpacing = fProofOfStake? nStakeTargetSpacing : min(nTargetSpacingWorkMax, (int64_t) nStakeTargetSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
+
+    if (nActualSpacing < 0)
+        nActualSpacing = nTargetSpacing;
+
+    CBigNum bnNew;
+    bnNew.SetCompact(pindexPrev->nBits);
+
     int64_t nInterval = nTargetTimespan / nTargetSpacing;
     bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
     bnNew /= ((nInterval + 1) * nTargetSpacing);
@@ -1286,6 +1383,7 @@ bool CheckProofOfWork(uint256 hash, unsigned int nBits)
 
     return true;
 }
+
 
 // Return maximum amount of blocks that other nodes claim to have
 int GetNumBlocksOfPeers()

@@ -60,12 +60,14 @@ static const int64_t MAX_SPLIT_AMOUNT = 20 * COIN;
 static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT * 2;
 
 
-/** Hard Fork Change Times */
+/** Hard Fork Change Times/Block */
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
 static const unsigned int REWARD_SWITCH_TIME = 1369432800; // 25 May 2013 00:00:00
 static const unsigned int POS_REWARD_SWITCH_TIME = 1378684800; // 9 SEP 2013 00:00:00
 static const unsigned int POS_REWARD_FIX_TIME = 1383177600; // 31 OCT 2013 00:00:00
 static const unsigned int POS_REWARD_FIX_TIME2 = 1383606000; // 04 Nov 2013 23:00:00
+static const unsigned int VERSION1_5_SWITCH_TIME = 1421489410; //  Sat, 17 Jan 2015 10:10:10 GMT
+static const unsigned int VERSION1_5_SWITCH_BLOCK = 1600000; //  Block 1.6 million, approx same time
 
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
@@ -75,8 +77,21 @@ static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20
 static const uint256 hashGenesisBlockOfficial("0x000009ea5ef5019446b315e7e581fc2ea184315ed46c9ddeadc8aa9442deedc9");
 static const uint256 hashGenesisBlockTestNet("0x0000f9e0292f278190e4d58cd1e1e9a32b7466c8092bd2371ffc80b06f8eca4a");
 
-inline int64_t PastDrift(int64_t nTime)   { return nTime - 2 * 60 * 60; } // up to 2 hours from the past
-inline int64_t FutureDrift(int64_t nTime) { return nTime + 2 * 60 * 60; } // up to 2 hours from the future
+inline int64_t PastDrift(int64_t nTime)
+{
+    if (nTime > VERSION1_5_SWITCH_TIME)
+        return nTime - 5 * 60; // up to 5 minutes from the past
+    else
+        return nTime - 2 * 60 * 60; // up to 120 minutes from the past
+}
+
+inline int64_t FutureDrift(int64_t nTime)
+{
+    if (nTime > VERSION1_5_SWITCH_TIME)
+        return nTime + 5 * 60; // up to 5 minutes from the future
+    else
+        return nTime + 2 * 60 * 60; // up to 120 minutes from the future
+}
 
 extern CScript COINBASE_FLAGS;
 
@@ -151,8 +166,13 @@ bool LoadExternalBlockFile(FILE* fileIn);
 void GenerateBitcoins(bool fGenerate, CWallet* pwallet);
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
+unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofOfStake);
+unsigned int GetNextTargetRequiredV2(const CBlockIndex* pindexLast, bool fProofOfStake);
+
 int64_t GetProofOfWorkReward();
 int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
+int64_t GetProofOfStakeRewardV1(int64_t nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
+int64_t GetProofOfStakeRewardV2(int64_t nCoinAge, unsigned int nBits, unsigned int nTime ,bool bCoinYearOnly=false);
 unsigned int ComputeMinWork(unsigned int nBase, int64_t nTime);
 unsigned int ComputeMinStake(unsigned int nBase, int64_t nTime, unsigned int nBlockTime);
 

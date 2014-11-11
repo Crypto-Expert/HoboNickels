@@ -22,7 +22,6 @@ static std::map<int, unsigned int> mapStakeModifierCheckpoints =
 
     ;
 
-// Get time weight
 int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
 {
     // Kernel hash weight starts from 0 at the 10-day min age
@@ -31,11 +30,10 @@ int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
     //
     // Maximum TimeWeight is 30 days.
 
-  // Tranz We are going to want to change this to fix the max weight. Requires a hard fork
-  // New Code:
-  // return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64_t)nStakeMaxAge);
-  return min(nIntervalEnd - nIntervalBeginning, (int64_t)nStakeMaxAge) - nStakeMinAge;
-
+    if ( nIntervalEnd > VERSION1_5_SWITCH_TIME )
+        return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64_t)nStakeMaxAge);
+    else
+        return min(nIntervalEnd - nIntervalBeginning, (int64_t)nStakeMaxAge) - nStakeMinAge;
 }
 
 // Get the last stake modifier and its generation time from a given block
@@ -282,18 +280,11 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     CBigNum bnTargetPerCoinDay;
     bnTargetPerCoinDay.SetCompact(nBits);
     int64_t nValueIn = txPrev.vout[prevout.n].nValue;
+
     uint256 hashBlockFrom = blockFrom.GetHash();
 
-    // v0.3 protocol kernel hash weight starts from 0 at the 10-day min age
-    // this change increases active coins participating the hash and helps
-    // to secure the network when proof-of-stake difficulty is low
-    // Tranz We are going to want to change this to fix the max weight. Requires a hard fork
-    // New Code:
-    // int64_t nTimeWeight = min((int64_t)nTimeTx - txPrev.nTime - nStakeMinAge, (int64_t)nStakeMaxAge);
-    int64_t nTimeWeight = min((int64_t)nTimeTx - txPrev.nTime, (int64_t)nStakeMaxAge) - nStakeMinAge;
-    CBigNum bnCoinDayWeight = CBigNum(nValueIn) * nTimeWeight / COIN / (24 * 60 * 60);
+    CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)txPrev.nTime, (int64_t)nTimeTx) / COIN / (24 * 60 * 60);
     targetProofOfStake = CBigNum(bnCoinDayWeight * bnTargetPerCoinDay).getuint256();
-
 
     // Calculate hash
     CDataStream ss(SER_GETHASH, 0);
