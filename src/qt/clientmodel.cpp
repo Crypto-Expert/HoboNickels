@@ -1,5 +1,7 @@
 #include "clientmodel.h"
+
 #include "guiconstants.h"
+#include "peertablemodel.h"
 #include "optionsmodel.h"
 #include "addresstablemodel.h"
 #include "transactiontablemodel.h"
@@ -8,22 +10,21 @@
 #include "main.h"
 #include "ui_interface.h"
 
-#include <QVector>
 #include <QDateTime>
 #include <QTimer>
+#include <QDebug>
 
-static const int64 nClientStartupTime = GetTime();
-double GetPoSKernelPS();
+static const qint64 nClientStartupTime = GetTime();
+double GetPoSKernelPS(const CBlockIndex* blockindex = NULL);
 double GetDifficulty(const CBlockIndex* blockindex);
-double GetPoWMHashPS();
-extern unsigned int nStakeTargetSpacing;
-
+double GetPoWMHashPS(const CBlockIndex* blockindex = NULL);
 
 ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
-    QObject(parent), optionsModel(optionsModel),
+    QObject(parent), optionsModel(optionsModel), peerTableModel(0),
     cachedNumBlocks(0), cachedNumBlocksOfPeers(0), numBlocksAtStartup(-1), pollTimer(0)
 {
 
+    peerTableModel = new PeerTableModel(this);
     pollTimer = new QTimer(this);
     pollTimer->setInterval(MODEL_UPDATE_DELAY);
     pollTimer->start();
@@ -34,37 +35,17 @@ ClientModel::ClientModel(OptionsModel *optionsModel, QObject *parent) :
 
 ClientModel::~ClientModel()
 {
-    //unsubscribeFromCoreSignals();
+
 }
 
 int ClientModel::getNumConnections() const
 {
     return vNodes.size();
-
-}
-
-QVector<CNodeStats> ClientModel::getPeerStats()
-{
-
-   QVector<CNodeStats> qvNodeStats;
-   CNode *pnode;
-
-   {
-
-      LOCK(cs_vNodes);
-      qvNodeStats.reserve(vNodes.size());
-      BOOST_FOREACH(pnode, vNodes) {
-          CNodeStats stats;
-          pnode->copyStats(stats);
-          qvNodeStats.push_back(stats);
-      }
-    }
-
-    return qvNodeStats;
 }
 
 int ClientModel::getNumBlocks() const
 {
+    LOCK(cs_main);
     return nBestHeight;
 }
 
@@ -91,7 +72,7 @@ int ClientModel::getLastPoSBlock()
     return GetLastBlockIndex(pindexBest,true)->nHeight;
 }
 
-int64 ClientModel::getMoneySupply()
+qint64 ClientModel::getMoneySupply()
 {
    return pindexBest->nMoneySupply;
 }
@@ -117,8 +98,20 @@ int ClientModel::getStakeTargetSpacing()
     return nStakeTargetSpacing;
 }
 
+quint64 ClientModel::getTotalBytesRecv() const
+{
+    return CNode::GetTotalBytesRecv();
+}
+
+quint64 ClientModel::getTotalBytesSent() const
+{
+    return CNode::GetTotalBytesSent();
+}
+
+
 QDateTime ClientModel::getLastBlockDate(bool fProofofStake) const
 {
+    LOCK(cs_main);
     if (pindexBest && !fProofofStake)
       return QDateTime::fromTime_t(pindexBest->GetBlockTime());
     else if (pindexBest && fProofofStake)
@@ -129,6 +122,13 @@ QDateTime ClientModel::getLastBlockDate(bool fProofofStake) const
 
 void ClientModel::updateTimer()
 {
+    // Get required lock upfront. This avoids the GUI from getting stuck on
+    // periodical polls if the core is holding the locks for a longer time -
+    // for example, during a wallet rescan.
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
+
     // Some quantities (such as number of blocks) change so fast that we don't want to be notified for each change.
     // Periodically check and update with a timer.
     int newNumBlocks = getNumBlocks();
@@ -142,6 +142,8 @@ void ClientModel::updateTimer()
         // ensure we return the maximum of newNumBlocksOfPeers and newNumBlocks to not create weird displays in the GUI
         emit numBlocksChanged(newNumBlocks, std::max(newNumBlocksOfPeers, newNumBlocks));
     }
+
+    emit bytesChanged(getTotalBytesRecv(), getTotalBytesSent());
 }
 
 void ClientModel::updateNumConnections(int numConnections)
@@ -206,6 +208,11 @@ OptionsModel *ClientModel::getOptionsModel()
     return optionsModel;
 }
 
+PeerTableModel *ClientModel::getPeerTableModel()
+{
+    return peerTableModel;
+}
+
 QString ClientModel::formatFullVersion() const
 {
     return QString::fromStdString(FormatFullVersion());
@@ -240,14 +247,14 @@ static void NotifyBlocksChanged(ClientModel *clientmodel)
 
 static void NotifyNumConnectionsChanged(ClientModel *clientmodel, int newNumConnections)
 {
-    // Too noisy: OutputDebugStringF("NotifyNumConnectionsChanged %i\n", newNumConnections);
+    // Too noisy: qDebug() << "NotifyNumConnectionsChanged : " + QString::number(newNumConnections);
     QMetaObject::invokeMethod(clientmodel, "updateNumConnections", Qt::QueuedConnection,
                               Q_ARG(int, newNumConnections));
 }
 
 static void NotifyAlertChanged(ClientModel *clientmodel, const uint256 &hash, ChangeType status)
 {
-    OutputDebugStringF("NotifyAlertChanged %s status=%i\n", hash.GetHex().c_str(), status);
+    qDebug() << "NotifyAlertChanged : " + QString::fromStdString(hash.GetHex()) + " status=" + QString::number(status);
     QMetaObject::invokeMethod(clientmodel, "updateAlert", Qt::QueuedConnection,
                               Q_ARG(QString, QString::fromStdString(hash.GetHex())),
                               Q_ARG(int, status));
@@ -255,20 +262,21 @@ static void NotifyAlertChanged(ClientModel *clientmodel, const uint256 &hash, Ch
 
 static void NotifyWalletAdded(ClientModel *clientmodel, const std::string &name)
 {
-    OutputDebugStringF("NotifyWalletAdded %s \n", name.c_str());
+    QString strWalletName = QString::fromStdString(name);
+
+    qDebug() << "NotifyWalletAdded : " + strWalletName;
     QMetaObject::invokeMethod(clientmodel, "updateWalletAdded", Qt::QueuedConnection,
-                              Q_ARG(QString, QString::fromStdString(name)));
+                              Q_ARG(QString, strWalletName));
 }
 
 static void NotifyWalletRemoved(ClientModel *clientmodel, const std::string &name)
 {
-    OutputDebugStringF("NotifyWalletRemoved %s \n", name.c_str());
+    QString strWalletName = QString::fromStdString(name);
+
+    qDebug() <<"NotifyWalletRemoved : " + strWalletName;
     QMetaObject::invokeMethod(clientmodel, "updateWalletRemoved", Qt::QueuedConnection,
-                              Q_ARG(QString, QString::fromStdString(name)));
+                              Q_ARG(QString, strWalletName));
 }
-
-
-
 
 void ClientModel::subscribeToCoreSignals()
 {

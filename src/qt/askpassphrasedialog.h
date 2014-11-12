@@ -6,7 +6,6 @@
 namespace Ui {
     class AskPassphraseDialog;
 }
-
 class WalletModel;
 
 /** Multifunctional dialog to ask for passphrases. Used for encryption, unlocking, and changing the passphrase.
@@ -41,6 +40,7 @@ private slots:
     void textChanged();
     bool event(QEvent *event);
     bool eventFilter(QObject *object, QEvent *event);
+    void secureClearPassFields();
 };
 
 #endif // ASKPASSPHRASEDIALOG_H

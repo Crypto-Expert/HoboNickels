@@ -8,6 +8,7 @@
 class TransactionFilterProxy : public QSortFilterProxyModel
 {
     Q_OBJECT
+
 public:
     explicit TransactionFilterProxy(QObject *parent = 0);
 
@@ -31,7 +32,13 @@ public:
     /** Set maximum number of rows returned, -1 if unlimited. */
     void setLimit(int limit);
 
+    /** Set whether to show conflicted transactions. */
+    void setShowInactive(bool showInactive);
+
     int rowCount(const QModelIndex &parent = QModelIndex()) const;
+
+    qint64 getTotalAmount() const { return totalAmount; }
+
 protected:
     bool filterAcceptsRow(int source_row, const QModelIndex & source_parent) const;
 
@@ -42,11 +49,8 @@ private:
     quint32 typeFilter;
     qint64 minAmount;
     int limitRows;
-
-signals:
-
-public slots:
-
+    mutable qint64 totalAmount;
+    bool showInactive;
 };
 
 #endif // TRANSACTIONFILTERPROXY_H

@@ -4,10 +4,10 @@
 #include <QObject>
 
 class OptionsModel;
+class PeerTableModel;
 class AddressTableModel;
 class TransactionTableModel;
 class CWallet;
-class CNodeStats;
 
 
 QT_BEGIN_NAMESPACE
@@ -26,11 +26,13 @@ enum BlockSource {
 class ClientModel : public QObject
 {
     Q_OBJECT
+
 public:
     explicit ClientModel(OptionsModel *optionsModel, QObject *parent = 0);
     ~ClientModel();
 
     OptionsModel *getOptionsModel();
+    PeerTableModel *getPeerTableModel();
 
     int getNumConnections() const;
     int getNumBlocks() const;
@@ -40,13 +42,12 @@ public:
     double getPoWMHashPS();
     double getProofOfStakeReward();
     int getLastPoSBlock();
-
-    QVector<CNodeStats> getPeerStats();
-
-
     int getNumBlocksAtStartup();
     double getPosKernalPS();
     int getStakeTargetSpacing();
+
+    quint64 getTotalBytesRecv() const;
+    quint64 getTotalBytesSent() const;
 
 
     QDateTime getLastBlockDate(bool fProofofStake=false) const;
@@ -70,6 +71,7 @@ public:
 
 private:
     OptionsModel *optionsModel;
+    PeerTableModel *peerTableModel;
 
     int cachedNumBlocks;
     int cachedNumBlocksOfPeers;
@@ -83,6 +85,7 @@ private:
 signals:
     void numConnectionsChanged(int count);
     void numBlocksChanged(int count, int countOfPeers);
+    void bytesChanged(quint64 totalBytesIn, quint64 totalBytesOut);
     void alertsChanged(const QString &warnings);
     void walletAdded(const QString &name);
     void walletRemoved(const QString &name);

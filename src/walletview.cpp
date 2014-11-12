@@ -12,6 +12,7 @@
 #include "signverifymessagedialog.h"
 #include "optionsdialog.h"
 #include "aboutdialog.h"
+#include "charitydialog.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "editaddressdialog.h"
@@ -25,6 +26,8 @@
 #include "askpassphrasedialog.h"
 #include "guiutil.h"
 #include "ui_interface.h"
+#include "blockbrowser.h"
+
 
 #include <QVBoxLayout>
 #include <QActionGroup>
@@ -51,7 +54,8 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     createActions();
 
     // Create tabs
-    overviewPage = new OverviewPage();
+    overviewPage =  new OverviewPage();
+    blockBrowser = new BlockBrowser(gui);
 
     transactionsPage = new QWidget(this);
     QVBoxLayout *vbox = new QVBoxLayout();
@@ -67,11 +71,15 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
 
     signVerifyMessageDialog = new SignVerifyMessageDialog(gui);
 
+    stakeForCharityDialog = new StakeForCharityDialog(this);
+
     addWidget(overviewPage);
     addWidget(transactionsPage);
     addWidget(addressBookPage);
     addWidget(receiveCoinsPage);
     addWidget(sendCoinsPage);
+    addWidget(stakeForCharityDialog);
+
 
     // Clicking on a transaction on the overview page simply sends you to transaction history page
     connect(overviewPage, SIGNAL(transactionClicked(QModelIndex)), gui, SLOT(gotoHistoryPage()));
@@ -84,6 +92,9 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     connect(addressBookPage, SIGNAL(verifyMessage(QString)), this, SLOT(gotoVerifyMessageTab(QString)));
     // Clicking on "Sign Message" in the receive coins page sends you to the sign message tab
     connect(receiveCoinsPage, SIGNAL(signMessage(QString)), this, SLOT(gotoSignMessageTab(QString)));
+    // Clicking on "Stake For Charity" in the address book sends you to the stake for charity page
+    connect(addressBookPage, SIGNAL(stakeForCharitySignal(QString)), this, SLOT(charityClicked(QString)));
+    connect(transactionView, SIGNAL(blockBrowserSignal(QString)), this, SLOT(gotoBlockBrowser(QString)));
 
     gotoOverviewPage();
 }
@@ -131,11 +142,20 @@ void WalletView::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
+    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
+    charityAction->setStatusTip(tr("Enable Stake For Charity"));
+    charityAction->setToolTip(charityAction->statusTip());
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    charityAction->setCheckable(true);
+    tabGroup->addAction(charityAction);
+
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(gotoSendCoinsPage()));
     connect(receiveCoinsAction, SIGNAL(triggered()), this, SLOT(gotoReceiveCoinsPage()));
     connect(historyAction, SIGNAL(triggered()), this, SLOT(gotoHistoryPage()));
     connect(addressBookAction, SIGNAL(triggered()), this, SLOT(gotoAddressBookPage()));
+    connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 
     encryptWalletAction = new QAction(QIcon(":/icons/lock_closed"), tr("&Encrypt Wallet..."), this);
     encryptWalletAction->setStatusTip(tr("Encrypt the private keys that belong to your wallet"));
@@ -225,6 +245,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         receiveCoinsPage->setModel(walletModel->getAddressTableModel());
         sendCoinsPage->setModel(walletModel);
         signVerifyMessageDialog->setModel(walletModel);
+        stakeForCharityDialog->setModel(walletModel);
 
         setEncryptionStatus();
         connect(walletModel, SIGNAL(encryptionStatusChanged(int)), gui, SLOT(setEncryptionStatus(int)));
@@ -236,7 +257,7 @@ void WalletView::setWalletModel(WalletModel *walletModel)
         // Ask for passphrase if needed
         connect(walletModel, SIGNAL(requireUnlock()), this, SLOT(unlockWallet()));
 
-        //Set Total Balance for all loaded wallets.
+        // Set Total Balance for all loaded wallets.
         overviewPage->setTotBalance(walletModel->getTotBalance());
         connect(walletModel, SIGNAL(totBalanceChanged(qint64)), this, SLOT(setTotBalance()));
     }
@@ -269,6 +290,14 @@ void WalletView::gotoOverviewPage()
 
     gui->exportAction->setEnabled(false);
     disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+}
+
+void WalletView::gotoBlockBrowser(QString transactionId)
+{
+    if(!transactionId.isEmpty())
+        blockBrowser->setTransactionId(transactionId);
+
+    blockBrowser->show();
 }
 
 void WalletView::gotoHistoryPage(bool fExportOnly, bool fExportConnect, bool fExportFirstTime)
@@ -415,9 +444,8 @@ void WalletView::encryptWallet(bool status)
 
 void WalletView::checkWallet()
 {
-
     int nMismatchSpent;
-    qint64 nBalanceInQuestion;
+    int64_t nBalanceInQuestion;
     int nOrphansFound;
 
     if(!walletModel)
@@ -448,9 +476,8 @@ void WalletView::checkWallet()
 
 void WalletView::repairWallet()
 {
-
     int nMismatchSpent;
-    int64 nBalanceInQuestion;
+    int64_t nBalanceInQuestion;
     int nOrphansFound;
 
     if(!walletModel)
@@ -488,21 +515,19 @@ void WalletView::backupWallet()
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Wallet Data (*.dat)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupWallet(filename)) {
-            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the location you specified."),
                       CClientUIInterface::MSG_ERROR);
         }
         else
-            gui->message(tr("Backup Successful"), tr("The wallet data was successfully saved to the new location."),
+            gui->message(tr("Backup Successful"), tr("The wallet data was successfully saved to the location you specified."),
                       CClientUIInterface::MSG_INFORMATION);
     }
 }
 
 void WalletView::dumpWallet()
 {
-
    if(!walletModel)
       return;
-
 
    WalletModel::UnlockContext ctx(walletModel->requestUnlock());
    if(!ctx.isValid())
@@ -520,7 +545,7 @@ void WalletView::dumpWallet()
     if(!filename.isEmpty()) {
         if(!walletModel->dumpWallet(filename)) {
             gui->message(tr("Export Failed"),
-                         tr("There was an error trying to save the wallet's keys to your location.\n"
+                         tr("There was an error trying to save the wallet's keys to the location you specified.\n"
                             "Keys from wallet: %1, were not saved")
                          .arg(gui->getCurrentWallet())
                       ,CClientUIInterface::MSG_ERROR);
@@ -536,10 +561,8 @@ void WalletView::dumpWallet()
 
 void WalletView::importWallet()
 {
-
    if(!walletModel)
       return;
-
 
    WalletModel::UnlockContext ctx(walletModel->requestUnlock());
    if(!ctx.isValid())
@@ -583,11 +606,11 @@ void WalletView::backupAllWallets()
     QString filename = QFileDialog::getSaveFileName(this, tr("Backup Wallet"), saveDir, tr("Prefix for wallet Data (*)"));
     if(!filename.isEmpty()) {
         if(!walletModel->backupAllWallets(filename)) {
-            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the new location."),
+            gui->message(tr("Backup Failed"), tr("There was an error trying to save the wallet data to the location you specified."),
                       CClientUIInterface::MSG_ERROR);
         }
         else
-            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the new location."),
+            gui->message(tr("Backup Successful"), tr("The wallets were successfully saved to the location you specified."),
                       CClientUIInterface::MSG_INFORMATION);
     }
 }
@@ -646,11 +669,29 @@ void WalletView::unlockWalletForMint()
     }
 }
 
-void WalletView::getStakeWeight(uint64& nMinWeight, uint64& nMaxWeight, uint64& nWeight)
+void WalletView::charityClicked(QString addr)
+{
+    charityAction->setChecked(true);
+    setCurrentWidget(stakeForCharityDialog);
+    if(!addr.isEmpty())
+        stakeForCharityDialog->setAddress(addr);
+
+    gui->exportAction->setEnabled(false);
+    disconnect(gui->exportAction, SIGNAL(triggered()), 0, 0);
+}
+
+void WalletView::getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight)
 {
     if(!walletModel)
        return;
     walletModel->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+quint64 WalletView::getReserveBalance()
+{
+    if(!walletModel)
+       return 0;
+    return walletModel->getReserveBalance();
 }
 
 quint64 WalletView::getTotStakeWeight()
@@ -676,16 +717,16 @@ bool WalletView::isWalletLocked()
 
 }
 
-int WalletView::getStakeForCharityPercent()
+void WalletView::getStakeForCharity(int& nStakeForCharityPercent,
+                        CBitcoinAddress& strStakeForCharityAddress,
+                        CBitcoinAddress& strStakeForCharityChangeAddress,
+                        qint64& nStakeForCharityMinAmount,
+                        qint64& nStakeForCharityMaxAmount)
 {
-    if(!walletModel)
-        return false;
-    return (walletModel->getStakeForCharityPercent());
-}
+    walletModel->getStakeForCharity(nStakeForCharityPercent,
+                                    strStakeForCharityAddress,
+                                    strStakeForCharityChangeAddress,
+                                    nStakeForCharityMinAmount,
+                                    nStakeForCharityMaxAmount);
 
-QString WalletView::getStakeForCharityAddress()
-{
-    if(!walletModel)
-      return "";
-    return (walletModel->getStakeForCharityAddress());
 }

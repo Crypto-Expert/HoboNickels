@@ -10,6 +10,7 @@
 class OptionsModel;
 class AddressTableModel;
 class TransactionTableModel;
+class CBitcoinAddress;
 class CWallet;
 class CKeyID;
 class CPubKey;
@@ -99,22 +100,31 @@ public:
     // Wallet backup
     bool backupWallet(const QString &filename);
     bool backupAllWallets(const QString &filename);
-    //Wallet Inport/Export
+    // Wallet Inport/Export
     bool dumpWallet(const QString &filename);
     bool importWallet(const QString &filename);
     // Wallet Repair
-    void checkWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
-    void repairWallet(int& nMismatchSpent, qint64& nBalanceInQuestion, int& nOrphansFound);
-    //PoS Information
-    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    void checkWallet(int& nMismatchSpent, int64_t& nBalanceInQuestion, int& nOrphansFound);
+    void repairWallet(int& nMismatchSpent, int64_t& nBalanceInQuestion, int& nOrphansFound);
+    // PoS Information
+    void getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
     quint64 getTotStakeWeight();
-    //PoS Information about value and time
-    void getStakeWeightFromValue(const qint64& nTime, const qint64& nValue, quint64& nWeight);
-    //Wallet Information about Stake For Charity
-    int getStakeForCharityPercent();
-    QString getStakeForCharityAddress();
-
-
+    /** Give user information about reserve balance */
+    quint64 getReserveBalance();
+    // PoS Information about value and time
+    void getStakeWeightFromValue(const int64_t& nTime, const int64_t& nValue, uint64_t& nWeight);
+    // setStakeForCharity Wallet Settings
+    void setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
+    // Wallet Information about Stake For Charity
+    void getStakeForCharity(int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
 
     // RAI object for unlocking wallet, returned by requestUnlock()
     class UnlockContext
@@ -145,6 +155,7 @@ public:
     void lockCoin(COutPoint& output);
     void unlockCoin(COutPoint& output);
     void listLockedCoins(std::vector<COutPoint>& vOutpts);
+    bool isMine(const CBitcoinAddress &address);
 
 private:
     CWallet *wallet;

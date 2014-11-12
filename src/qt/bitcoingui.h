@@ -5,6 +5,8 @@
 #include <QSystemTrayIcon>
 #include <QMap>
 
+#include "util.h"
+
 class TransactionTableModel;
 class WalletView;
 class ClientModel;
@@ -17,19 +19,15 @@ class SendCoinsDialog;
 class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
-
+class StakeForCharityDialog;
 class CWallet;
 class CWalletManager;
 
 QT_BEGIN_NAMESPACE
 class QLabel;
-class QLineEdit;
-class QTableView;
-class QAbstractItemModel;
 class QModelIndex;
 class QProgressBar;
 class QStackedWidget;
-class QUrl;
 class QListWidget;
 class QPushButton;
 QT_END_NAMESPACE
@@ -41,6 +39,7 @@ QT_END_NAMESPACE
 class BitcoinGUI : public QMainWindow
 {
     Q_OBJECT
+
 public:
     explicit BitcoinGUI(QWidget *parent = 0);
     ~BitcoinGUI();
@@ -61,6 +60,9 @@ public:
 
     QAction *exportAction;
 
+   /// Get window identifier of QMainWindow (BitcoinGUI)
+   WId getMainWinId() const;
+
 protected:
     void changeEvent(QEvent *e);
     void closeEvent(QCloseEvent *event);
@@ -71,6 +73,8 @@ protected:
 private:
     ClientModel *clientModel;
     CWalletManager *walletManager;
+    StakeForCharityDialog *stakeForCharityDialog;
+
     QMap<QString, WalletModel*> mapWalletModels;
     QListWidget *walletList;
     WalletStack *walletStack;
@@ -96,6 +100,7 @@ private:
     QAction *signMessageAction;
     QAction *verifyMessageAction;
     QAction *aboutAction;
+    QAction *charityAction;
     QAction *receiveCoinsAction;
     QAction *optionsAction;
     QAction *toggleHideAction;
@@ -111,9 +116,14 @@ private:
     QAction *changePassphraseAction;
     QAction *aboutQtAction;
     QAction *openRPCConsoleAction;
+    QAction *openTrafficAction;
     QAction *loadWalletAction;
     QAction *unloadWalletAction;
     QAction *newWalletAction;
+    QAction *blockAction;
+    QAction *blocksIconAction;
+    QAction *connectionIconAction;
+    QAction *stakingIconAction;
 
     QSystemTrayIcon *trayIcon;
     Notificator *notificator;
@@ -121,6 +131,10 @@ private:
     RPCConsole *rpcConsole;
 
     QMovie *syncIconMovie;
+    /** Keep track of previous number of blocks, to detect progress */
+    int prevBlocks;
+
+    uint64_t nWeight;
 
     /** Create the main UI actions. */
     void createActions();
@@ -144,6 +158,8 @@ public slots:
     void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
+    /** Switch to block browser page */
+    void gotoBlockBrowser(QString transactionId = "");
 
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -192,12 +208,12 @@ private slots:
     void optionsClicked();
     /** Show about dialog */
     void aboutClicked();
+    /** Show Stake For Charity Dialog */
+    void charityClicked(QString addr = "");
     /** Show information about network */
     void blocksIconClicked();
     /** Allow user to lock/unlock wallet from click */
     void lockIconClicked();
-    /** Show information about peers */
-    void connectionIconClicked();
     /** Show information about stakes */
     void stakingIconClicked();
 #ifndef Q_OS_MAC

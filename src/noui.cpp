@@ -10,14 +10,19 @@
 
 static int noui_ThreadSafeMessageBox(const std::string& message, const std::string& caption, int style)
 {
-    printf("%s: %s\n", caption.c_str(), message.c_str());
+    LogPrintf("%s: %s\n", caption, message);
     fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
     return 4;
 }
 
-static bool noui_ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
+static bool noui_ThreadSafeAskFee(int64_t nFeeRequired, const std::string& strCaption)
 {
     return true;
+}
+
+static void noui_InitMessage(const std::string &message)
+{
+   LogPrintf("init message: %s\n", message);
 }
 
 void noui_connect()
@@ -25,4 +30,5 @@ void noui_connect()
     // Connect bitcoind signal handlers
     uiInterface.ThreadSafeMessageBox.connect(noui_ThreadSafeMessageBox);
     uiInterface.ThreadSafeAskFee.connect(noui_ThreadSafeAskFee);
+    uiInterface.InitMessage.connect(noui_InitMessage);
 }

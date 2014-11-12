@@ -383,17 +383,6 @@ bool CKey::Verify(uint256 hash, const std::vector<unsigned char>& vchSig)
     return true;
 }
 
-bool CKey::VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig)
-{
-    CKey key;
-    if (!key.SetCompactSignature(hash, vchSig))
-        return false;
-    if (GetPubKey() != key.GetPubKey())
-        return false;
-
-    return true;
-}
-
 bool CKey::IsValid()
 {
     if (!fSet)
@@ -407,4 +396,15 @@ bool CKey::IsValid()
     CKey key2;
     key2.SetSecret(secret, fCompr);
     return GetPubKey() == key2.GetPubKey();
+}
+
+bool ECC_InitSanityCheck() {
+    EC_KEY *pkey = EC_KEY_new_by_curve_name(NID_secp256k1);
+    if(pkey == NULL)
+       return false;
+    EC_KEY_free(pkey);
+
+  // TODO Is there more EC functionality that could be missing?
+  return true;
+
 }

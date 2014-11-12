@@ -125,6 +125,12 @@ void WalletStack::gotoSendCoinsPage()
         i.value()->gotoSendCoinsPage();
 }
 
+void WalletStack::gotoBlockBrowser(QString transactionId)
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->gotoBlockBrowser(transactionId);
+}
+
 void WalletStack::gotoSignMessageTab(QString addr)
 {
     WalletView *walletView = (WalletView*)currentWidget();
@@ -203,6 +209,12 @@ void WalletStack::unlockWalletForMint()
     if (walletView) walletView->unlockWalletForMint();
 }
 
+void WalletStack::charityClicked(QString addr)
+{
+    QMap<QString, WalletView*>::const_iterator i;
+    for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
+        i.value()->charityClicked(addr);
+}
 
 void WalletStack::setEncryptionStatus()
 {
@@ -222,7 +234,7 @@ void WalletStack::setCurrentWalletView(const QString& name)
     setCurrentWidget(walletView);
     walletView->setEncryptionStatus();
 
-    //Call the pages that have export and only set that connect
+    // Call the pages that have export and only set that connect
     QMap<QString, WalletView*>::const_iterator i;
     for (i = mapWalletViews.constBegin(); i != mapWalletViews.constEnd(); ++i)
     {
@@ -247,10 +259,17 @@ void WalletStack::setCurrentWalletView(const QString& name)
      }
 }
 
-void WalletStack::getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight)
+void WalletStack::getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight)
 {
     WalletView *walletView = (WalletView*)currentWidget();
     if (walletView) walletView->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+}
+
+quint64 WalletStack::getReserveBalance()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) return walletView->getReserveBalance();
+    return 0;
 }
 
 quint64 WalletStack::getTotStakeWeight()
@@ -274,18 +293,16 @@ bool WalletStack::isWalletLocked()
     return false;
 }
 
-int WalletStack::getStakeForCharityPercent()
+void WalletStack::getStakeForCharity(int& nStakeForCharityPercent,
+                        CBitcoinAddress& strStakeForCharityAddress,
+                        CBitcoinAddress& strStakeForCharityChangeAddress,
+                        qint64& nStakeForCharityMinAmount,
+                        qint64& nStakeForCharityMaxAmount)
 {
     WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) return walletView->getStakeForCharityPercent();
-    return 0;
+    if (walletView) return walletView->getStakeForCharity(nStakeForCharityPercent,
+                                                          strStakeForCharityAddress,
+                                                          strStakeForCharityChangeAddress,
+                                                          nStakeForCharityMinAmount,
+                                                          nStakeForCharityMaxAmount);
 }
-
-QString WalletStack::getStakeForCharityAddress()
-{
-    WalletView *walletView = (WalletView*)currentWidget();
-    if (walletView) return walletView->getStakeForCharityAddress();
-    return "";
-}
-
-

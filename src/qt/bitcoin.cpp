@@ -1,18 +1,22 @@
 /*
  * W.J. van der Laan 2011-2012
  */
+
+#include <QApplication>
+
 #include "bitcoingui.h"
 #include "clientmodel.h"
 #include "walletmodel.h"
 #include "optionsmodel.h"
 #include "guiutil.h"
 #include "guiconstants.h"
+#include "winshutdownmonitor.h"
 
 #include "init.h"
 #include "ui_interface.h"
 #include "qtipcserver.h"
 
-#include <QApplication>
+
 #include <QMessageBox>
 #if QT_VERSION < 0x050000
 #include <QTextCodec>
@@ -53,12 +57,12 @@ static void ThreadSafeMessageBox(const std::string& message, const std::string& 
     }
     else
     {
-        printf("%s: %s\n", caption.c_str(), message.c_str());
+        LogPrintf("%s: %s\n", caption, message);
         fprintf(stderr, "%s: %s\n", caption.c_str(), message.c_str());
     }
 }
 
-static bool ThreadSafeAskFee(int64 nFeeRequired, const std::string& strCaption)
+static bool ThreadSafeAskFee(int64_t nFeeRequired, const std::string& strCaption)
 {
     if(!guiref)
         return false;
@@ -89,6 +93,7 @@ static void InitMessage(const std::string &message)
         splashref->showMessage(QString::fromStdString(message+'\n'+'\n') + QString::fromStdString(FormatFullVersion().c_str()), Qt::AlignBottom|Qt::AlignHCenter, QColor(255,255,200));
         QApplication::instance()->processEvents();
     }
+    LogPrintf("init message: %s\n", message);
 }
 
 static void QueueShutdown()
@@ -113,9 +118,23 @@ static void handleRunawayException(std::exception *e)
     exit(1);
 }
 
+/* qDebug() message handler --> debug.log */
+#if QT_VERSION < 0x050000
+void DebugMessageHandler(QtMsgType type, const char * msg)
+{
+    LogPrint("qt", "Bitcoin-Qt: %s\n", msg);
+}
+#else
+void DebugMessageHandler(QtMsgType type, const QMessageLogContext& context, const QString &msg)
+{
+    LogPrint("qt", "Bitcoin-Qt: %s\n", qPrintable(msg));
+}
+#endif
+
 #ifndef BITCOIN_QT_TEST
 int main(int argc, char *argv[])
 {
+    fHaveGUI = true;
 
     // Command-line options take precedence:
     ParseParameters(argc, argv);
@@ -141,6 +160,13 @@ int main(int argc, char *argv[])
     // Install global event filter that makes sure that long tooltips can be word-wrapped
     app.installEventFilter(new GUIUtil::ToolTipToRichTextFilter(TOOLTIP_WRAP_THRESHOLD, &app));
 
+    // Install qDebug() message handler to route to debug.log:
+#if QT_VERSION < 0x050000
+    qInstallMsgHandler(DebugMessageHandler);
+#else
+    qInstallMessageHandler(DebugMessageHandler);
+#endif
+
     // ... then bitcoin.conf:
     if (!boost::filesystem::is_directory(GetDataDir(false)))
     {
@@ -155,7 +181,7 @@ int main(int argc, char *argv[])
     // Application identification (must be set before OptionsModel is initialized,
     // as it is used to locate QSettings)
     app.setOrganizationName("HoboNickels");
-    app.setOrganizationDomain("HoboNickels.su");
+    app.setOrganizationDomain("HoboNickels.info");
     if(GetBoolArg("-testnet")) // Separate UI settings for testnet
         app.setApplicationName("HoboNickels-Qt-testnet");
     else
@@ -208,6 +234,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+
     QSplashScreen splash(QPixmap(":/images/splash"), 0);
     if (GetBoolArg("-splash", true) && !GetBoolArg("-min"))
     {
@@ -234,8 +261,6 @@ int main(int argc, char *argv[])
                 // Put this in a block, so that the Model objects are cleaned up before
                 // calling Shutdown().
 
-                optionsModel.Upgrade(); // Must be done after AppInit2
-
                 if (splashref)
                     splash.finish(&window);
 
@@ -254,6 +279,11 @@ int main(int argc, char *argv[])
                 }
                 window.setCurrentWallet("~Default");
 
+#if defined(Q_OS_WIN) && QT_VERSION >= 0x050000
+                app.installNativeEventFilter(new WinShutdownMonitor());
+#endif
+
+
                 // If -min option passed, start window minimized.
                 if(GetBoolArg("-min"))
                 {
@@ -266,6 +296,10 @@ int main(int argc, char *argv[])
 
                 // Place this here as guiref has to be defined if we don't want to lose URIs
                 ipcInit(argc, argv);
+
+#if defined(Q_OS_WIN) && QT_VERSION >= 0x050000
+                 WinShutdownMonitor::registerShutdownBlockReason(QObject::tr("HoboNickels shutting down. Please wait..."), (HWND)window.getMainWinId());
+#endif
 
                 app.exec();
 

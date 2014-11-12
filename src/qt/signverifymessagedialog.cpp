@@ -10,10 +10,11 @@
 #include "walletmodel.h"
 #include "wallet.h"
 
+#include <QClipboard>
+#include <QDebug>
+
 #include <string>
 #include <vector>
-
-#include <QClipboard>
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
     QDialog(parent),
@@ -70,7 +71,6 @@ void SignVerifyMessageDialog::setAddress_VM(const QString &address)
 void SignVerifyMessageDialog::showTab_SM(bool fShow)
 {
     ui->tabWidget->setCurrentIndex(0);
-
     if (fShow)
         this->show();
 }
@@ -139,7 +139,7 @@ void SignVerifyMessageDialog::on_signMessageButton_SM_clicked()
       pwalletMain = pWalletManager->GetWallet(item.first.c_str()).get();
 
       if (!pwalletMain->GetKey(keyID, tkey))
-          printf("Address Not Found For %s\n",pwalletMain->strWalletFile.c_str());
+          qDebug() << "Address Not Found For " + QString(pwalletMain->strWalletFile.c_str());
       else
       {
           if (!pwalletMain->GetKey(keyID, key))

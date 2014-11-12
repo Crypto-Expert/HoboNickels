@@ -8,6 +8,9 @@
 #define WALLETSTACK_H
 
 #include <QStackedWidget>
+
+#include "util.h"
+
 #include <QMap>
 #include <boost/shared_ptr.hpp>
 
@@ -23,7 +26,8 @@ class SendCoinsDialog;
 class SignVerifyMessageDialog;
 class Notificator;
 class RPCConsole;
-
+class StakeForCharityDialog;
+class CBitcoinAddress;
 class CWalletManager;
 
 QT_BEGIN_NAMESPACE
@@ -76,6 +80,8 @@ public slots:
     void gotoReceiveCoinsPage(bool fExportOnly=false, bool fExportConnect=true, bool fExportFirstTime=false);
     /** Switch to send coins page */
     void gotoSendCoinsPage();
+    /** Switch to block browser page */
+    void gotoBlockBrowser(QString transactionId);
     
     /** Show Sign/Verify Message dialog and switch to sign message tab */
     void gotoSignMessageTab(QString addr = "");
@@ -102,14 +108,21 @@ public slots:
     void lockWallet();
     /** Ask for passphrase to unlock wallet for the session to mint */
     void unlockWalletForMint();
+    /** Show Stake For Charity Dialog */
+    void charityClicked(QString addr = "");
     /** Add up all loaded wallets and show total balance */
     void setTotBalance();
     /** Give user information about staking */
-    void getStakeWeight(quint64& nMinWeight, quint64& nMaxWeight, quint64& nWeight);
+    void getStakeWeight(uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
     quint64 getTotStakeWeight();
+    /** Give user information about reserve balance */
+    quint64 getReserveBalance();
     /** Give user information about Stake For Charity */
-    int getStakeForCharityPercent();
-    QString getStakeForCharityAddress();
+    void getStakeForCharity(int& nStakeForCharityPercent,
+                            CBitcoinAddress& strStakeForCharityAddress,
+                            CBitcoinAddress& strStakeForCharityChangeAddress,
+                            qint64& nStakeForCharityMinAmount,
+                            qint64& nStakeForCharityMaxAmount);
     /** Report Current Wallet Version */
     int getWalletVersion() const;
     /** Report from Stack about Wallet Encryption */

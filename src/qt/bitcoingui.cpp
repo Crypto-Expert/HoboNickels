@@ -4,7 +4,11 @@
  * W.J. van der Laan 2011-2012
  * The Bitcoin Developers 2011-2012
  */
+
+#include <QApplication>
+
 #include "bitcoingui.h"
+
 #include "transactiontablemodel.h"
 #include "optionsdialog.h"
 #include "aboutdialog.h"
@@ -25,19 +29,14 @@
 #include "macdockiconhandler.h"
 #endif
 
-#include <QApplication>
-#include <QMainWindow>
 #include <QMenuBar>
 #include <QMenu>
 #include <QIcon>
-#include <QTabWidget>
 #include <QVBoxLayout>
 #include <QToolBar>
 #include <QStatusBar>
 #include <QLabel>
-#include <QLineEdit>
 #include <QPushButton>
-#include <QLocale>
 #include <QMessageBox>
 #include <QProgressBar>
 #include <QStackedWidget>
@@ -67,7 +66,9 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     aboutQtAction(0),
     trayIcon(0),
     notificator(0),
-    rpcConsole(0)
+    rpcConsole(0),
+    prevBlocks(0),
+    nWeight(0)
 {
     resize(850, 550);
     setWindowTitle(tr("HoboNickels") + " - " + tr("Wallet"));
@@ -99,8 +100,9 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     // Create wallet list control, load and unload buttons
     QFrame *listFrame = new QFrame();
-    listFrame->setMinimumWidth(200);
-    listFrame->setMaximumWidth(200);
+    listFrame->setMinimumWidth(150);
+    listFrame->setMaximumWidth(150);
+    listFrame->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     QVBoxLayout *listFrameLayout = new QVBoxLayout(listFrame);
 
     QLabel *listFrameLabel = new QLabel();
@@ -111,26 +113,21 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     walletList = new QListWidget();
     listFrameLayout->addWidget(walletList);
 
-    // Create wallet load and unload buttons
-    QFrame *loadButtonFrame = new QFrame();
-    QHBoxLayout *loadButtonFrameLayout = new QHBoxLayout(loadButtonFrame);
 
     newWalletButton = new QPushButton(QIcon(":/icons/add"),tr("New"));
-    loadButtonFrameLayout->addWidget(newWalletButton);
-    newWalletButton->setMinimumWidth(50);
+    listFrameLayout->addWidget(newWalletButton);
+    newWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     newWalletButton->setStatusTip(tr("Create a new wallet. Must be called wallet-[name].dat, (wallet-stake.dat) for example"));
 
     loadWalletButton = new QPushButton(QIcon(":/icons/load_wallet"),tr("Load"));
-    loadButtonFrameLayout->addWidget(loadWalletButton);
-    loadWalletButton->setMinimumWidth(50);
+    listFrameLayout->addWidget(loadWalletButton);
+    loadWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     loadWalletButton->setStatusTip(tr("Load an existing wallet"));
 
     unloadWalletButton = new QPushButton(QIcon(":/icons/unload_wallet"),tr("Unload"));
-    loadButtonFrameLayout->addWidget(unloadWalletButton);
-    unloadWalletButton->setMinimumWidth(59);
+    listFrameLayout->addWidget(unloadWalletButton);
+    unloadWalletButton->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     unloadWalletButton->setStatusTip(tr("Remove an open wallet from memory"));
-
-    listFrameLayout->addWidget(loadButtonFrame);
 
     connect(newWalletButton, SIGNAL(clicked()), this, SLOT(newWallet()));
     connect(loadWalletButton, SIGNAL(clicked()), this, SLOT(loadWallet()));
@@ -152,19 +149,18 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
     // Status bar notification icons
     QFrame *frameBlocks = new QFrame();
     frameBlocks->setContentsMargins(0,0,0,0);
-    frameBlocks->setMinimumWidth(56);
-    frameBlocks->setMaximumWidth(90);
+    frameBlocks->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred);
     QHBoxLayout *frameBlocksLayout = new QHBoxLayout(frameBlocks);
     frameBlocksLayout->setContentsMargins(3,0,3,0);
     frameBlocksLayout->setSpacing(3);
     labelEncryptionIcon = new GUIUtil::ClickableLabel();
     labelStakingIcon = new GUIUtil::ClickableLabel();
     labelConnectionsIcon = new GUIUtil::ClickableLabel();
-    connect(labelConnectionsIcon, SIGNAL(clicked()),this,SLOT(connectionIconClicked()));
-    connect(labelStakingIcon, SIGNAL(clicked()), this, SLOT(stakingIconClicked()));
-
     labelBlocksIcon = new GUIUtil::ClickableLabel();
+
+    connect(labelStakingIcon, SIGNAL(clicked()), this, SLOT(stakingIconClicked()));
     connect(labelBlocksIcon, SIGNAL(clicked()),this,SLOT(blocksIconClicked()));
+
     frameBlocksLayout->addStretch();
     frameBlocksLayout->addWidget(labelEncryptionIcon);
     frameBlocksLayout->addStretch();
@@ -199,6 +195,9 @@ BitcoinGUI::BitcoinGUI(QWidget *parent):
 
     rpcConsole = new RPCConsole(this);
 
+    connect(openTrafficAction, SIGNAL(triggered()), rpcConsole, SLOT(showTab_Stats()));
+    connect(connectionIconAction, SIGNAL(triggered()), rpcConsole, SLOT(showTab_Peers()));
+    connect(labelConnectionsIcon, SIGNAL(clicked()), rpcConsole, SLOT(showTab_Peers()));
     connect(openRPCConsoleAction, SIGNAL(triggered()), rpcConsole, SLOT(show()));
 
     // Install event filter to be able to catch status tip events (QEvent::StatusTip)
@@ -260,6 +259,26 @@ void BitcoinGUI::createActions()
     addressBookAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_5));
     tabGroup->addAction(addressBookAction);
 
+    charityAction = new QAction(QIcon(":/icons/send"), tr("Stake For &Charity"), this);
+    charityAction->setStatusTip(tr("Enable Stake For Charity"));
+    charityAction->setToolTip(charityAction->statusTip());
+    charityAction->setShortcut(QKeySequence(Qt::ALT + Qt::Key_6));
+    charityAction->setCheckable(true);
+    tabGroup->addAction(charityAction);
+
+    blockAction = new QAction(QIcon(":/icons/blexp"), tr("Block Bro&wser"), this);
+    blockAction->setStatusTip(tr("Explore the BlockChain"));
+    blockAction->setToolTip(blockAction->statusTip());
+
+    blocksIconAction = new QAction(QIcon(":/icons/info"), tr("Current &Block Info"), this);
+    blocksIconAction->setStatusTip(tr("Get Current Block Information"));
+    blocksIconAction->setToolTip(blocksIconAction->statusTip());
+
+    stakingIconAction = new QAction(QIcon(":/icons/info"), tr("Current &PoS Block Info"), this);
+    stakingIconAction->setStatusTip(tr("Get Current PoS Block Information"));
+    stakingIconAction->setToolTip(stakingIconAction->statusTip());
+
+
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
     connect(overviewAction, SIGNAL(triggered()), this, SLOT(gotoOverviewPage()));
     connect(sendCoinsAction, SIGNAL(triggered()), this, SLOT(showNormalIfMinimized()));
@@ -295,6 +314,8 @@ void BitcoinGUI::createActions()
     aboutAction = new QAction(QIcon(":/icons/bitcoin"), tr("&About HoboNickels"), this);
     aboutAction->setStatusTip(tr("Show information about HoboNickels"));
     aboutAction->setMenuRole(QAction::AboutRole);
+
+
 
     aboutQtAction = new QAction(QIcon(":/trolltech/qmessagebox/images/qtlogo-64.png"), tr("About &Qt"), this);
     aboutQtAction->setStatusTip(tr("Show information about Qt"));
@@ -354,6 +375,14 @@ void BitcoinGUI::createActions()
     openRPCConsoleAction->setStatusTip(tr("Open debugging and diagnostic console"));
     openRPCConsoleAction->setToolTip(openRPCConsoleAction->statusTip());
 
+    openTrafficAction = new QAction(QIcon(":/icons/traffic"), tr("&Traffic window"), this);
+    openTrafficAction->setStatusTip(tr("Open Network Traffic Graph"));
+    openTrafficAction->setToolTip(openTrafficAction->statusTip());
+
+    connectionIconAction = new QAction(QIcon(":/icons/p2p"), tr("Current &Peer Info"), this);
+    connectionIconAction->setStatusTip(tr("Get Current Peer Information"));
+    connectionIconAction->setToolTip(connectionIconAction->statusTip());
+
     connect(quitAction, SIGNAL(triggered()), qApp, SLOT(quit()));
     connect(aboutAction, SIGNAL(triggered()), this, SLOT(aboutClicked()));
     connect(aboutQtAction, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
@@ -371,6 +400,10 @@ void BitcoinGUI::createActions()
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
     connect(unlockWalletAction, SIGNAL(triggered()), this, SLOT(unlockWalletForMint()));
     connect(lockWalletAction, SIGNAL(triggered()), this, SLOT(lockWallet()));
+    connect(blockAction, SIGNAL(triggered()), this, SLOT(gotoBlockBrowser()));
+    connect(blocksIconAction, SIGNAL(triggered()), this, SLOT(blocksIconClicked()));
+    connect(stakingIconAction, SIGNAL(triggered()), this, SLOT(stakingIconClicked()));
+    connect(charityAction, SIGNAL(triggered()), this, SLOT(charityClicked()));
 }
 
 void BitcoinGUI::createMenuBar()
@@ -403,6 +436,7 @@ void BitcoinGUI::createMenuBar()
     QMenu *wallet = appMenuBar->addMenu(tr("&Wallet"));
     wallet->addAction(encryptWalletAction);
     wallet->addAction(changePassphraseAction);
+    wallet->addSeparator();
     wallet->addAction(unlockWalletAction);
     wallet->addAction(lockWalletAction);
     wallet->addSeparator();
@@ -412,6 +446,13 @@ void BitcoinGUI::createMenuBar()
     wallet->addAction(signMessageAction);
     wallet->addAction(verifyMessageAction);
 
+    QMenu *network = appMenuBar->addMenu(tr("&Network"));
+    network->addAction(blockAction);
+    network->addAction(openTrafficAction);
+    network->addAction(connectionIconAction);
+    network->addSeparator();
+    network->addAction(blocksIconAction);
+    network->addAction(stakingIconAction);
 
 
     QMenu *help = appMenuBar->addMenu(tr("&Help"));
@@ -419,7 +460,6 @@ void BitcoinGUI::createMenuBar()
     help->addSeparator();
     help->addAction(aboutAction);
     help->addAction(aboutQtAction);
-
 }
 
 void BitcoinGUI::createToolBars()
@@ -431,6 +471,7 @@ void BitcoinGUI::createToolBars()
     toolbar->addAction(receiveCoinsAction);
     toolbar->addAction(historyAction);
     toolbar->addAction(addressBookAction);
+    toolbar->addAction(charityAction);
 
     QToolBar *toolbar2 = addToolBar(tr("Actions toolbar"));
     toolbar2->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
@@ -482,7 +523,7 @@ void BitcoinGUI::setClientModel(ClientModel *clientModel)
         walletStack->setClientModel(clientModel);
         rpcConsole->setClientModel(clientModel);
 
-        //Watch for wallets being loaded or unloaded
+        // Watch for wallets being loaded or unloaded
         connect(clientModel, SIGNAL(walletAdded(QString)), this, SLOT(addWallet(QString)));
         connect(clientModel, SIGNAL(walletRemoved(QString)), this, SLOT(removeWallet(QString)));
     }
@@ -513,9 +554,8 @@ bool BitcoinGUI::setCurrentWallet(const QString& name)
 
 void BitcoinGUI::createTrayIcon()
 {
-#ifndef Q_OS_MAC
     trayIcon = new QSystemTrayIcon(this);
-
+#ifndef Q_OS_MAC
     trayIcon->setToolTip(tr("HoboNickels client"));
     trayIcon->setIcon(QIcon(":/icons/toolbar"));
     trayIcon->show();
@@ -535,12 +575,11 @@ void BitcoinGUI::createTrayIconMenu()
 #else
     // Note: On Mac, the dock icon is used to provide the tray's functionality.
     MacDockIconHandler *dockIconHandler = MacDockIconHandler::instance();
-    trayIconMenu = dockIconHandler->dockMenu();
     dockIconHandler->setMainWindow((QMainWindow*)this);
+    trayIconMenu = dockIconHandler->dockMenu();
 #endif
 
     // Configuration of the tray icon (or dock icon) icon menu
-    trayIconMenu->addAction(toggleHideAction);
     trayIconMenu->addSeparator();
     trayIconMenu->addAction(sendCoinsAction);
     trayIconMenu->addAction(receiveCoinsAction);
@@ -585,99 +624,64 @@ void BitcoinGUI::aboutClicked()
 
 void BitcoinGUI::blocksIconClicked()
 {
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
 
-   int unit = clientModel->getOptionsModel()->getDisplayUnit();
+    int unit = clientModel->getOptionsModel()->getDisplayUnit();
 
-   message(tr("Extended Block Chain Information"),
-       tr("Client Version: %1\n"
-          "Protocol Version: %2\n\n"
-          "Last Block Number: %3\n"
-          "Last Block Time: %4\n\n"
-          "Current PoW Difficulty: %5\n"
-          "Current PoW Mh/s: %6\n"
-          "Current PoW Reward: %7\n\n"
-          "Current Wallet Viewed: %8\n"
-          "Current Wallet Version: %9\n"
-          "Total Wallets Loaded: %10\n\n"
-          "Network Money Supply: %11\n")
-          .arg(clientModel->formatFullVersion())
-          .arg(clientModel->getProtocolVersion())
-          .arg(clientModel->getNumBlocks())
-          .arg(clientModel->getLastBlockDate().toString())
-          .arg(clientModel->getDifficulty())
-          .arg(clientModel->getPoWMHashPS())
-          .arg(tr("5.0000000")) //Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
-          .arg(walletStack->getCurrentWallet())
-          .arg(walletStack->getWalletVersion())
-          .arg(walletManager->GetWalletCount())
-          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
-       ,CClientUIInterface::MODAL);
+    message(tr("Extended Block Chain Information"),
+        tr("Client Version: %1\n"
+           "Protocol Version: %2\n\n"
+           "Last Block Number: %3\n"
+           "Last Block Time: %4\n\n"
+           "Current PoW Difficulty: %5\n"
+           "Current PoW Mh/s: %6\n"
+           "Current PoW Reward: %7\n\n"
+           "Current Wallet Viewed: %8\n"
+           "Current Wallet Version: %9\n"
+           "Total Wallets Loaded: %10\n\n"
+           "Network Money Supply: %11\n")
+           .arg(clientModel->formatFullVersion())
+           .arg(clientModel->getProtocolVersion())
+           .arg(clientModel->getNumBlocks())
+           .arg(clientModel->getLastBlockDate().toString())
+           .arg(clientModel->getDifficulty())
+           .arg(clientModel->getPoWMHashPS())
+           .arg(tr("5.0000000")) // Hard Coded as HBN is always 5, but should use GetProofOfWorkReward
+           .arg(walletStack->getCurrentWallet())
+           .arg(walletStack->getWalletVersion())
+           .arg(walletManager->GetWalletCount())
+           .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
+        ,CClientUIInterface::MODAL);
 }
 
 void BitcoinGUI::lockIconClicked()
 {
-
-   if(walletStack->isWalletLocked())
-     unlockWalletForMint();
-}
-
-void BitcoinGUI::connectionIconClicked()
-{
-
-   QString strAllPeer;
-   QVector<CNodeStats> qvNodeStats = clientModel->getPeerStats();
-   uint64 nTotSendBytes = 0, nTotRecvBytes = 0 ,nTotBlocksRequested = 0;
-
-   BOOST_FOREACH(const CNodeStats& stats, qvNodeStats) {
-      QString strPeer;
-      nTotSendBytes+=stats.nSendBytes;
-      nTotRecvBytes+=stats.nRecvBytes;
-      nTotBlocksRequested+=stats.nBlocksRequested;
-
-      strPeer=tr("Peer IP: %1\n") .arg(stats.addrName.c_str());
-      strPeer=strPeer+tr("Time Connected: %1\n") .arg(QDateTime::fromTime_t(QDateTime::currentDateTimeUtc().toTime_t() - stats.nTimeConnected).toUTC().toString("hh:mm:ss"));
-      strPeer=strPeer+tr("Time of Last Send: %1\n") .arg(QDateTime::fromTime_t(stats.nLastSend).toString());
-      strPeer=strPeer+tr("Time of Last Recv: %1\n") .arg(QDateTime::fromTime_t(stats.nLastRecv).toString());
-      strPeer=strPeer+tr("Bytes Sent: %1\n") .arg(stats.nSendBytes);
-      strPeer=strPeer+tr("Bytes Recv: %1\n") .arg(stats.nRecvBytes);
-      strPeer=strPeer+tr("Blocks Requested: %1\n") .arg(stats.nBlocksRequested);
-      strPeer=strPeer+tr("Version: %1\n") .arg(stats.nVersion);
-      strPeer=strPeer+tr("SubVersion: %1\n") .arg(stats.strSubVer.c_str());
-      strPeer=strPeer+tr("Inbound?: %1\n") .arg(stats.fInbound ? "N": "Y");
-      strPeer=strPeer+tr("Starting Block: %1\n") .arg(stats.nStartingHeight);
-      strPeer=strPeer+tr("Ban Score(100 max): %1\n\n") .arg(stats.nMisbehavior);
-
-      strAllPeer=strAllPeer+strPeer;
-   }
-
-  message(tr("Extended Peer Information"),
-          tr("\tNumber of Connections: %1\n"
-             "\tTotal Bytes Recv: %2\n"
-             "\tTotal Bytes Sent: %3\n"
-             "\tTotal Blocks Requested: %4\n\n"
-             "\tPlease click \"Show Details\" for more information.\n")
-          .arg(clientModel->getNumConnections())
-          .arg(nTotRecvBytes)
-          .arg(nTotSendBytes)
-          .arg(nTotBlocksRequested),
-          CClientUIInterface::MODAL,
-          tr("%1")
-          .arg(strAllPeer));
-
-
-
+    if(walletStack->isWalletLocked())
+        unlockWalletForMint();
 }
 
 void BitcoinGUI::stakingIconClicked()
 {
+    TRY_LOCK(cs_main, lockMain);
+    if(!lockMain)
+        return;
 
-   uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
-   walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+    uint64_t nMinWeight = 0, nMaxWeight = 0;
+    walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
-   int unit = clientModel->getOptionsModel()->getDisplayUnit();
+    CBitcoinAddress strAddress;
+    CBitcoinAddress strChangeAddress;
+    int nPer;
+    qint64 nMin;
+    qint64 nMax;
 
+    walletStack->getStakeForCharity(nPer, strAddress, strChangeAddress, nMin, nMax);
 
-   message(tr("Extended Staking Information"),
+    int unit = clientModel->getOptionsModel()->getDisplayUnit();
+
+    message(tr("Extended Staking Information"),
       tr("Client Version: %1\n"
          "Protocol Version: %2\n\n"
          "Last PoS Block Number: %3\n"
@@ -687,12 +691,15 @@ void BitcoinGUI::stakingIconClicked()
          "Current PoS Yearly Interest: %7\%\n\n"
          "Current Wallet Viewed: %8\n"
          "Current Wallet Version: %9\n"
-         "Current Wallet PoS Weight: %10\n\n"
-         "Stake for Charity Address: %11\n"
-         "Stake for Charity Percentage: %12\n\n"
-         "Total Wallets Loaded: %13\n"
-         "Total Wallets PoS Weight: %14\n\n"
-         "Network Money Supply: %15\n")
+         "Current Wallet PoS Weight: %10\n"
+         "Current Wallet Reserve Balance: %11\n\n"
+         "Stake Split Threshold %12\n"
+         "Stake Combine Threshold %13\n\n"
+         "Stake for Charity Address: %14\n"
+         "Stake for Charity Percentage: %15\n\n"
+         "Total Wallets Loaded: %16\n"
+         "Total Wallets PoS Weight: %17\n\n"
+         "Network Money Supply: %18\n")
          .arg(clientModel->formatFullVersion())
          .arg(clientModel->getProtocolVersion())
          .arg(clientModel->getLastPoSBlock())
@@ -703,14 +710,22 @@ void BitcoinGUI::stakingIconClicked()
          .arg(walletStack->getCurrentWallet())
          .arg(walletStack->getWalletVersion())
          .arg(nWeight)
-         .arg(walletStack->getStakeForCharityAddress())
-         .arg(walletStack->getStakeForCharityPercent())
+         .arg(BitcoinUnits::formatWithUnit(unit, walletStack->getReserveBalance()))
+         .arg(BitcoinUnits::formatWithUnit(unit, nSplitThreshold, false))
+         .arg(BitcoinUnits::formatWithUnit(unit, nCombineThreshold, false))
+         .arg(strAddress.IsValid() ? strAddress.ToString().c_str() : "Not Giving")
+         .arg(nPer)
          .arg(walletManager->GetWalletCount())
          .arg(walletStack->getTotStakeWeight())
          .arg(BitcoinUnits::formatWithUnit(unit, clientModel->getMoneySupply(), false))
       ,CClientUIInterface::MODAL);
+}
 
 
+
+void BitcoinGUI::gotoBlockBrowser(QString transactionId)
+{
+    if (walletStack) walletStack->gotoBlockBrowser(transactionId);
 }
 
 void BitcoinGUI::gotoOverviewPage()
@@ -758,7 +773,7 @@ void BitcoinGUI::gotoSignMessageTab(QString addr)
 
 void BitcoinGUI::gotoVerifyMessageTab(QString addr)
 {
-    if (walletStack) walletStack->gotoSignMessageTab(addr);
+    if (walletStack) walletStack->gotoVerifyMessageTab(addr);
 }
 
 void BitcoinGUI::setNumConnections(int count)
@@ -782,19 +797,10 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
     // Prevent orphan statusbar messages (e.g. hover Quit in main menu, wait until chain-sync starts -> garbelled text)
     statusBar()->clearMessage();
 
-    // don't show / hide progress bar and its label if we have no connection to the network
     enum BlockSource blockSource = clientModel ? clientModel->getBlockSource() : BLOCK_SOURCE_NONE;
-    if (blockSource == BLOCK_SOURCE_NONE || (blockSource == BLOCK_SOURCE_NETWORK && clientModel->getNumConnections() == 0))
-    {
-        progressBarLabel->setVisible(false);
-        progressBar->setVisible(false);
-
-        return;
-    }
-
     QString tooltip;
-
     QString importText;
+
     switch (blockSource) {
     case BLOCK_SOURCE_NONE:
     case BLOCK_SOURCE_NETWORK:
@@ -807,44 +813,17 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         importText = tr("Reindexing blocks on disk...");
     }
 
-    if(count < nTotalBlocks)
-    {
-        int nRemainingBlocks = nTotalBlocks - count;
-        float nPercentageDone = count / (nTotalBlocks * 0.01f);
+    QDateTime lastBlockDate = clientModel->getLastBlockDate();
+    QDateTime currentDate = QDateTime::currentDateTime();
+    int totalSecs = GetTime() - 1374628210;
+    int secs = lastBlockDate.secsTo(currentDate);
 
-        progressBarLabel->setText(importText);
-        progressBarLabel->setVisible(true);
-        progressBar->setFormat(tr("~%n block(s) remaining", "", nRemainingBlocks));
-        progressBar->setMaximum(nTotalBlocks);
-        progressBar->setValue(count);
-        progressBar->setVisible(true);
-
-        tooltip = tr("Processed %1 of %2 blocks of transaction history (%3% done).").arg(count).arg(nTotalBlocks).arg(nPercentageDone, 0, 'f', 2);
-
-    }
-    else
-    {
-        progressBarLabel->setVisible(false);
-        progressBar->setVisible(false);
+    if(count < nTotalBlocks) {
+        tooltip = tr("Processed %1 of %2 (estimated) blocks of transaction history.").arg(count).arg(nTotalBlocks);
+    } else {
         tooltip = tr("Processed %1 blocks of transaction history.").arg(count);
     }
 
-    QDateTime lastBlockDate = clientModel->getLastBlockDate();
-    int secs = lastBlockDate.secsTo(QDateTime::currentDateTime());
-    QString text;
-
-    // Represent time from last generated block in human readable text
-    if(secs <= 0) {
-      // Fully up to date. Leave text empty.
-    }
-    else if(secs < 60)
-       text = tr("%n second(s) ago","",secs);
-    else if(secs < 60*60)
-       text = tr("%n minute(s) ago","",secs/60);
-    else if(secs < 24*60*60)
-       text = tr("%n hour(s) ago","",secs/(60*60));
-    else
-       text = tr("%n day(s) ago","",secs/(60*60*24));
 
     // Set icon state: spinning if catching up, tick otherwise
     if(secs < 90*60 && count >= nTotalBlocks)
@@ -853,21 +832,35 @@ void BitcoinGUI::setNumBlocks(int count, int nTotalBlocks)
         labelBlocksIcon->setPixmap(QIcon(":/icons/synced").pixmap(STATUSBAR_ICONSIZE, STATUSBAR_ICONSIZE));
 
         walletStack->showOutOfSyncWarning(false);
+        progressBarLabel->setVisible(false);
+        progressBar->setVisible(false);
 
     }
     else
     {
+        // Represent time from last generated block in human readable text
+        QString timeBehindText;
+        timeBehindText=(GUIUtil::formatDurationStr(secs));
+
+        progressBarLabel->setText(tr("Synchronizing with network..."));
+        progressBarLabel->setVisible(true);
+        progressBar->setFormat(tr("%1 behind").arg(timeBehindText));
+        progressBar->setMaximum(totalSecs);
+        progressBar->setValue(totalSecs - secs);
+        progressBar->setVisible(true);
+
         tooltip = tr("Catching up...") + QString("<br>") + tooltip;
         labelBlocksIcon->setMovie(syncIconMovie);
-        syncIconMovie->start();
+        if(count != prevBlocks)
+            syncIconMovie->jumpToNextFrame();
+        prevBlocks = count;
 
         walletStack->showOutOfSyncWarning(true);
-    }
 
-    if(!text.isEmpty())
-    {
         tooltip += QString("<br>");
-        tooltip += tr("Last received block was generated %1.").arg(text);
+        tooltip += tr("Last received block was generated %1 ago.").arg(timeBehindText);
+        tooltip += QString("<br>");
+        tooltip += tr("Transactions after this will not yet be visible.");
     }
 
     // Don't word-wrap this (fixed-width) tooltip
@@ -1169,7 +1162,7 @@ void BitcoinGUI::setEncryptionStatus(int status)
         connect(labelEncryptionIcon,SIGNAL(clicked()), this, SLOT(lockIconClicked()));
         break;
     }
-    //Put here as this function will be called on any wallet or lock status change.
+    // Put here as this function will be called on any wallet or lock status change.
     updateStakingIcon();
 
 }
@@ -1229,6 +1222,11 @@ void BitcoinGUI::unlockWalletForMint()
    if (walletStack) walletStack->unlockWalletForMint();
 }
 
+void BitcoinGUI::charityClicked(QString addr)
+{
+    if (walletStack) walletStack->charityClicked(addr);
+}
+
 void BitcoinGUI::showNormalIfMinimized(bool fToggleHidden)
 {
 
@@ -1259,42 +1257,40 @@ void BitcoinGUI::toggleHidden()
 
 void BitcoinGUI::updateStakingIcon()
 {
+    if (!walletStack)
+        return;
 
-      if (!walletStack)
-         return;
+    labelStakingIcon->setPixmap(QIcon(":/icons/staking_off").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
 
-      labelStakingIcon->setPixmap(QIcon(":/icons/staking_off").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
+    if (!clientModel->getNumConnections())
+        labelStakingIcon->setToolTip(tr("Not staking because wallet is offline"));
+    else if (clientModel->getNumConnections() < 3 )
+        labelStakingIcon->setToolTip(tr("Not staking because wallet is still acquiring nodes"));
+    else if (clientModel->inInitialBlockDownload() ||
+             clientModel->getNumBlocks() < clientModel->getNumBlocksOfPeers())
+        labelStakingIcon->setToolTip(tr("Not staking because wallet is syncing"));
+    else if (walletStack->isWalletLocked())
+        labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
+    else
+    {
+        uint64_t nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
 
-      if (!clientModel->getNumConnections())
-         labelStakingIcon->setToolTip(tr("Not staking because wallet is offline"));
-      else if (clientModel->inInitialBlockDownload() ||
-               clientModel->getNumBlocks() < clientModel->getNumBlocksOfPeers())
-         labelStakingIcon->setToolTip(tr("Not staking because wallet is syncing"));
-      else if (walletStack->isWalletLocked())
-         labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
-      else
-      {
-         uint64 nMinWeight = 0, nMaxWeight = 0, nWeight = 0;
-
-         walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
-         if (!nWeight)
+        walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
+        if (!nWeight)
             labelStakingIcon->setToolTip(tr("Not staking because you don't have mature coins"));
-          else
-          {
-            uint64 nNetworkWeight = clientModel->getPosKernalPS();
+        else
+        {
+            quint64 nNetworkWeight = clientModel->getPosKernalPS();
             int nEstimateTime = clientModel->getStakeTargetSpacing() * 10 * nNetworkWeight / nWeight;
-            QString text;
-            if (nEstimateTime < 60)
-               text = tr("%n second(s)", "", nEstimateTime);
-            else if (nEstimateTime < 60*60)
-               text = tr("%n minute(s)", "", nEstimateTime/60);
-            else if (nEstimateTime < 24*60*60)
-               text = tr("%n hour(s)", "", nEstimateTime/(60*60));
-            else
-               text = tr("%n day(s)", "", nEstimateTime/(60*60*24));
+            QString text = (GUIUtil::formatDurationStr(nEstimateTime));
 
             labelStakingIcon->setPixmap(QIcon(":/icons/staking_on").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));
             labelStakingIcon->setToolTip(tr("Staking.\n Your weight is %1\n Network weight is %2\n You have 50\% chance of producing a stake within %3").arg(nWeight).arg(nNetworkWeight).arg(text));
           }
-       }
+     }
+}
+
+WId BitcoinGUI::getMainWinId() const
+{
+    return winId();
 }

@@ -153,10 +153,10 @@ public:
 
     bool Verify(uint256 hash, const std::vector<unsigned char>& vchSig);
 
-    // Verify a compact signature
-    bool VerifyCompact(uint256 hash, const std::vector<unsigned char>& vchSig);
-
     bool IsValid();
 };
+
+/** Check that required EC support is available at runtime */
+bool ECC_InitSanityCheck(void);
 
 #endif
