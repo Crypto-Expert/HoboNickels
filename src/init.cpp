@@ -960,15 +960,15 @@ bool AppInit2()
     RandAddSeedPerfmon();
 
     //// debug print
-    LogPrintf("mapBlockIndex.size() = %"PRIszu"\n",   mapBlockIndex.size());
+    LogPrintf("mapBlockIndex.size() = %u\n",   mapBlockIndex.size());
     LogPrintf("nBestHeight = %d\n",            nBestHeight);
 
     BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
        {
            LogPrintf("Setting properties for wallet \"%s\"...\n", item.first);
-           LogPrintf(" setKeyPool.size() = %"PRIszu"\n", item.second->setKeyPool.size());
-           LogPrintf(" mapWallet.size() = %"PRIszu"\n", item.second->mapWallet.size());
-           LogPrintf(" mapAddressBook.size() = %"PRIszu"\n", item.second->mapAddressBook.size());
+           LogPrintf(" setKeyPool.size() = %u\n", item.second->setKeyPool.size());
+           LogPrintf(" mapWallet.size() = %u\n", item.second->mapWallet.size());
+           LogPrintf(" mapAddressBook.size() = %u\n", item.second->mapAddressBook.size());
        }
 
     if (!NewThread(StartNode, NULL))

@@ -885,7 +885,7 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     if ((int)keys.size() < nRequired)
         throw runtime_error(
             strprintf("not enough keys supplied "
-                      "(got %"PRIszu" keys, but need at least %d to redeem)", keys.size(), nRequired));
+                      "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     std::vector<CKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -924,7 +924,7 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     result.SetMultisig(nRequired, pubkeys);
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
         throw runtime_error(
-                 strprintf("redeemScript exceeds size limit: %"PRIszu" > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
+                 strprintf("redeemScript exceeds size limit: %u > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
     return result;
 }
 
