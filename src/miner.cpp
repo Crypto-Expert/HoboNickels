@@ -557,7 +557,7 @@ void BitcoinMiner(CWallet *pwallet)
             return;
         IncrementExtraNonce(pblock.get(), pindexPrev, nExtraNonce);
 
-        LogPrintf("Running BitcoinMiner with %"PRIszu" transactions in block (%u bytes)\n", pblock->vtx.size(),
+        LogPrintf("Running BitcoinMiner with %u transactions in block (%u bytes)\n", pblock->vtx.size(),
                ::GetSerializeSize(*pblock, SER_NETWORK, PROTOCOL_VERSION));
 
         //

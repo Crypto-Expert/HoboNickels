@@ -196,6 +196,8 @@ extern json_spirit::Value validateaddress(CWallet* pWallet, const json_spirit::A
 extern json_spirit::Value getsubsidy(CWallet* pWallet,const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getinfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value reservebalance(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value splitthreshold(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value combinethreshold(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value checkwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value repairwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value resendtx(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

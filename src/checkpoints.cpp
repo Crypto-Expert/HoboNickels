@@ -370,11 +370,14 @@ namespace Checkpoints
     // Is the sync-checkpoint too old?
     bool IsSyncCheckpointTooOld(unsigned int nSeconds)
     {
+        // Tranz for now just return false
+        return false;
         LOCK(cs_hashSyncCheckpoint);
         // sync-checkpoint should always be accepted block
         assert(mapBlockIndex.count(hashSyncCheckpoint));
         const CBlockIndex* pindexSync = mapBlockIndex[hashSyncCheckpoint];
-        return (pindexSync->GetBlockTime() + nSeconds < GetAdjustedTime());
+        //return (pindexSync->GetBlockTime() + nSeconds < GetAdjustedTime());
+
     }
 }
 

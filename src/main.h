@@ -56,7 +56,7 @@ static const int64_t MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just 
 /** Transactions smaller then this are ignored */
 static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 /** Split/Combine Threshold Max */
-static const int64_t MAX_SPLIT_AMOUNT = 20 * COIN;
+static const int64_t MAX_SPLIT_AMOUNT = 100 * COIN;
 static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT * 2;
 
 
@@ -619,7 +619,7 @@ public:
     {
         std::string str;
         str += IsCoinBase()? "Coinbase" : (IsCoinStake()? "Coinstake" : "CTransaction");
-        str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%"PRIszu", vout.size=%"PRIszu", nLockTime=%d)\n",
+        str += strprintf("(hash=%s, nTime=%d, ver=%d, vin.size=%u vout.size=%u nLockTime=%d)\n",
             GetHash().ToString().substr(0,10),
             nTime,
             nVersion,
@@ -1050,7 +1050,7 @@ public:
     std::string ToString() const
     {
         std::stringstream s;
-        s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%"PRIszu", vchBlockSig=%s)\n",
+        s << strprintf("CBlock(hash=%s, ver=%d, hashPrevBlock=%s, hashMerkleRoot=%s, nTime=%u, nBits=%08x, nNonce=%u, vtx=%u, vchBlockSig=%s)\n",
             GetHash().ToString(),
             nVersion,
             hashPrevBlock.ToString(),

@@ -885,7 +885,7 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     if ((int)keys.size() < nRequired)
         throw runtime_error(
             strprintf("not enough keys supplied "
-                      "(got %"PRIszu" keys, but need at least %d to redeem)", keys.size(), nRequired));
+                      "(got %u keys, but need at least %d to redeem)", keys.size(), nRequired));
     std::vector<CKey> pubkeys;
     pubkeys.resize(keys.size());
     for (unsigned int i = 0; i < keys.size(); i++)
@@ -924,7 +924,7 @@ static CScript _createmultisig(CWallet* pWallet, const Array& params)
     result.SetMultisig(nRequired, pubkeys);
     if (result.size() > MAX_SCRIPT_ELEMENT_SIZE)
         throw runtime_error(
-                 strprintf("redeemScript exceeds size limit: %"PRIszu" > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
+                 strprintf("redeemScript exceeds size limit: %u > %d", result.size(), MAX_SCRIPT_ELEMENT_SIZE));
     return result;
 }
 
@@ -1796,6 +1796,68 @@ Value validatepubkey(CWallet* pWallet, const Array& params, bool fHelp)
             ret.push_back(Pair("account", pWallet->mapAddressBook[dest]));
     }
     return ret;
+}
+
+Value splitthreshold(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "splitthreshold [amount]\n"
+            "[amount] is a real and rounded to cent.\n"
+            "Set split threshold, not to split a wallet block, if the PoS reward + wallet block is smaller then this amount \n"
+            "If no parameters provided current setting is printed.\n");
+
+    if (params.size() > 0)
+    {
+        int64_t nAmount = AmountFromValue(params[0]);
+        nAmount = (nAmount / CENT) * CENT;  // round to cent
+        if (nAmount < 0)
+            throw runtime_error("amount cannot be negative.\n");
+
+        int64_t nMaxAmount = MAX_SPLIT_AMOUNT;
+        if ((((pwalletMain->GetBalance() / 500) / CENT ) * CENT) > MAX_SPLIT_AMOUNT)
+            nMaxAmount = (((pwalletMain->GetBalance() / 500) / CENT ) * CENT);
+
+        if (nAmount > nMaxAmount)
+            nAmount = nMaxAmount;
+
+        nSplitThreshold = nAmount;
+    }
+
+    Object result;
+    result.push_back(Pair("amount", ValueFromAmount(nSplitThreshold)));
+    return result;
+}
+
+Value combinethreshold(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() > 1)
+        throw runtime_error(
+            "combinethreshold [amount]\n"
+            "[amount] is a real and rounded to cent.\n"
+            "Set combine threshold, to combine wallet blocks. Blocks must be on the same adress and reach max maturity. \n"
+            "If no parameters provided current setting is printed.\n");
+
+    if (params.size() > 0)
+    {
+        int64_t nAmount = AmountFromValue(params[0]);
+        nAmount = (nAmount / CENT) * CENT;  // round to cent
+        if (nAmount < 0)
+            throw runtime_error("amount cannot be negative.\n");
+
+        int64_t nMaxAmount = MAX_COMBINE_AMOUNT;
+        if ((((pwalletMain->GetBalance() / 250) / CENT ) * CENT) > MAX_COMBINE_AMOUNT)
+            nMaxAmount = (((pwalletMain->GetBalance() / 250) / CENT ) * CENT);
+
+        if (nAmount > nMaxAmount)
+            nAmount = nMaxAmount;
+
+        nCombineThreshold = nAmount;
+    }
+
+    Object result;
+    result.push_back(Pair("amount", ValueFromAmount(nCombineThreshold)));
+    return result;
 }
 
 // ppcoin: reserve balance from being staked for network protection
