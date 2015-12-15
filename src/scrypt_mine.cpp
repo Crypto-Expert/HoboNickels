@@ -29,7 +29,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include <xmmintrin.h>
+//#include <xmmintrin.h>   removed because ARM
 
 #include "scrypt_mine.h"
 #include "pbkdf2.h"
