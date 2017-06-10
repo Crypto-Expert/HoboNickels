@@ -22,7 +22,7 @@ extern const std::string CLIENT_BUILD;
 extern const std::string CLIENT_DATE;
 
 // database version
-static const int DATABASE_VERSION = 70501;
+static const int DATABASE_VERSION = 70600;
 
 // network protocol versioning
 static const int PROTOCOL_VERSION = 70007;
