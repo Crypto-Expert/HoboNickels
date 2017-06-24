@@ -1602,8 +1602,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
     return nSigOps;
 }
 
-bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
-                                 map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
+bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs, map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
                                  const CBlockIndex* pindexBlock, bool fBlock, bool fMiner)
 {
     // Take over previous transactions' spent pointers
@@ -2821,7 +2820,7 @@ bool LoadBlockIndex(bool fAllowNew)
     //
     // Load block index
     //
-    CTxDB txdb("cr");
+    CTxDB txdb("cr+");
     if (!txdb.LoadBlockIndex())
         return false;
     txdb.Close();
@@ -3096,7 +3095,7 @@ string GetWarnings(string strFor)
     if (!CLIENT_VERSION_IS_RELEASE)
         strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
 
-    // ppcoin: wallet lock warning for minting
+    // wallet lock warning for minting
     if (strMintWarning != "")
     {
         nPriority = 0;
@@ -3110,16 +3109,7 @@ string GetWarnings(string strFor)
         strStatusBar = strMiscWarning;
     }
 
-    // * Should not enter safe mode for longer invalid chain
-    // * If sync-checkpoint is too old do not enter safe mode
-    // * Display warning only in the STRICT mode
-    if (CheckpointsMode == Checkpoints::STRICT && Checkpoints::IsSyncCheckpointTooOld(60 * 60 * 24 * 10) && !fTestNet && !IsInitialBlockDownload())
-    {
-        nPriority = 100;
-        strStatusBar = _("WARNING: Checkpoint is too old. Wait for block chain to download, or notify developers.");
-    }
-
-    // ppcoin: if detected invalid checkpoint enter safe mode
+    // if detected invalid checkpoint enter safe mode
     if (Checkpoints::hashInvalidCheckpoint != 0)
     {
         nPriority = 3000;

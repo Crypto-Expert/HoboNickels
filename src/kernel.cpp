@@ -69,11 +69,8 @@ static int64_t GetStakeModifierSelectionInterval()
 // select a block from the candidate blocks in vSortedByTimestamp, excluding
 // already selected blocks in vSelectedBlocks, and with timestamp up to
 // nSelectionIntervalStop.
-static bool SelectBlockFromCandidates(
-    vector<pair<int64_t, uint256> >& vSortedByTimestamp,
-    map<uint256, const CBlockIndex*>& mapSelectedBlocks,
-    int64_t nSelectionIntervalStop, uint64_t nStakeModifierPrev,
-    const CBlockIndex** pindexSelected)
+static bool SelectBlockFromCandidates(vector<pair<int64_t, uint256> >& vSortedByTimestamp, map<uint256, const CBlockIndex*>& mapSelectedBlocks,
+    int64_t nSelectionIntervalStop, uint64_t nStakeModifierPrev, const CBlockIndex** pindexSelected)
 {
     bool fSelected = false;
     uint256 hashBest = 0;
@@ -251,10 +248,8 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
 // this ensures that the chance of getting a coinstake is proportional to the
 // amount of coin age one owns.
 // The reason this hash is chosen is the following:
-//   nStakeModifier: 
-//       (v0.3) scrambles computation to make it very difficult to precompute
-//              future proof-of-stake at the time of the coin's confirmation
-//       (v0.2) nBits (deprecated): encodes all past block timestamps
+//   nStakeModifier: scrambles computation to make it very difficult to precompute
+//                   future proof-of-stake at the time of the coin's confirmation
 //   txPrev.block.nTime: prevent nodes from guessing a good timestamp to
 //                       generate transaction for future advantage
 //   txPrev.offset: offset of txPrev inside block, to reduce the chance of 

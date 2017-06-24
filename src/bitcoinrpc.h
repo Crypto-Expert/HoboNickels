@@ -148,9 +148,6 @@ extern json_spirit::Value importprivkey(CWallet* pWallet, const json_spirit::Arr
 extern json_spirit::Value sendalert(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value stakeforcharity(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 
-extern json_spirit::Value getgenerate(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rpcmining.cpp
-extern json_spirit::Value setgenerate(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
-extern json_spirit::Value gethashespersec(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getmininginfo(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getwork(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value getworkex(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
