@@ -158,7 +158,7 @@ Value getworkex(CWallet* pWallet, const Array& params, bool fHelp)
             coinbase = ParseHex(params[1].get_str());
 
         if (vchData.size() != 128)
-            throw JSONRPCError(-8, "Invalid parameter");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
 
         CBlock* pdata = (CBlock*)&vchData[0];
 

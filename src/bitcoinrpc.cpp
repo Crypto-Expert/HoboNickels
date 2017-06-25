@@ -107,7 +107,41 @@ Value ValueFromAmount(int64_t amount)
     return (double)amount / (double)COIN;
 }
 
+//
+// Utilities: convert hex-encoded Values
+// (throws error if not hex).
+//
+uint256 ParseHashV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex)) // Note: IsHex("") is false
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    uint256 result;
+    result.SetHex(strHex);
+    return result;
+}
 
+uint256 ParseHashO(const Object& o, string strKey)
+{
+    return ParseHashV(find_value(o, strKey), strKey);
+}
+
+vector<unsigned char> ParseHexV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    return ParseHex(strHex);
+}
+
+vector<unsigned char> ParseHexO(const Object& o, string strKey)
+{
+    return ParseHexV(find_value(o, strKey), strKey);
+}
 
 
 ///
@@ -226,6 +260,7 @@ static const CRPCCommand vRPCCommands[] =
     { "sendfrom",               &sendfrom,               false,  false,    true  },
     { "sendmany",               &sendmany,               false,  false,    true  },
     { "addmultisigaddress",     &addmultisigaddress,     false,  false,    true  },
+    { "addredeemscript",        &addredeemscript,        false,  false,    true  },
     { "createmultisig",         &createmultisig,         true,   true,     true  },
     { "getrawmempool",          &getrawmempool,          true,   false,    false },
     { "getblock",               &getblock,               false,  false,    false },
@@ -249,6 +284,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getrawtransaction",      &getrawtransaction,      false,  false,    false },
     { "createrawtransaction",   &createrawtransaction,   false,  false,    false },
     { "decoderawtransaction",   &decoderawtransaction,   false,  false,    false },
+    { "decodescript",           &decodescript,           false,  false,    false },
     { "signrawtransaction",     &signrawtransaction,     false,  false,    true  },
     { "sendrawtransaction",     &sendrawtransaction,     false,  false,    false },
   //{ "gettxoutsetinfo",        &gettxoutsetinfo,        true,   false,    false },// For Future Release
