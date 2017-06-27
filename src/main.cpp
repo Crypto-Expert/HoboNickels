@@ -2823,7 +2823,6 @@ bool LoadBlockIndex(bool fAllowNew)
     CTxDB txdb("cr+");
     if (!txdb.LoadBlockIndex())
         return false;
-    txdb.Close();
 
     //
     // Init with genesis block
@@ -2907,7 +2906,7 @@ bool LoadBlockIndex(bool fAllowNew)
             return error("LoadBlockIndex() : failed to init sync checkpoint");
     }
 
-    // ppcoin: if checkpoint master key changed must reset sync-checkpoint
+    // if checkpoint master key changed must reset sync-checkpoint
     {
         CTxDB txdb;
         string strPubKey = "";
