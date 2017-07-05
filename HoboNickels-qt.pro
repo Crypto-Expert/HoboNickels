@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = HoboNickels-qt
-VERSION = 1.5.2.0
+VERSION = 1.5.2.5
 QT += core gui network
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN __NO_SYSTEM_INCLUDES
@@ -176,7 +176,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/util.h \
     src/uint256.h \
     src/kernel.h \
-    src/scrypt_mine.h \
     src/pbkdf2.h \
     src/serialize.h \
     src/strlcpy.h \
@@ -239,7 +238,10 @@ HEADERS += src/qt/bitcoingui.h \
     src/timer.h \
     src/qt/blockbrowser.h \
     src/qt/macnotificationhandler.h \
-    src/qt/winshutdownmonitor.h
+    src/qt/winshutdownmonitor.h \
+    src/tinyformat.h \
+    src/scrypt.h \
+    src/hash.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -309,13 +311,14 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/rpcconsole.cpp \
     src/noui.cpp \
     src/kernel.cpp \
+    src/scrypt-arm.S \
     src/scrypt-x86.S \
     src/scrypt-x86_64.S \
-    src/scrypt_mine.cpp \
     src/pbkdf2.cpp \
     src/timer.cpp \
     src/qt/blockbrowser.cpp \
-    src/qt/winshutdownmonitor.cpp
+    src/qt/winshutdownmonitor.cpp \
+    src/scrypt.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc
