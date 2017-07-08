@@ -2359,6 +2359,18 @@ bool CBlock::AcceptBlock()
     CBlockIndex* pindexPrev = (*mi).second;
     int nHeight = pindexPrev->nHeight+1;
 
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (IsProofOfWork() && nHeight > (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetBlockTime() - FutureDrift(pindexPrev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        return DoS(10, error("AcceptBlock() : PoW is only allowed after 10 mins of no block found"));
+
+    // Code to prevent flash mining.
+    if (IsProofOfWork() && nHeight > (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT) && pindexPrev->IsProofOfWork())
+    {
+        if (GetBlockTime() - FutureDrift(pindexPrev->GetBlockTime())  <  (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+          return DoS(10, error("AcceptBlock() : PoW must come afer PoS only or after 10 mins"));
+    }
+
     // Check proof-of-work or proof-of-stake
     if (nBits != GetNextTargetRequired(pindexPrev, IsProofOfStake()))
         return DoS(100, error("AcceptBlock() : incorrect %s", IsProofOfWork() ? "proof-of-work" : "proof-of-stake"));
@@ -2909,11 +2921,11 @@ bool LoadBlockIndex(bool fAllowNew)
     {
         CTxDB txdb;
         string strPubKey = "";
-        if (!txdb.ReadCheckpointPubKey(strPubKey) || strPubKey != CSyncCheckpoint::strMasterPubKey)
+        if (!txdb.ReadCheckpointPubKey(strPubKey) || strPubKey != (fTestNet ? CSyncCheckpoint::strMasterPubKeyTestNet : CSyncCheckpoint::strMasterPubKey))
         {
             // write checkpoint master key to db
             txdb.TxnBegin();
-            if (!txdb.WriteCheckpointPubKey(CSyncCheckpoint::strMasterPubKey))
+            if (!txdb.WriteCheckpointPubKey((fTestNet ? CSyncCheckpoint::strMasterPubKeyTestNet : CSyncCheckpoint::strMasterPubKey)))
                 return error("LoadBlockIndex() : failed to write new checkpoint master key to db");
             if (!txdb.TxnCommit())
                 return error("LoadBlockIndex() : failed to commit new checkpoint master key to db");

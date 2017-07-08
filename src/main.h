@@ -67,7 +67,18 @@ static const unsigned int POS_REWARD_SWITCH_TIME = 1378684800; // 9 SEP 2013 00:
 static const unsigned int POS_REWARD_FIX_TIME = 1383177600; // 31 OCT 2013 00:00:00
 static const unsigned int POS_REWARD_FIX_TIME2 = 1383606000; // 04 Nov 2013 23:00:00
 static const unsigned int VERSION1_5_SWITCH_TIME = 1421489410; //  Sat, 17 Jan 2015 10:10:10 GMT
-static const unsigned int VERSION1_5_SWITCH_BLOCK = 1600000; //  Block 1.6 million, approx same time
+static const int VERSION1_5_SWITCH_BLOCK = 1600000; //  Block 1.6 million, approx same time
+
+static const int POW_LIMIT_HEIGHT_TESTNET = 4500; // Limit Flash PoW Mining TestNet.
+static const int POW_STOP_HEIGHT_TESTNET = 4600; // Limit PoW Mining TestNet
+static const int64_t POW_TIME_LIMIT_TESTNET = 60; // Time for PoW to wait to find block TestNet
+
+static const int POW_LIMIT_HEIGHT =  5600000 ; // Limit Flash PoW Mining.
+static const int POW_STOP_HEIGHT =  6000000; // Limit PoW Mining.
+static const int64_t POW_TIME_LIMIT = 60 * 10; // Time for PoW to wait to find block
+
+
+
 
 
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }

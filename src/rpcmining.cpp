@@ -73,6 +73,17 @@ Value getworkex(CWallet* pWallet, const Array& params, bool fHelp)
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "HoboNickels is downloading blocks...");
 
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;
     static vector<CBlock*> vNewBlock;
@@ -206,6 +217,18 @@ Value getwork(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "HoboNickels is downloading blocks...");
+
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ?   POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
@@ -351,6 +374,18 @@ Value getblocktemplate(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "HoboNickels is downloading blocks...");
+
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT )
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
 
     static CReserveKey reservekey(pWallet);
 
