@@ -99,7 +99,7 @@ DEFS += -I"$(CURDIR)/leveldb/include" -DUSE_LEVELDB
 DEFS += -I"$(CURDIR)/leveldb/helpers"
 OBJS += obj/txdb-leveldb.o
 leveldb/out-static/libleveldb.lib:
-  @echo "Building LevelDB ..."; cd leveldb; TARGET_OS=OS_WINDOWS_CROSSCOMPILE make; cd ..
+    @echo "Building LevelDB ..."; cd leveldb; TARGET_OS=OS_WINDOWS_CROSSCOMPILE make; cd ..
 obj/txdb-leveldb.o: leveldb/out-static/libleveldb.lib
 else
 OBJS += obj/txdb-bdb.o
