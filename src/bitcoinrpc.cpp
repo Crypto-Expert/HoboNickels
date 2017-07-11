@@ -107,7 +107,41 @@ Value ValueFromAmount(int64_t amount)
     return (double)amount / (double)COIN;
 }
 
+//
+// Utilities: convert hex-encoded Values
+// (throws error if not hex).
+//
+uint256 ParseHashV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex)) // Note: IsHex("") is false
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    uint256 result;
+    result.SetHex(strHex);
+    return result;
+}
 
+uint256 ParseHashO(const Object& o, string strKey)
+{
+    return ParseHashV(find_value(o, strKey), strKey);
+}
+
+vector<unsigned char> ParseHexV(const Value& v, string strName)
+{
+    string strHex;
+    if (v.type() == str_type)
+        strHex = v.get_str();
+    if (!IsHex(strHex))
+        throw JSONRPCError(RPC_INVALID_PARAMETER, strName+" must be hexadecimal string (not '"+strHex+"')");
+    return ParseHex(strHex);
+}
+
+vector<unsigned char> ParseHexO(const Object& o, string strKey)
+{
+    return ParseHexV(find_value(o, strKey), strKey);
+}
 
 
 ///
@@ -200,9 +234,6 @@ static const CRPCCommand vRPCCommands[] =
     { "addnode",                &addnode,                true,   true,     false },
     { "getaddednodeinfo",       &getaddednodeinfo,       true,   true,     false },
     { "getdifficulty",          &getdifficulty,          true,   false,    false },
-    { "getgenerate",            &getgenerate,            true,   false,    false },
-    { "setgenerate",            &setgenerate,            true,   false,    false },
-    { "gethashespersec",        &gethashespersec,        true,   false,    false },
     { "getsubsidy",             &getsubsidy,             true,   false,    false },
     { "getinfo",                &getinfo,                true,   false,    false },
     { "getmininginfo",          &getmininginfo,          true,   false,    true  },
@@ -229,6 +260,7 @@ static const CRPCCommand vRPCCommands[] =
     { "sendfrom",               &sendfrom,               false,  false,    true  },
     { "sendmany",               &sendmany,               false,  false,    true  },
     { "addmultisigaddress",     &addmultisigaddress,     false,  false,    true  },
+    { "addredeemscript",        &addredeemscript,        false,  false,    true  },
     { "createmultisig",         &createmultisig,         true,   true,     true  },
     { "getrawmempool",          &getrawmempool,          true,   false,    false },
     { "getblock",               &getblock,               false,  false,    false },
@@ -252,6 +284,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getrawtransaction",      &getrawtransaction,      false,  false,    false },
     { "createrawtransaction",   &createrawtransaction,   false,  false,    false },
     { "decoderawtransaction",   &decoderawtransaction,   false,  false,    false },
+    { "decodescript",           &decodescript,           false,  false,    false },
     { "signrawtransaction",     &signrawtransaction,     false,  false,    true  },
     { "sendrawtransaction",     &sendrawtransaction,     false,  false,    false },
   //{ "gettxoutsetinfo",        &gettxoutsetinfo,        true,   false,    false },// For Future Release
@@ -1184,8 +1217,6 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     //
     if (strMethod == "stop"                   && n > 0) ConvertTo<bool>(params[0]);
     if (strMethod == "getaddednodeinfo"       && n > 0) ConvertTo<bool>(params[0]);
-    if (strMethod == "setgenerate"            && n > 0) ConvertTo<bool>(params[0]);
-    if (strMethod == "setgenerate"            && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "sendtoaddress"          && n > 1) ConvertTo<double>(params[1]);
     if (strMethod == "settxfee"               && n > 0) ConvertTo<double>(params[0]);
     if (strMethod == "getreceivedbyaddress"   && n > 1) ConvertTo<boost::int64_t>(params[1]);

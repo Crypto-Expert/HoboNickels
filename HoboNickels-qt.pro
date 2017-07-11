@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = HoboNickels-qt
-VERSION = 1.5.0.0
+VERSION = 1.5.3.0
 QT += core gui network
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN __NO_SYSTEM_INCLUDES
@@ -55,6 +55,7 @@ QMAKE_LFLAGS *= -fstack-protector-all --param ssp-buffer-size=1
 win32:QMAKE_LFLAGS *= -Wl,--dynamicbase -Wl,--nxcompat
  # on Windows: enable GCC large address aware linker flag
 win32:QMAKE_LFLAGS *= -Wl,--large-address-aware -static
+win32:QMAKE_LFLAGS += -static-libgcc -static-libstdc++
 
 # use: qmake "USE_QRCODE=1"
 # libqrencode (http://fukuchi.org/works/qrencode/index.en.html) must be installed for support
@@ -103,7 +104,7 @@ contains(USE_LEVELDB, -) {
     message(Building with LevelDB)
     DEFINES += USE_LEVELDB
     INCLUDEPATH += src/leveldb/include src/leveldb/helpers
-    LIBS += $$PWD/src/leveldb/libleveldb.a $$PWD/src/leveldb/libmemenv.a
+    LIBS += $$PWD/src/leveldb/out-static/libleveldb.a $$PWD/src/leveldb/out-static/libmemenv.a
     SOURCES += src/txdb-leveldb.cpp
     !win32 {
     # we use QMAKE_CXXFLAGS_RELEASE even without RELEASE=1 because we use RELEASE to indicate linking preferences not -O preferences
@@ -175,7 +176,6 @@ HEADERS += src/qt/bitcoingui.h \
     src/util.h \
     src/uint256.h \
     src/kernel.h \
-    src/scrypt_mine.h \
     src/pbkdf2.h \
     src/serialize.h \
     src/strlcpy.h \
@@ -238,7 +238,10 @@ HEADERS += src/qt/bitcoingui.h \
     src/timer.h \
     src/qt/blockbrowser.h \
     src/qt/macnotificationhandler.h \
-    src/qt/winshutdownmonitor.h
+    src/qt/winshutdownmonitor.h \
+    src/tinyformat.h \
+    src/scrypt.h \
+    src/hash.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
@@ -308,13 +311,14 @@ SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/rpcconsole.cpp \
     src/noui.cpp \
     src/kernel.cpp \
+    src/scrypt-arm.S \
     src/scrypt-x86.S \
     src/scrypt-x86_64.S \
-    src/scrypt_mine.cpp \
     src/pbkdf2.cpp \
     src/timer.cpp \
     src/qt/blockbrowser.cpp \
-    src/qt/winshutdownmonitor.cpp
+    src/qt/winshutdownmonitor.cpp \
+    src/scrypt.cpp
 
 RESOURCES += \
     src/qt/bitcoin.qrc

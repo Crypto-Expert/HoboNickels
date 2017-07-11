@@ -953,6 +953,30 @@ Value addmultisigaddress(CWallet* pWallet, const Array& params, bool fHelp)
   return CBitcoinAddress(innerID).ToString();
 }
 
+Value addredeemscript(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 2)
+    {
+        string msg = "addredeemscript <redeemScript> [account]\n"
+            "Add a P2SH address with a specified redeemScript to the wallet.\n"
+            "If [account] is specified, assign address to [account].";
+        throw runtime_error(msg);
+    }
+
+    string strAccount;
+    if (params.size() > 1)
+        strAccount = AccountFromValue(params[1]);
+
+    // Construct using pay-to-script-hash:
+    vector<unsigned char> innerData = ParseHexV(params[0], "redeemScript");
+    CScript inner(innerData.begin(), innerData.end());
+    CScriptID innerID = inner.GetID();
+    pWallet->AddCScript(inner);
+
+    pWallet->SetAddressBookName(innerID, strAccount);
+    return CBitcoinAddress(innerID).ToString();
+}
+
 Value createmultisig(CWallet* pWallet, const Array& params, bool fHelp)
 {
     if (fHelp || params.size() < 2 || params.size() > 2)
@@ -1435,7 +1459,6 @@ Value gettransaction(CWallet* pWallet, const Array& params, bool fHelp)
         uint256 hashBlock = 0;
         if (GetTransaction(hash, tx, hashBlock))
         {
-            entry.push_back(Pair("txid", hash.GetHex()));
             if (!fWalletOnly)
                TxToJSON(tx, 0, entry);
             if (hashBlock == 0)
@@ -1448,11 +1471,7 @@ Value gettransaction(CWallet* pWallet, const Array& params, bool fHelp)
                 {
                     CBlockIndex* pindex = (*mi).second;
                     if (pindex->IsInMainChain())
-                    {
                         entry.push_back(Pair("confirmations", 1 + nBestHeight - pindex->nHeight));
-                        entry.push_back(Pair("txntime", (boost::int64_t)tx.nTime));
-                        entry.push_back(Pair("time", (boost::int64_t)pindex->nTime));
-                    }
                     else
                         entry.push_back(Pair("confirmations", 0));
                 }
@@ -1722,6 +1741,7 @@ public:
         int nRequired;
         ExtractDestinations(subscript, whichType, addresses, nRequired);
         obj.push_back(Pair("script", GetTxnOutputType(whichType)));
+        obj.push_back(Pair("hex", HexStr(subscript.begin(), subscript.end())));
         Array a;
         BOOST_FOREACH(const CTxDestination& addr, addresses)
             a.push_back(CBitcoinAddress(addr).ToString());
@@ -2012,18 +2032,18 @@ Value lockunspent(CWallet* pWallet, const Array& params, bool fHelp)
     BOOST_FOREACH(Value& output, outputs)
     {
         if (output.type() != obj_type)
-            throw JSONRPCError(-8, "Invalid parameter, expected object");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected object");
         const Object& o = output.get_obj();
 
         RPCTypeCheck(o, map_list_of("txid", str_type)("vout", int_type));
 
         string txid = find_value(o, "txid").get_str();
         if (!IsHex(txid))
-            throw JSONRPCError(-8, "Invalid parameter, expected hex txid");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, expected hex txid");
 
         int nOutput = find_value(o, "vout").get_int();
         if (nOutput < 0)
-            throw JSONRPCError(-8, "Invalid parameter, vout must be positive");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter, vout must be positive");
 
         COutPoint outpt(uint256(txid), nOutput);
 

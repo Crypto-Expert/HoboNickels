@@ -215,7 +215,6 @@ namespace Checkpoints
     // Check against synchronized checkpoint
     bool CheckSync(const uint256& hashBlock, const CBlockIndex* pindexPrev)
     {
-        if (fTestNet) return true; // Testnet has no checkpoints
         int nHeight = pindexPrev->nHeight + 1;
 
         LOCK(cs_hashSyncCheckpoint);
@@ -366,31 +365,20 @@ namespace Checkpoints
         return (nBestHeight >= pindexSync->nHeight + nCoinbaseMaturity ||
                 pindexSync->GetBlockTime() + nStakeMinAge < GetAdjustedTime());
     }
-
-    // Is the sync-checkpoint too old?
-    bool IsSyncCheckpointTooOld(unsigned int nSeconds)
-    {
-        // Tranz for now just return false
-        return false;
-        LOCK(cs_hashSyncCheckpoint);
-        // sync-checkpoint should always be accepted block
-        assert(mapBlockIndex.count(hashSyncCheckpoint));
-        const CBlockIndex* pindexSync = mapBlockIndex[hashSyncCheckpoint];
-        //return (pindexSync->GetBlockTime() + nSeconds < GetAdjustedTime());
-
-    }
 }
 
-// ppcoin: sync-checkpoint master key
+// sync-checkpoint master key
+
 const std::string CSyncCheckpoint::strMasterPubKey = "04bdd7aa319f16d2682afab4d0d807141be59caac0291802ba7467f0288eaf54db9d144f8c78231d61746bb7b5f1ef70f92c62d4b18c5488ab39118e38460304dd";
+const std::string CSyncCheckpoint::strMasterPubKeyTestNet = "04d22e393d8500b017d0d3df9ef961321df12748bbd39a9f18b4cc47002717ad4d2f0ba87d1d81b83fff61472fad51ce11677b55b4f0861b4272ca3c6b001f8b1e";
 
 std::string CSyncCheckpoint::strMasterPrivKey = "";
 
-// ppcoin: verify signature of sync-checkpoint message
+// verify signature of sync-checkpoint message
 bool CSyncCheckpoint::CheckSignature()
 {
     CKey key;
-    if (!key.SetPubKey(ParseHex(CSyncCheckpoint::strMasterPubKey)))
+    if (!key.SetPubKey(ParseHex((fTestNet ? CSyncCheckpoint::strMasterPubKeyTestNet : CSyncCheckpoint::strMasterPubKey))))
         return error("CSyncCheckpoint::CheckSignature() : SetPubKey failed");
     if (!key.Verify(Hash(vchMsg.begin(), vchMsg.end()), vchSig))
         return error("CSyncCheckpoint::CheckSignature() : verify signature failed");

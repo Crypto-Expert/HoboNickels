@@ -20,6 +20,7 @@
 #include "netbase.h"
 #include "protocol.h"
 #include "addrman.h"
+#include "hash.h"
 
 class CRequestTracker;
 class CNode;
@@ -120,7 +121,6 @@ enum threadId
     THREAD_SOCKETHANDLER,
     THREAD_OPENCONNECTIONS,
     THREAD_MESSAGEHANDLER,
-    THREAD_MINER,
     THREAD_RPCLISTENER,
     THREAD_UPNP,
     THREAD_DNSSEED,

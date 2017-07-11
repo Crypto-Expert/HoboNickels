@@ -235,8 +235,6 @@ std::string HelpMessage()
         strUsage += "  -?                     " + _("This help message") + "\n";
         strUsage += "  -conf=<file>           " + _("Specify configuration file (default: HoboNickels.conf)") + "\n";
         strUsage += "  -pid=<file>            " + _("Specify pid file (default: HoboNickelsd.pid)") + "\n";
-        strUsage += "  -gen                   " + _("Generate coins") + "\n";
-        strUsage += "  -gen=0                 " + _("Don't generate coins") + "\n";
         strUsage += "  -datadir=<dir>         " + _("Specify data directory") + "\n";
         strUsage += "  -dbcache=<n>           " + _("Set database cache size in megabytes (default: 25)") + "\n";
         strUsage += "  -dblogsize=<n>         " + _("Set database disk log size in megabytes (default: 100)") + "\n";
@@ -497,7 +495,7 @@ bool AppInit2()
 
     fTestNet = GetBoolArg("-testnet");
     if (fTestNet) {
-        SoftSetBoolArg("-irc", true);
+        SoftSetBoolArg("-irc", false);
     }
 
     if (mapArgs.count("-bind")) {

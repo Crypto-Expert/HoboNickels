@@ -13,55 +13,6 @@
 using namespace json_spirit;
 using namespace std;
 
-Value getgenerate(CWallet* pWallet, const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() != 0)
-        throw runtime_error(
-            "getgenerate\n"
-            "Returns true or false.");
-
-    return GetBoolArg("-gen");
-}
-
-
-Value setgenerate(CWallet* pWallet, const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() < 1 || params.size() > 2)
-        throw runtime_error(
-            "setgenerate <generate> [genproclimit]\n"
-            "<generate> is true or false to turn generation on or off.\n"
-            "Generation is limited to [genproclimit] processors, -1 is unlimited.");
-
-    bool fGenerate = true;
-    if (params.size() > 0)
-        fGenerate = params[0].get_bool();
-
-    if (params.size() > 1)
-    {
-        int nGenProcLimit = params[1].get_int();
-        mapArgs["-genproclimit"] = itostr(nGenProcLimit);
-        if (nGenProcLimit == 0)
-            fGenerate = false;
-    }
-    mapArgs["-gen"] = (fGenerate ? "1" : "0");
-
-    GenerateBitcoins(fGenerate, pWallet);
-    return Value::null;
-}
-
-
-Value gethashespersec(CWallet* pWallet, const Array& params, bool fHelp)
-{
-    if (fHelp || params.size() != 0)
-        throw runtime_error(
-            "gethashespersec\n"
-            "Returns a recent hashes per second performance measurement while generating.");
-
-    if (GetTimeMillis() - nHPSTimerStart > 8000)
-        return (boost::int64_t)0;
-    return (boost::int64_t)dHashesPerSec;
-}
-
 Value getsubsidy(CWallet* pWallet, const Array& params, bool fHelp)
 {
     if (fHelp || params.size() > 1)
@@ -95,9 +46,6 @@ Value getmininginfo(CWallet* pWallet, const Array& params, bool fHelp)
     obj.push_back(Pair("errors",        GetWarnings("statusbar")));
     obj.push_back(Pair("netmhashps",     GetPoWMHashPS()));
     obj.push_back(Pair("netstakeweight", GetPoSKernelPS()));
-    obj.push_back(Pair("generate",      GetBoolArg("-gen")));
-    obj.push_back(Pair("genproclimit",  (int)GetArg("-genproclimit", -1)));
-    obj.push_back(Pair("hashespersec",  gethashespersec(NULL, params, false)));
 
     weight.push_back(Pair("minimum",    (uint64_t)nMinWeight));
     weight.push_back(Pair("maximum",    (uint64_t)nMaxWeight));
@@ -120,11 +68,22 @@ Value getworkex(CWallet* pWallet, const Array& params, bool fHelp)
         );
 
     if (vNodes.empty())
-        throw JSONRPCError(-9, "HoboNickels is not connected!");
+        throw JSONRPCError(RPC_CLIENT_NOT_CONNECTED, "HoboNickels is not connected!");
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(-10, "HoboNickels is downloading blocks...");
 
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;
     static vector<CBlock*> vNewBlock;
@@ -210,7 +169,7 @@ Value getworkex(CWallet* pWallet, const Array& params, bool fHelp)
             coinbase = ParseHex(params[1].get_str());
 
         if (vchData.size() != 128)
-            throw JSONRPCError(-8, "Invalid parameter");
+            throw JSONRPCError(RPC_INVALID_PARAMETER, "Invalid parameter");
 
         CBlock* pdata = (CBlock*)&vchData[0];
 
@@ -258,6 +217,18 @@ Value getwork(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "HoboNickels is downloading blocks...");
+
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ?   POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
 
     typedef map<uint256, pair<CBlock*, CScript> > mapNewBlock_t;
     static mapNewBlock_t mapNewBlock;    // FIXME: thread safety
@@ -319,6 +290,7 @@ Value getwork(CWallet* pWallet, const Array& params, bool fHelp)
         FormatHashBuffers(pblock, pmidstate, pdata, phash1);
 
         uint256 hashTarget = CBigNum().SetCompact(pblock->nBits).getuint256();
+
 
         Object result;
         result.push_back(Pair("midstate", HexStr(BEGIN(pmidstate), END(pmidstate)))); // deprecated
@@ -402,6 +374,18 @@ Value getblocktemplate(CWallet* pWallet, const Array& params, bool fHelp)
 
     if (IsInitialBlockDownload())
         throw JSONRPCError(RPC_CLIENT_IN_INITIAL_DOWNLOAD, "HoboNickels is downloading blocks...");
+
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (pindexBest->nHeight >= (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT )
+        && (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        throw JSONRPCError(RPC_MISC_ERROR, "PoW is only allowed after 10 mins of no block found");
+
+    // Code to prevent flash mining.
+    if (pindexBest->IsProofOfWork() && pindexBest->nHeight >= (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT))
+    {
+        if (GetAdjustedTime() - FutureDrift(pindexBest->pprev->GetBlockTime()) < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+           throw JSONRPCError(RPC_MISC_ERROR, "PoW must wait for PoS block or 10 min with no block");
+    }
 
     static CReserveKey reservekey(pWallet);
 

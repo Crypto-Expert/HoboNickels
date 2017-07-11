@@ -62,7 +62,6 @@ namespace Checkpoints
     bool SetCheckpointPrivKey(std::string strPrivKey);
     bool SendSyncCheckpoint(uint256 hashCheckpoint);
     bool IsMatureSyncCheckpoint();
-    bool IsSyncCheckpointTooOld(unsigned int nSeconds);
 }
 
 // ppcoin: synchronized checkpoint
@@ -101,6 +100,7 @@ class CSyncCheckpoint : public CUnsignedSyncCheckpoint
 {
 public:
     static const std::string strMasterPubKey;
+    static const std::string strMasterPubKeyTestNet;
     static std::string strMasterPrivKey;
 
     std::vector<unsigned char> vchMsg;

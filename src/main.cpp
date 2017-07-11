@@ -11,7 +11,6 @@
 #include "init.h"
 #include "ui_interface.h"
 #include "kernel.h"
-#include "scrypt_mine.h"
 #include <boost/algorithm/string/replace.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/filesystem/fstream.hpp>
@@ -1602,8 +1601,7 @@ unsigned int CTransaction::GetP2SHSigOpCount(const MapPrevTx& inputs) const
     return nSigOps;
 }
 
-bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
-                                 map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
+bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs, map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
                                  const CBlockIndex* pindexBlock, bool fBlock, bool fMiner)
 {
     // Take over previous transactions' spent pointers
@@ -2276,11 +2274,11 @@ bool CBlock::CheckBlock(bool fCheckPOW, bool fCheckMerkleRoot, bool fCheckSig) c
             return DoS(100, error("CheckBlock() : coinstake in wrong position"));
 
         // Coinbase output should be empty if proof-of-stake block
-        if (IsProofOfStake() && (vtx[0].vout.size() != 1 || !vtx[0].vout[0].IsEmpty()))
+        if (vtx[0].vout.size() != 1 || !vtx[0].vout[0].IsEmpty())
             return DoS(100, error("CheckBlock() : coinbase output not empty for proof-of-stake block"));
 
         // Check coinstake timestamp
-        if (IsProofOfStake() && !CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
+        if (!CheckCoinStakeTimestamp(GetBlockTime(), (int64_t)vtx[1].nTime))
             return DoS(50, error("CheckBlock() : coinstake timestamp violation nTimeBlock=%d nTimeTx=%u", GetBlockTime(), vtx[1].nTime));
 
         // NovaCoin: check proof-of-stake block signature
@@ -2360,6 +2358,18 @@ bool CBlock::AcceptBlock()
         return DoS(10, error("AcceptBlock() : prev block not found"));
     CBlockIndex* pindexPrev = (*mi).second;
     int nHeight = pindexPrev->nHeight+1;
+
+    // Code to effectivly turn off PoW, except for emergency need.
+    if (IsProofOfWork() && nHeight > (fTestNet ? POW_STOP_HEIGHT_TESTNET : POW_STOP_HEIGHT)
+        && (GetBlockTime() - FutureDrift(pindexPrev->GetBlockTime())  < (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT)))
+        return DoS(10, error("AcceptBlock() : PoW is only allowed after 10 mins of no block found"));
+
+    // Code to prevent flash mining.
+    if (IsProofOfWork() && nHeight > (fTestNet ? POW_LIMIT_HEIGHT_TESTNET : POW_LIMIT_HEIGHT) && pindexPrev->IsProofOfWork())
+    {
+        if (GetBlockTime() - FutureDrift(pindexPrev->GetBlockTime())  <  (fTestNet ? POW_TIME_LIMIT_TESTNET : POW_TIME_LIMIT))
+          return DoS(10, error("AcceptBlock() : PoW must come afer PoS only or after 10 mins"));
+    }
 
     // Check proof-of-work or proof-of-stake
     if (nBits != GetNextTargetRequired(pindexPrev, IsProofOfStake()))
@@ -2821,10 +2831,9 @@ bool LoadBlockIndex(bool fAllowNew)
     //
     // Load block index
     //
-    CTxDB txdb("cr");
+    CTxDB txdb("cr+");
     if (!txdb.LoadBlockIndex())
         return false;
-    txdb.Close();
 
     //
     // Init with genesis block
@@ -2908,15 +2917,15 @@ bool LoadBlockIndex(bool fAllowNew)
             return error("LoadBlockIndex() : failed to init sync checkpoint");
     }
 
-    // ppcoin: if checkpoint master key changed must reset sync-checkpoint
+    // if checkpoint master key changed must reset sync-checkpoint
     {
         CTxDB txdb;
         string strPubKey = "";
-        if (!txdb.ReadCheckpointPubKey(strPubKey) || strPubKey != CSyncCheckpoint::strMasterPubKey)
+        if (!txdb.ReadCheckpointPubKey(strPubKey) || strPubKey != (fTestNet ? CSyncCheckpoint::strMasterPubKeyTestNet : CSyncCheckpoint::strMasterPubKey))
         {
             // write checkpoint master key to db
             txdb.TxnBegin();
-            if (!txdb.WriteCheckpointPubKey(CSyncCheckpoint::strMasterPubKey))
+            if (!txdb.WriteCheckpointPubKey((fTestNet ? CSyncCheckpoint::strMasterPubKeyTestNet : CSyncCheckpoint::strMasterPubKey)))
                 return error("LoadBlockIndex() : failed to write new checkpoint master key to db");
             if (!txdb.TxnCommit())
                 return error("LoadBlockIndex() : failed to commit new checkpoint master key to db");
@@ -3096,7 +3105,7 @@ string GetWarnings(string strFor)
     if (!CLIENT_VERSION_IS_RELEASE)
         strStatusBar = _("This is a pre-release test build - use at your own risk - do not use for mining or merchant applications");
 
-    // ppcoin: wallet lock warning for minting
+    // wallet lock warning for minting
     if (strMintWarning != "")
     {
         nPriority = 0;
@@ -3110,16 +3119,7 @@ string GetWarnings(string strFor)
         strStatusBar = strMiscWarning;
     }
 
-    // * Should not enter safe mode for longer invalid chain
-    // * If sync-checkpoint is too old do not enter safe mode
-    // * Display warning only in the STRICT mode
-    if (CheckpointsMode == Checkpoints::STRICT && Checkpoints::IsSyncCheckpointTooOld(60 * 60 * 24 * 10) && !fTestNet && !IsInitialBlockDownload())
-    {
-        nPriority = 100;
-        strStatusBar = _("WARNING: Checkpoint is too old. Wait for block chain to download, or notify developers.");
-    }
-
-    // ppcoin: if detected invalid checkpoint enter safe mode
+    // if detected invalid checkpoint enter safe mode
     if (Checkpoints::hashInvalidCheckpoint != 0)
     {
         nPriority = 3000;

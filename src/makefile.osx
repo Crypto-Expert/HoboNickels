@@ -103,7 +103,7 @@ OBJS= \
     obj/noui.o \
     obj/pbkdf2.o \
     obj/kernel.o \
-    obj/scrypt_mine.o \
+    obj/scrypt.o \
     obj/scrypt-x86.o \
     obj/scrypt-x86_64.o
 
@@ -125,13 +125,13 @@ all: hobonickelsd
 # LevelDB support
 #
 ifdef USE_LEVELDB
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+LIBS += $(CURDIR)/leveldb/out-static/libleveldb.a $(CURDIR)/leveldb/out-static/libmemenv.a
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/include) -DUSE_LEVELDB
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 OBJS += obj/txdb-leveldb.o
-leveldb/libleveldb.a:
-  @echo "Building LevelDB ..."; cd leveldb; make libleveldb.a libmemenv.a; cd ..
-obj/txdb-leveldb.o: leveldb/libleveldb.a
+leveldb/out-static/libleveldb.a:
+  @echo "Building LevelDB ..."; cd leveldb; make ; cd ..
+obj/txdb-leveldb.o: leveldb/out-static/libleveldb.a
 else
 OBJS += obj/txdb-bdb.o
 endif
