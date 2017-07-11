@@ -91,13 +91,13 @@ all: HoboNickelsd.exe
 # LevelDB support
 #
 ifneq (${USE_LEVELDB}, -)
-LIBS += $(CURDIR)/leveldb/libleveldb.a $(CURDIR)/leveldb/libmemenv.a
+LIBS += $(CURDIR)/leveldb/out-static/libleveldb.a $(CURDIR)/leveldb/out-static/libmemenv.a
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/include) -DUSE_LEVELDB
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 OBJS += obj/txdb-leveldb.o
-leveldb/libleveldb.a:
+leveldb/out-static/libleveldb.a:
   cd leveldb; make; cd ..
-obj/txdb-leveldb.o: leveldb/libleveldb.lib
+obj/txdb-leveldb.o: leveldb/out-static/libleveldb.lib
 else
 OBJS += obj/txdb-bdb.o
 endif
