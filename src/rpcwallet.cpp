@@ -2226,3 +2226,35 @@ Value unloadwallet(CWallet* pWallet, const Array& params, bool fHelp)
 
     return string("Wallet ") + strWalletName + " unloaded.";
 }
+
+Value startstaking(CWallet* pWallet, const Array& params, bool fHelp)
+{
+  if (fHelp || params.size() != 0)
+      throw runtime_error(
+          "startstaking\n"
+          "Starts the Staking Thread to allow wallet(s) to stake coins.\n"
+          "Effects all loaded wallets.");
+
+    pWalletManager->RestartStakeMiner();
+
+    return Value::null;
+}
+
+Value stopstaking(CWallet* pWallet, const Array& params, bool fHelp)
+{
+  if (fHelp || params.size() != 0)
+      throw runtime_error(
+          "stopstaking\n"
+          "Stops the Staking Thread. Coins will not stake until startstaking is used.\n"
+          "Effects all loaded wallets.");
+
+  if (!fShutdown)
+  {
+    LogPrintf ("Halting Stake Mining.\n");
+    fStopStaking = true;
+    MilliSleep(1000);
+  }
+    return Value::null;
+}
+
+

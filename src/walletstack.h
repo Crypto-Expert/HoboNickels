@@ -102,6 +102,9 @@ public slots:
     void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+    /** Start/Stop the Stake miner thread */
+    void startStaking();
+    void stopStaking();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
     /** Allow user to lock wallet */

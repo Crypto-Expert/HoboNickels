@@ -358,6 +358,12 @@ void BitcoinGUI::createActions()
     importWalletAction = new QAction(QIcon(":/icons/import"), tr("&Import Wallet..."), this);
     importWalletAction->setStatusTip(tr("Import a file's keys into a wallet"));
 
+    startStakingAction = new QAction(QIcon(":/icons/staking_on"), tr("&Start Staking..."), this);
+    startStakingAction->setStatusTip(tr("Start the staking miner thread for wallet(s)"));
+
+    stopStakingAction = new QAction(QIcon(":/icons/staking_off"), tr("Sto&p Staking..."), this);
+    stopStakingAction->setStatusTip(tr("Stop the staking miner thread for wallet(s)"));
+
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
 
@@ -396,6 +402,8 @@ void BitcoinGUI::createActions()
     connect(dumpWalletAction, SIGNAL(triggered()), this, SLOT(dumpWallet()));
     connect(importWalletAction, SIGNAL(triggered()), this, SLOT(importWallet()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
+    connect(startStakingAction, SIGNAL(triggered()), this, SLOT(startStaking()));
+    connect(stopStakingAction, SIGNAL(triggered()), this, SLOT(stopStaking()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
     connect(unlockWalletAction, SIGNAL(triggered()), this, SLOT(unlockWalletForMint()));
@@ -445,6 +453,9 @@ void BitcoinGUI::createMenuBar()
     wallet->addSeparator();
     wallet->addAction(signMessageAction);
     wallet->addAction(verifyMessageAction);
+    wallet->addSeparator();
+    wallet->addAction(startStakingAction);
+    wallet->addAction(stopStakingAction);
 
     QMenu *network = appMenuBar->addMenu(tr("&Network"));
     network->addAction(blockAction);
@@ -624,10 +635,6 @@ void BitcoinGUI::aboutClicked()
 
 void BitcoinGUI::blocksIconClicked()
 {
-    TRY_LOCK(cs_main, lockMain);
-    if(!lockMain)
-        return;
-
     int unit = clientModel->getOptionsModel()->getDisplayUnit();
 
     message(tr("Extended Block Chain Information"),
@@ -664,10 +671,6 @@ void BitcoinGUI::lockIconClicked()
 
 void BitcoinGUI::stakingIconClicked()
 {
-    TRY_LOCK(cs_main, lockMain);
-    if(!lockMain)
-        return;
-
     uint64_t nMinWeight = 0, nMaxWeight = 0;
     walletStack->getStakeWeight(nMinWeight,nMaxWeight,nWeight);
 
@@ -1207,6 +1210,16 @@ void BitcoinGUI::changePassphrase()
    if (walletStack) walletStack->changePassphrase();
 }
 
+void BitcoinGUI::startStaking()
+{
+   if (walletStack) walletStack->startStaking();
+}
+
+void BitcoinGUI::stopStaking()
+{
+   if (walletStack) walletStack->stopStaking();
+}
+
 void BitcoinGUI::unlockWallet()
 {
    if (walletStack) walletStack->unlockWallet();
@@ -1271,6 +1284,8 @@ void BitcoinGUI::updateStakingIcon()
         labelStakingIcon->setToolTip(tr("Not staking because wallet is syncing"));
     else if (walletStack->isWalletLocked())
         labelStakingIcon->setToolTip(tr("Not staking because wallet is locked"));
+    else if (fStopStaking)
+        labelStakingIcon->setToolTip(tr("Not staking because staking is off"));
     else
     {
         uint64_t nMinWeight = 0, nMaxWeight = 0, nWeight = 0;

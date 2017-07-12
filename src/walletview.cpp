@@ -48,7 +48,10 @@ WalletView::WalletView(QWidget *parent, BitcoinGUI *_gui):
     encryptWalletAction(0),
     unlockWalletAction(0),
     lockWalletAction(0),
-    changePassphraseAction(0)
+    changePassphraseAction(0),
+    startStakingAction(0),
+    stopStakingAction(0)
+
 {
     // Create actions for the toolbar, menu bar and tray/dock icon
     createActions();
@@ -187,6 +190,12 @@ void WalletView::createActions()
     backupAllWalletsAction = new QAction(QIcon(":/icons/filesave"), tr("&Backup All Wallets..."), this);
     backupAllWalletsAction->setStatusTip(tr("Backup all loaded wallets to another location"));
 
+    startStakingAction = new QAction(QIcon(":/icons/staking_on"), tr("&Start Staking..."), this);
+    startStakingAction->setStatusTip(tr("Start the staking miner thread for wallet(s)"));
+
+    stopStakingAction = new QAction(QIcon(":/icons/staking_off"), tr("Sto&p Staking..."), this);
+    stopStakingAction->setStatusTip(tr("Stop the staking miner thread for wallet(s)"));
+
     changePassphraseAction = new QAction(QIcon(":/icons/key"), tr("&Change Passphrase..."), this);
     changePassphraseAction->setStatusTip(tr("Change the passphrase used for wallet encryption"));
 
@@ -208,6 +217,8 @@ void WalletView::createActions()
     connect(importWalletAction, SIGNAL(triggered()), this, SLOT(importWallet()));
     connect(backupAllWalletsAction, SIGNAL(triggered()), this, SLOT(backupAllWallets()));
     connect(changePassphraseAction, SIGNAL(triggered()), this, SLOT(changePassphrase()));
+    connect(startStakingAction, SIGNAL(triggered()), this, SLOT(startStaking()));
+    connect(stopStakingAction, SIGNAL(triggered()), this, SLOT(stopStaking()));
     connect(signMessageAction, SIGNAL(triggered()), this, SLOT(gotoSignMessageTab()));
     connect(verifyMessageAction, SIGNAL(triggered()), this, SLOT(gotoVerifyMessageTab()));
     connect(unlockWalletAction, SIGNAL(triggered(bool)), this, SLOT(unlockWalletForMint()));
@@ -620,6 +631,16 @@ void WalletView::changePassphrase()
     AskPassphraseDialog dlg(AskPassphraseDialog::ChangePass, this);
     dlg.setModel(walletModel);
     dlg.exec();
+}
+
+void WalletView::startStaking()
+{
+    walletModel->startStaking();
+}
+
+void WalletView::stopStaking()
+{
+    walletModel->stopStaking();
 }
 
 void WalletView::lockWallet()
