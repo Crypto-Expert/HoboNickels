@@ -148,12 +148,12 @@ all: hobonickelsd
 # LevelDB support
 #
 ifeq (${USE_LEVELDB}, 1)
-LIBS += $(CURDIR)/leveldb/out-static/libleveldb.a $(CURDIR)/out-static/leveldb/libmemenv.a
+LIBS += $(CURDIR)/leveldb/out-static/libleveldb.a $(CURDIR)/leveldb/out-static/libmemenv.a
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/include) -DUSE_LEVELDB
 DEFS += $(addprefix -I,$(CURDIR)/leveldb/helpers)
 OBJS += obj/txdb-leveldb.o
 leveldb/out-static/libleveldb.a:
-    @echo "Building LevelDB ..."; cd leveldb; make ; cd ..;
+	@echo "Building LevelDB ..."; cd leveldb; make ; cd ..;
 obj/txdb-leveldb.o: leveldb/out-static/libleveldb.a
 endif
 ifneq (${USE_LEVELDB}, 1)
