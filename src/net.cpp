@@ -2043,9 +2043,18 @@ void StartNode(void* parg)
 
     // ppcoin: mint proof-of-stake blocks in the background
     // hbn: each wallet gets its own thread.
-    // Todo: Need to add a method to choose not to run stake off wallet.
+    // staking argument applies to all wallets
 
-    pWalletManager->RestartStakeMiner();
+    bool fStaking = GetBoolArg("-staking",true);
+
+    if (fStaking) {
+       fStopStaking = false;
+       pWalletManager->RestartStakeMiner();
+    }
+    else {
+       fStopStaking = true;
+       LogPrintf("Staking thread not started due to -staking set to false\n");
+    }
 }
 
 bool StopNode()

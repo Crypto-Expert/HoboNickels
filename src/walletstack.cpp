@@ -191,6 +191,18 @@ void WalletStack::changePassphrase()
     if (walletView) walletView->changePassphrase();
 }
 
+void WalletStack::startStaking()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->startStaking();
+}
+
+void WalletStack::stopStaking()
+{
+    WalletView *walletView = (WalletView*)currentWidget();
+    if (walletView) walletView->stopStaking();
+}
+
 void WalletStack::unlockWallet()
 {
     WalletView *walletView = (WalletView*)currentWidget();

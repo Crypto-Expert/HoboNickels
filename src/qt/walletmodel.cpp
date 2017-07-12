@@ -361,6 +361,17 @@ bool WalletModel::changePassphrase(const SecureString &oldPass, const SecureStri
     return retval;
 }
 
+
+void WalletModel::startStaking()
+{
+    pWalletManager->RestartStakeMiner();
+}
+
+void WalletModel::stopStaking()
+{
+    fStopStaking=true;
+}
+
 bool WalletModel::backupWallet(const QString &filename)
 {
     return BackupWallet(*wallet, filename.toLocal8Bit().data(), false);

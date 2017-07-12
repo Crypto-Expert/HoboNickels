@@ -100,6 +100,8 @@ private:
     QAction *importWalletAction;
     QAction *backupAllWalletsAction;
     QAction *changePassphraseAction;
+    QAction *startStakingAction;
+    QAction *stopStakingAction;
     QAction *aboutQtAction;
     QAction *charityAction;
 
@@ -147,6 +149,9 @@ public slots:
     void importWallet();
     /** Change encrypted wallet passphrase */
     void changePassphrase();
+    /** Start/Stop the Stake miner thread */
+    void startStaking();
+    void stopStaking();
     /** Ask for passphrase to unlock wallet temporarily */
     void unlockWallet();
     /** Allow user to lock wallet */
