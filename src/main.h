@@ -59,7 +59,6 @@ static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 static const int64_t MAX_SPLIT_AMOUNT = 100 * COIN;
 static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT * 2;
 
-
 /** Hard Fork Change Times/Block */
 static const unsigned int PROTOCOL_SWITCH_TIME = 1371686400; // 20 Jun 2013 00:00:00
 static const unsigned int REWARD_SWITCH_TIME = 1369432800; // 25 May 2013 00:00:00
@@ -77,6 +76,8 @@ static const int POW_LIMIT_HEIGHT =  5600000 ; // Limit Flash PoW Mining.
 static const int POW_STOP_HEIGHT =  6000000; // Limit PoW Mining.
 static const int64_t POW_TIME_LIMIT = 60 * 10; // Time for PoW to wait to find block
 
+static const unsigned int SIG_SWITCH_TIME = 1519900000; // Thu, 01 Mar 2018 10:26:40 GMT
+
 
 
 
@@ -84,6 +85,8 @@ static const int64_t POW_TIME_LIMIT = 60 * 10; // Time for PoW to wait to find b
 inline bool MoneyRange(int64_t nValue) { return (nValue >= 0 && nValue <= MAX_MONEY); }
 /** Threshold for nLockTime: below this value it is interpreted as block number, otherwise as UNIX timestamp. */
 static const unsigned int LOCKTIME_THRESHOLD = 500000000; // Tue Nov  5 00:53:20 1985 UTC
+// Maximum number of script-checking threads allowed
+static const int MAX_SCRIPTCHECK_THREADS = 16;
 
 static const uint256 hashGenesisBlockOfficial("0x000009ea5ef5019446b315e7e581fc2ea184315ed46c9ddeadc8aa9442deedc9");
 static const uint256 hashGenesisBlockTestNet("0x0000f9e0292f278190e4d58cd1e1e9a32b7466c8092bd2371ffc80b06f8eca4a");
@@ -145,6 +148,7 @@ extern int64_t nMinimumInputValue;
 extern int64_t nCombineThreshold;
 extern int64_t nSplitThreshold;
 extern bool fUseFastIndex;
+extern int nScriptCheckThreads;
 
 // Minimum disk space required - used in CheckDiskSpace()
 static const uint64_t nMinDiskSpace = 52428800;
@@ -153,6 +157,7 @@ static const uint64_t nMinDiskSpace = 52428800;
 class CReserveKey;
 class CTxDB;
 class CTxIndex;
+class CScriptCheck;
 struct CNodeStateStats;
 
 void RegisterWallet(CWallet* pwalletIn);
@@ -174,6 +179,12 @@ CBlockIndex* FindBlockByHeight(int nHeight);
 bool ProcessMessages(CNode* pfrom);
 bool SendMessages(CNode* pto, bool fSendTrickle);
 bool LoadExternalBlockFile(FILE* fileIn);
+
+// Run an instance of the script checking thread
+void ThreadScriptCheck(void* parg);
+// Stop the script checking threads
+void ThreadScriptCheckQuit();
+
 bool CheckProofOfWork(uint256 hash, unsigned int nBits);
 unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfStake);
 unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofOfStake);
@@ -196,6 +207,8 @@ void StakeMiner(CWallet *pwallet);
 void ResendWalletTransactions(bool fForce = false);
 /** Get statistics from node state */
 bool GetNodeStateStats(NodeId nodeid, CNodeStateStats &stats);
+
+bool VerifySignature(const CTransaction& txFrom, const CTransaction& txTo, unsigned int nIn, unsigned int flags, int nHashType);
 
 /** (try to) add transaction to memory pool **/
 bool AcceptToMemoryPool(CTxMemPool& pool, CTransaction &tx,
@@ -669,16 +682,48 @@ public:
         @param[in] pindexBlock
         @param[in] fBlock	true if called from ConnectBlock
         @param[in] fMiner	true if called from CreateNewBlock
+        @param[in] fScriptChecks	enable scripts validation?
+        @param[in] flags	STRICT_FLAGS script validation flags
+        @param[in] pvChecks	NULL If pvChecks is not NULL, script checks are pushed onto it instead of being performed inline.
         @return Returns true if all checks succeed
      */
-    bool ConnectInputs(CTxDB& txdb, MapPrevTx inputs,
-                       std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx,
-                       const CBlockIndex* pindexBlock, bool fBlock, bool fMiner);
+    bool ConnectInputs(CTxDB& txdb, MapPrevTx inputs, std::map<uint256, CTxIndex>& mapTestPool, const CDiskTxPos& posThisTx, const CBlockIndex* pindexBlock,
+                       bool fBlock, bool fMiner, bool fScriptChecks=true,
+                       unsigned int flags=STRICT_FLAGS, std::vector<CScriptCheck> *pvChecks = NULL);
     bool CheckTransaction() const;
     bool GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const;  // ppcoin: get transaction coin age
 
 protected:
-    const CTxOut& GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
+    const CTxOut&
+    GetOutputFor(const CTxIn& input, const MapPrevTx& inputs) const;
+};
+
+/** Closure representing one script verification
+ *  Note that this stores references to the spending transaction */
+class CScriptCheck
+{
+private:
+    CScript scriptPubKey;
+    const CTransaction *ptxTo;
+    unsigned int nIn;
+    unsigned int nFlags;
+    int nHashType;
+
+public:
+    CScriptCheck() {}
+    CScriptCheck(const CTransaction& txFromIn, const CTransaction& txToIn, unsigned int nInIn, unsigned int nFlagsIn, int nHashTypeIn) :
+        scriptPubKey(txFromIn.vout[txToIn.vin[nInIn].prevout.n].scriptPubKey),
+        ptxTo(&txToIn), nIn(nInIn), nFlags(nFlagsIn), nHashType(nHashTypeIn) { }
+
+    bool operator()() const;
+
+    void swap(CScriptCheck &check) {
+        scriptPubKey.swap(check.scriptPubKey);
+        std::swap(ptxTo, check.ptxTo);
+        std::swap(nIn, check.nIn);
+        std::swap(nFlags, check.nFlags);
+        std::swap(nHashType, check.nHashType);
+    }
 };
 
 /** Check for standard transaction types

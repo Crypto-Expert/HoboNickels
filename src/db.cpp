@@ -21,7 +21,7 @@ using namespace boost;
 
 unsigned int nWalletDBUpdated;
 
-
+extern bool fUseMemoryLog;
 
 //
 // CDB
@@ -155,7 +155,7 @@ void CDBEnv::MakeMock()
     dbenv.set_lk_max_objects(10000);
     dbenv.set_flags(DB_AUTO_COMMIT, 1);
 #ifdef DB_LOG_IN_MEMORY
-    dbenv.log_set_config(DB_LOG_IN_MEMORY, 1);
+    dbenv.log_set_config(DB_LOG_IN_MEMORY, fUseMemoryLog ? 1 : 0);
 #endif
     int ret = dbenv.open(NULL,
                      DB_CREATE     |

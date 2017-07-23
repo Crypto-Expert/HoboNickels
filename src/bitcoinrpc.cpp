@@ -235,7 +235,7 @@ static const CRPCCommand vRPCCommands[] =
     { "getaddednodeinfo",       &getaddednodeinfo,       true,   true,     false },
     { "getdifficulty",          &getdifficulty,          true,   false,    false },
     { "getsubsidy",             &getsubsidy,             true,   false,    false },
-    { "getinfo",                &getinfo,                true,   false,    false },
+    { "getinfo",                &getinfo,                true,   false,    true  },
     { "getmininginfo",          &getmininginfo,          true,   false,    true  },
     { "getnewaddress",          &getnewaddress,          true,   false,    true  },
     { "getaccountaddress",      &getaccountaddress,      true,   false,    true  },
@@ -280,6 +280,7 @@ static const CRPCCommand vRPCCommands[] =
     { "importwallet",           &importwallet,           false,  false,    true  },
     { "dumpprivkey",            &dumpprivkey,            false,  false,    true  },
     { "importprivkey",          &importprivkey,          false,  false,    true  },
+    { "importaddress",          &importaddress,          false,  true,     true  },
     { "listunspent",            &listunspent,            false,  false,    true  },
     { "getrawtransaction",      &getrawtransaction,      false,  false,    false },
     { "createrawtransaction",   &createrawtransaction,   false,  false,    false },
@@ -291,8 +292,6 @@ static const CRPCCommand vRPCCommands[] =
  // { "gettxout",               &gettxout,               true,   false,    true  },// For Future Release
     { "lockunspent",            &lockunspent,            false,  false,    true  },
     { "listlockunspent",        &listlockunspent,        false,  false,    true  },
-    { "getnewpubkey",           &getnewpubkey,           true,   false,    true  },
-    { "validatepubkey",         &validatepubkey,         true,   false,    true  },
     { "getblockbynumber",       &getblockbynumber,       false,  false,    false },
     { "getworkex",              &getworkex,              true,   false,    false },
     { "getcheckpoint",          &getcheckpoint,          true,   false,    false },
@@ -311,6 +310,7 @@ static const CRPCCommand vRPCCommands[] =
     { "unloadwallet",           &unloadwallet,           false,  false,    false },
     { "startstaking",           &startstaking,           false,  false,    false },
     { "stopstaking",            &stopstaking,            false,  false,    false }
+
 };
 
 CRPCTable::CRPCTable()
@@ -673,7 +673,7 @@ private:
 void ThreadRPCServer(void* parg)
 {
     // Make this thread recognisable as the RPC listener
-    RenameThread("bitcoin-rpclist");
+    RenameThread("hobocoin-rpclist");
 
     try
     {
@@ -977,7 +977,7 @@ static CCriticalSection cs_THREAD_RPCHANDLER;
 void ThreadRPCServer3(void* parg)
 {
     // Make this thread recognisable as the RPC handler
-    RenameThread("bitcoin-rpchand");
+    RenameThread("hobocoin-rpchand");
 
     {
         LOCK(cs_THREAD_RPCHANDLER);
@@ -1228,6 +1228,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "listreceivedbyaccount"  && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "listreceivedbyaccount"  && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "getbalance"             && n > 1) ConvertTo<boost::int64_t>(params[1]);
+    if (strMethod == "getbalance"             && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "getblock"               && n > 1) ConvertTo<bool>(params[1]);
     if (strMethod == "getblockbynumber"       && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "getblockbynumber"       && n > 1) ConvertTo<bool>(params[1]);
@@ -1240,6 +1241,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "sendfrom"               && n > 3) ConvertTo<boost::int64_t>(params[3]);
     if (strMethod == "listtransactions"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "listtransactions"       && n > 2) ConvertTo<boost::int64_t>(params[2]);
+    if (strMethod == "listtransactions"       && n > 3) ConvertTo<bool>(params[3]);
     if (strMethod == "listaccounts"           && n > 0) ConvertTo<boost::int64_t>(params[0]);
     if (strMethod == "walletpassphrase"       && n > 1) ConvertTo<boost::int64_t>(params[1]);
     if (strMethod == "walletpassphrase"       && n > 2) ConvertTo<bool>(params[2]);
@@ -1264,6 +1266,7 @@ Array RPCConvertValues(const std::string &strMethod, const std::vector<std::stri
     if (strMethod == "signrawtransaction"     && n > 1) ConvertTo<Array>(params[1], true);
     if (strMethod == "signrawtransaction"     && n > 2) ConvertTo<Array>(params[2], true);
     if (strMethod == "keypoolrefill"          && n > 0) ConvertTo<boost::int64_t>(params[0]);
+    if (strMethod == "importaddress"          && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "importprivkey"          && n > 2) ConvertTo<bool>(params[2]);
     if (strMethod == "sendalert"              && n > 2) ConvertTo<boost::int64_t>(params[2]);
     if (strMethod == "sendalert"              && n > 3) ConvertTo<boost::int64_t>(params[3]);

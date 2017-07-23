@@ -241,7 +241,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/qt/winshutdownmonitor.h \
     src/tinyformat.h \
     src/scrypt.h \
-    src/hash.h
+    src/hash.h \
+    src/checkqueue.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \

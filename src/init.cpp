@@ -35,6 +35,7 @@ unsigned int nMinerSleep;
 enum Checkpoints::CPMode CheckpointsMode;
 bool fUseFastIndex;
 bool fConfChange;
+bool fUseMemoryLog;
 
 CClientUIInterface uiInterface;
 
@@ -68,7 +69,7 @@ void Shutdown(void* parg)
     static bool fTaken;
 
     // Make this thread recognisable as the shutdown thread
-    RenameThread("bitcoin-shutoff");
+    RenameThread("hobocoin-shutoff");
 
     bool fFirstThread = false;
     {
@@ -270,6 +271,9 @@ std::string HelpMessage()
 #endif
 #endif
         strUsage += "  -detachdb              " + _("Detach block and address databases. Increases shutdown time (default: 0)") + "\n";
+#ifdef DB_LOG_IN_MEMORY
+        strUsage += "  -memorylog             " + _("Use in-memory logging for block index database (default: 1)") + "\n";
+#endif
         strUsage += "  -paytxfee=<amt>        " + _("Fee per KB to add to transactions you send") + "\n";
         strUsage += "  -mininput=<amt>        " + _("When creating transactions, ignore inputs with value less than this (default: 0.001)") + "\n";
 #ifdef QT_GUI
@@ -317,6 +321,7 @@ std::string HelpMessage()
         strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n";
         strUsage += "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n";
         strUsage += "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n";
+        strUsage += "  -par=N                 " + _("Set the number of script verification threads (1-16, 0=auto, default: 0)") + "\n";
         strUsage += "  -loadblock=<file>      " + _("Imports blocks from external blk000?.dat file") + "\n";
 
         strUsage += "\n" + _("Block creation options:") + "\n" +
@@ -479,6 +484,7 @@ bool AppInit2()
 
     nNodeLifespan = GetArg("-addrlifespan", 7);
     fUseFastIndex = GetBoolArg("-fastindex", true);
+    fUseMemoryLog = GetBoolArg("-memorylog", true);
     nMinerSleep = GetArg("-minersleep", 500);
 
     CheckpointsMode = Checkpoints::STRICT;
@@ -538,6 +544,16 @@ bool AppInit2()
     }
 
     // ********************************************************* Step 3: parameter-to-internal-flags
+
+    // -par=0 means autodetect, but nScriptCheckThreads==0 means no concurrency
+    nScriptCheckThreads = GetArg("-par", 0);
+    if (nScriptCheckThreads == 0)
+       nScriptCheckThreads = boost::thread::hardware_concurrency();
+    if (nScriptCheckThreads <= 1)
+       nScriptCheckThreads = 0;
+    else if (nScriptCheckThreads > MAX_SCRIPTCHECK_THREADS)
+       nScriptCheckThreads = MAX_SCRIPTCHECK_THREADS;
+
 
     fDebug = !mapMultiArgs["-debug"].empty();
     // Special-case: if -debug=0/-nodebug is set, turn off debugging messages
@@ -644,6 +660,12 @@ bool AppInit2()
 
     if (fDaemon)
         fprintf(stdout, "HoboNickels server starting\n");
+
+    if (nScriptCheckThreads) {
+       LogPrintf("Using %u threads for script verification\n", nScriptCheckThreads);
+       for (int i=0; i<nScriptCheckThreads-1; i++)
+          NewThread(ThreadScriptCheck, NULL);
+    }
 
     int64_t nStart;
 
@@ -920,6 +942,7 @@ bool AppInit2()
             if (file)
                 LoadExternalBlockFile(file);
         }
+        StartShutdown();
     }
 
     filesystem::path pathBootstrap = GetDataDir() / "bootstrap.dat";
