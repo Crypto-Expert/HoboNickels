@@ -1,6 +1,6 @@
 TEMPLATE = app
 TARGET = HoboNickels-qt
-VERSION = 1.5.3.0
+VERSION = 1.5.5.0
 QT += core gui network
 INCLUDEPATH += src src/json src/qt
 DEFINES += QT_GUI BOOST_THREAD_USE_LIB BOOST_SPIRIT_THREADSAFE BOOST_THREAD_PROVIDES_GENERIC_SHARED_MUTEX_ON_WIN __NO_SYSTEM_INCLUDES
@@ -242,7 +242,8 @@ HEADERS += src/qt/bitcoingui.h \
     src/tinyformat.h \
     src/scrypt.h \
     src/hash.h \
-    src/checkqueue.h
+    src/checkqueue.h \
+    src/qt/dialogwindowflags.h
 
 SOURCES += src/qt/bitcoin.cpp src/qt/bitcoingui.cpp \
     src/qt/transactiontablemodel.cpp \
