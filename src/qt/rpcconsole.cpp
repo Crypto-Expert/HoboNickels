@@ -7,6 +7,7 @@
 #include "peertablemodel.h"
 #include "main.h"
 #include "util.h"
+#include "dialogwindowflags.h"
 
 #include <QTime>
 
@@ -195,7 +196,7 @@ void RPCExecutor::request(const QString &command)
 }
 
 RPCConsole::RPCConsole(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::RPCConsole),
     historyPtr(0),
     cachedNodeid(-1)

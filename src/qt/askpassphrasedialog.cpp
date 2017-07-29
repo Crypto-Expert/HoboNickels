@@ -3,13 +3,14 @@
 
 #include "guiconstants.h"
 #include "walletmodel.h"
+#include "dialogwindowflags.h"
 
 #include <QMessageBox>
 #include <QPushButton>
 #include <QKeyEvent>
 
 AskPassphraseDialog::AskPassphraseDialog(Mode mode, QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::AskPassphraseDialog),
     mode(mode),
     model(0),

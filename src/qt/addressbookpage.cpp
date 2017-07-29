@@ -7,6 +7,7 @@
 #include "editaddressdialog.h"
 #include "csvmodelwriter.h"
 #include "guiutil.h"
+#include "dialogwindowflags.h"
 
 #ifdef USE_QRCODE
 #include "qrcodedialog.h"
@@ -18,7 +19,7 @@
 #include <QMenu>
 
 AddressBookPage::AddressBookPage(Mode mode, Tabs tab, QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent,DIALOGWINDOWHINTS),
     ui(new Ui::AddressBookPage),
     model(0),
     optionsModel(0),

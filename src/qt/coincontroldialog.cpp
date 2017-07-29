@@ -8,6 +8,7 @@
 #include "optionsmodel.h"
 #include "coincontrol.h"
 #include "guiutil.h"
+#include "dialogwindowflags.h"
 #include "qcomboboxfiltercoins.h"
 
 #include <QApplication>
@@ -28,7 +29,7 @@ QList<qint64> CoinControlDialog::payAmounts;
 CCoinControl* CoinControlDialog::coinControl = new CCoinControl();
 
 CoinControlDialog::CoinControlDialog(QWidget *parent) :
-    QDialog(parent, (Qt::WindowMaximizeButtonHint|Qt::WindowCloseButtonHint)),
+    QDialog(parent, (DIALOGWINDOWHINTS|Qt::WindowMaximizeButtonHint)),
     ui(new Ui::CoinControlDialog),
     model(0)
 {

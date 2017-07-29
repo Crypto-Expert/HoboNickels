@@ -12,6 +12,7 @@
 #include "coincontrol.h"
 #include "coincontroldialog.h"
 #include "base58.h"
+#include "dialogwindowflags.h"
 
 #include <QMessageBox>
 #include <QTextDocument>
@@ -19,7 +20,7 @@
 #include <QClipboard>
 
 SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::SendCoinsDialog),
     model(0)
 {

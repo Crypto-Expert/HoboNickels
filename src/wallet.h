@@ -90,6 +90,7 @@ class CWallet : public CCryptoKeyStore
 {
 private:
     bool SelectCoins(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet, const CCoinControl *coinControl=NULL) const;
+    bool SelectCoinsSimple(int64_t nTargetValue, int64_t nMinValue, int64_t nMaxValue, unsigned int nSpendTime, int nMinConf, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
     bool SelectCoinsForStaking(int64_t nTargetValue, unsigned int nSpendTime, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
 
     CWalletDB *pwalletdbEncryption;
@@ -105,6 +106,9 @@ private:
     // the maximum wallet format version: memory-only variable that specifies to what version this wallet may be upgraded
     int nWalletMaxVersion;
 
+    // selected coins metadata
+    std::map<std::pair<uint256, unsigned int>, std::pair<std::pair<CTxIndex, std::pair<const CWalletTx*,unsigned int> >, std::pair<CBlock, uint64_t> > > mapMeta;
+
 public:
     /// Main wallet lock.
     ///  This lock protects all the fields added by CWallet
@@ -116,6 +120,7 @@ public:
     bool fFileBacked;
     bool fWalletUnlockMintOnly;
     bool fStakeForCharity;
+    bool fCoinsDataActual;
     int nStakeForCharityPercent;
     int64_t nStakeForCharityMin;
     int64_t nStakeForCharityMax;
@@ -158,6 +163,7 @@ public:
         nOrderPosNext = 0;
         fWalletUnlockMintOnly = false;
         fStakeForCharity = false;
+        fCoinsDataActual = false;
         nStakeForCharityPercent = 0;
         nStakeForCharityMin = MIN_TXOUT_AMOUNT;
         nStakeForCharityMax = MAX_MONEY;
@@ -185,6 +191,7 @@ public:
 
     void AvailableCoins(std::vector<COutput>& vCoins, bool fOnlyConfirmed=true, const CCoinControl *coinControl=NULL) const;
     void AvailableCoinsForStaking(std::vector<COutput>& vCoins, unsigned int nSpendTime) const;
+    void AvailableCoinsMinConf(std::vector<COutput>& vCoins, int nConf, int64_t nMinValue, int64_t nMaxValue) const;
     bool SelectCoinsMinConf(int64_t nTargetValue, unsigned int nSpendTime, int nConfMine, int nConfTheirs, std::vector<COutput> vCoins, std::set<std::pair<const CWalletTx*,unsigned int> >& setCoinsRet, int64_t& nValueRet) const;
     bool IsLockedCoin(uint256 hash, unsigned int n) const;
     void LockCoin(COutPoint& output);
@@ -260,6 +267,7 @@ public:
     bool GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);
     bool GetStakeWeightFromValue(const int64_t& nTime, const int64_t& nValue, uint64_t& nWeight);
     bool CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int64_t nSearchInterval, CTransaction& txNew, CKey& key);
+    bool MergeCoins(const int64_t& nAmount, const int64_t& nMinValue, const int64_t& nMaxValue, std::list<uint256>& listMerged);
     std::string SendMoney(CScript scriptPubKey, int64_t nValue, CWalletTx& wtxNew, bool fAskFee=false, bool fAllowS4C=false);
     std::string SendMoneyToDestination(const CTxDestination &address, int64_t nValue, CWalletTx& wtxNew, bool fAskFee=false, bool fAllowS4C=false);
 
@@ -440,6 +448,7 @@ public:
     void RestartStakeMiner();
     void StakeForCharity();
     int64_t GetTotalBalance();
+    bool CoinsActualDataCheck();
 
 
     // GetWallet and GetDefaultWallet throw a CWalletManagerException if the wallet is not found.

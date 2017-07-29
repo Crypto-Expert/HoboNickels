@@ -212,6 +212,7 @@ extern json_spirit::Value checkwallet(CWallet* pWallet, const json_spirit::Array
 extern json_spirit::Value repairwallet(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value resendtx(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 extern json_spirit::Value makekeypair(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
+extern json_spirit::Value mergecoins(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);
 
 extern json_spirit::Value getrawtransaction(CWallet* pWallet, const json_spirit::Array& params, bool fHelp); // in rcprawtransaction.cpp
 extern json_spirit::Value listunspent(CWallet* pWallet, const json_spirit::Array& params, bool fHelp);

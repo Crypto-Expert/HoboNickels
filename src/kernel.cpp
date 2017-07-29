@@ -241,6 +241,14 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
     return true;
 }
 
+bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifier)
+{
+    int nStakeModifierHeight;
+    int64_t nStakeModifierTime;
+
+    return GetKernelStakeModifier(hashBlockFrom, nStakeModifier, nStakeModifierHeight, nStakeModifierTime, false);
+}
+
 // ppcoin kernel protocol
 // coinstake must meet hash target according to the protocol:
 // kernel (input 0) must meet the formula
@@ -324,6 +332,74 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
             hashProofOfStake.ToString());
     }
     return true;
+}
+
+// Scan given coins set for kernel solution
+bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime)
+{
+    uint256 hashProofOfStake = 0;
+
+    // (txid, vout.n) => ((txindex, (tx, vout.n)), (block, modifier))
+    for(MetaMap::const_iterator meta_item = mapMeta.begin(); meta_item != mapMeta.end(); meta_item++)
+    {
+        if (!fGlobalCoinsDataActual)
+            break;
+
+        CTxIndex txindex = (*meta_item).second.first.first;
+        CBlock block = (*meta_item).second.second.first;
+        uint64_t nStakeModifier = (*meta_item).second.second.second;
+
+        // Get coin
+        CoinsSet::value_type pcoin = meta_item->second.first.second;
+
+        static int nMaxStakeSearchInterval = 60;
+
+        // only count coins meeting min age requirement
+        if (nStakeMinAge + block.nTime > settings.nTime - nMaxStakeSearchInterval)
+            continue;
+
+        // Transaction offset inside block
+        unsigned int nTxOffset = txindex.pos.nTxPos - txindex.pos.nBlockPos;
+
+        // Current timestamp scanning interval
+        unsigned int nCurrentSearchInterval = min((int64_t)settings.nSearchInterval, (int64_t)nMaxStakeSearchInterval);
+
+        nBlockTime = block.nTime;
+        CBigNum bnTargetPerCoinDay;
+        bnTargetPerCoinDay.SetCompact(settings.nBits);
+        int64_t nValueIn = pcoin.first->vout[pcoin.second].nValue;
+
+        // Search backward in time from the given timestamp
+        // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
+        // Stopping search in case of shutting down or cache invalidation
+        for (unsigned int n=0; n<nCurrentSearchInterval && fGlobalCoinsDataActual && !fShutdown; n++)
+        {
+            nTimeTx = settings.nTime - n;
+            CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)pcoin.first->nTime, (int64_t)nTimeTx) / COIN / (24 * 60 * 60);
+            CBigNum bnTargetProofOfStake = bnCoinDayWeight * bnTargetPerCoinDay;
+
+            // Build kernel
+            CDataStream ss(SER_GETHASH, 0);
+            ss << nStakeModifier;
+            ss << nBlockTime << nTxOffset << pcoin.first->nTime << pcoin.second << nTimeTx;
+
+            // Calculate kernel hash
+            hashProofOfStake = Hash(ss.begin(), ss.end());
+
+            if (bnTargetProofOfStake >= CBigNum(hashProofOfStake))
+            {
+                LogPrint("coinstake", "nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s Success=true\n",
+                    nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str());
+
+                kernelcoin = pcoin;
+                return true;
+            }
+            //LogPrint("coinstake", "nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s Success=false\n",
+            //    nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str());
+        }
+    }
+
+    return false;
 }
 
 // Check kernel hash target and coinstake signature

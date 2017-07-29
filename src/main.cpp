@@ -159,8 +159,13 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
 
     {
         LOCK(cs_setpwalletRegistered);
-        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered)
-            pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
+            if (pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate) ) {
+            // Preloaded coins cache invalidation
+            pwallet->fCoinsDataActual = false;
+            fGlobalCoinsDataActual = false;
+            }
+        }
     }
 }
 
@@ -2652,6 +2657,17 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 
     if (fGlobalStakeForCharity && !IsInitialBlockDownload())
         pWalletManager->StakeForCharity();
+
+
+    if (!IsInitialBlockDownload() && (pindexBest->nHeight % 20 ) == 0 )
+    {
+        LOCK(cs_setpwalletRegistered);
+        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
+            // Preloaded coins cache invalidation
+            pwallet->fCoinsDataActual = false;
+            fGlobalCoinsDataActual = false;
+            }
+    }
 
     // ppcoin: if responsible for sync-checkpoint send it
     if (pfrom && !CSyncCheckpoint::strMasterPrivKey.empty())
