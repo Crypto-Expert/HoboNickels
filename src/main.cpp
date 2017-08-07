@@ -161,9 +161,8 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
         LOCK(cs_setpwalletRegistered);
         BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
             if (pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate) ) {
-            // Preloaded coins cache invalidation
-            pwallet->fCoinsDataActual = false;
-            fGlobalCoinsDataActual = false;
+               // Preloaded coins cache invalidation
+                pwallet->SetCoinsDataActual(false);
             }
         }
     }
@@ -2276,13 +2275,10 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const u
     if (!txdb.TxnCommit())
         return false;
 
-    LOCK(cs_main);
-
     // New best
     if (pindexNew->nChainTrust > nBestChainTrust)
         if (!SetBestChain(txdb, pindexNew))
             return false;
-
 
     if (pindexNew == pindexBest)
     {
@@ -2292,7 +2288,10 @@ bool CBlock::AddToBlockIndex(unsigned int nFile, unsigned int nBlockPos, const u
         hashPrevBestCoinBase = vtx[0].GetHash();
     }
 
-    uiInterface.NotifyBlocksChanged();
+    static int8_t counter = 0;
+    if( (++counter & 0x0F) == 0 || !IsInitialBlockDownload()) // repaint every 16 blocks if not in initial block download
+       uiInterface.NotifyBlocksChanged();
+
     return true;
 }
 
@@ -2657,17 +2656,6 @@ bool ProcessBlock(CNode* pfrom, CBlock* pblock)
 
     if (fGlobalStakeForCharity && !IsInitialBlockDownload())
         pWalletManager->StakeForCharity();
-
-
-    if (!IsInitialBlockDownload() && (pindexBest->nHeight % 20 ) == 0 )
-    {
-        LOCK(cs_setpwalletRegistered);
-        BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
-            // Preloaded coins cache invalidation
-            pwallet->fCoinsDataActual = false;
-            fGlobalCoinsDataActual = false;
-            }
-    }
 
     // ppcoin: if responsible for sync-checkpoint send it
     if (pfrom && !CSyncCheckpoint::strMasterPrivKey.empty())

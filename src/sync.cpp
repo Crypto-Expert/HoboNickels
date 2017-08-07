@@ -108,11 +108,9 @@ static void push_lock(void* c, const CLockLocation& locklocation, bool fTry)
 
 static void pop_lock()
 {
-    if (fDebug)
-    {
-        const CLockLocation& locklocation = (*lockstack).rbegin()->second;
-        LogPrint("lock", "Unlocked: %s\n", locklocation.ToString());
-    }
+    const CLockLocation& locklocation = (*lockstack).rbegin()->second;
+    LogPrint("lock", "Unlocked: %s\n", locklocation.ToString());
+
     dd_mutex.lock();
     (*lockstack).pop_back();
     dd_mutex.unlock();

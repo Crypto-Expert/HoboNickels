@@ -390,6 +390,9 @@ public:
     // get the current wallet format (the oldest client version guaranteed to understand this wallet)
     int GetVersion() { LOCK(cs_wallet); return nWalletVersion; }
 
+    void SetCoinsDataActual(bool fCoinsDataActualSet);
+    bool GetCoinsDataActual() { LOCK(cs_wallet); return fCoinsDataActual; }
+
     void FixSpentCoins(int& nMismatchSpent, int64_t& nBalanceInQuestion, int& nOrphansFound, bool fCheckOnly = false);
     void DisableTransaction(const CTransaction &tx);
 
@@ -448,8 +451,6 @@ public:
     void RestartStakeMiner();
     void StakeForCharity();
     int64_t GetTotalBalance();
-    bool CoinsActualDataCheck();
-
 
     // GetWallet and GetDefaultWallet throw a CWalletManagerException if the wallet is not found.
     boost::shared_ptr<CWallet> GetWallet(const std::string& strName);

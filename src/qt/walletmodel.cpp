@@ -323,6 +323,7 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
 
 bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
+    LOCK(wallet->cs_wallet);
     bool rc;
     if(locked)
     {

@@ -253,8 +253,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
     }
     CWalletDB walletdb(pWallet->strWalletFile);
 
-    LOCK(pWallet->cs_wallet);
     {
+        LOCK(pWallet->cs_wallet);
         bool fFileBacked = pWallet->fFileBacked;
         // Turn off if we set to zero.
         // Future: After we allow multiple addresses, only turn of this address

@@ -683,6 +683,7 @@ void ThreadFlushWalletDB(void* parg)
     RenameThread("hobocoin-wallet");
 
     const string& strFile = ((const string*)parg)[0];
+    // Tranz need to ensure multi-wallets get flushed as well.
     static bool fOneThread;
     if (fOneThread)
         return;

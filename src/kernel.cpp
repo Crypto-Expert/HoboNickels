@@ -335,14 +335,14 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
 }
 
 // Scan given coins set for kernel solution
-bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime)
+bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime, CWallet* pwallet)
 {
     uint256 hashProofOfStake = 0;
 
     // (txid, vout.n) => ((txindex, (tx, vout.n)), (block, modifier))
     for(MetaMap::const_iterator meta_item = mapMeta.begin(); meta_item != mapMeta.end(); meta_item++)
     {
-        if (!fGlobalCoinsDataActual)
+        if (!pwallet->GetCoinsDataActual())
             break;
 
         CTxIndex txindex = (*meta_item).second.first.first;
@@ -372,7 +372,7 @@ bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, Co
         // Search backward in time from the given timestamp
         // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
         // Stopping search in case of shutting down or cache invalidation
-        for (unsigned int n=0; n<nCurrentSearchInterval && fGlobalCoinsDataActual && !fShutdown; n++)
+        for (unsigned int n=0; n<nCurrentSearchInterval && pwallet->GetCoinsDataActual() && !fShutdown; n++)
         {
             nTimeTx = settings.nTime - n;
             CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)pcoin.first->nTime, (int64_t)nTimeTx) / COIN / (24 * 60 * 60);
@@ -394,8 +394,8 @@ bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, Co
                 kernelcoin = pcoin;
                 return true;
             }
-            //LogPrint("coinstake", "nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s Success=false\n",
-            //    nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str());
+            //LogPrint("coinstakedeep", "n=%d,nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s wallet=%s Success=false\n",
+            //    n, nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str(),pwallet->strWalletFile.c_str());
         }
     }
 

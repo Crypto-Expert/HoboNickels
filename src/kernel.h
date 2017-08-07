@@ -10,7 +10,6 @@
 // MODIFIER_INTERVAL: time to elapse before new modifier is computed
 static const unsigned int MODIFIER_INTERVAL = 6 * 60 * 60;
 extern unsigned int nModifierInterval;
-extern bool fGlobalCoinsDataActual;
 
 // MODIFIER_INTERVAL_RATIO:
 // ratio of group interval length between the last group and the first group
@@ -43,7 +42,7 @@ typedef std::set<std::pair<const CWalletTx*,unsigned int> > CoinsSet;
 typedef std::map<std::pair<uint256, unsigned int>, std::pair<std::pair<CTxIndex, std::pair<const CWalletTx*,unsigned int> >, std::pair<CBlock, uint64_t> > > MetaMap;
 
 // Scan given coins set for kernel solution
-bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime);
+bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime, CWallet* pwallet);
 
 
 // Check kernel hash target and coinstake signature

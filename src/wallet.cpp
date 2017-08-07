@@ -19,8 +19,6 @@
 using namespace std;
 extern int nMinerSleep;
 
-bool fGlobalCoinsDataActual;
-
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -253,6 +251,17 @@ bool CWallet::SetMinVersion(enum WalletFeature nVersion, CWalletDB* pwalletdbIn,
 
     return true;
 }
+void CWallet::SetCoinsDataActual(bool fCoinsDataActualSet )
+{
+    if (IsLocked())
+       return;
+    {
+       LOCK(cs_wallet); // fCoinsDataActual
+       fCoinsDataActual = fCoinsDataActualSet;
+       return;
+    }
+}
+
 
 bool CWallet::SetMaxVersion(int nVersion)
 {
@@ -1355,7 +1364,6 @@ bool CWallet::StakeForCharity()
     CWalletTx wtx;
     int64_t nNet = 0;
 
-
     {
         LOCK2(cs_main, cs_wallet);
         for (map<uint256, CWalletTx>::const_iterator it = mapWallet.begin(); it != mapWallet.end(); ++it)
@@ -1536,6 +1544,7 @@ bool CWallet::SelectCoinsForStaking(int64_t nTargetValue, unsigned int nSpendTim
     {
         if(!output.fSpendable)
            continue;
+
 
         const CWalletTx *pcoin = output.tx;
         int i = output.i;
@@ -1786,7 +1795,7 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, ui
     {
         LOCK2(cs_main, cs_wallet);
         // Cache outputs unless best block or wallet transaction set changed
-        if (!fCoinsDataActual)
+        if (!fCoinsDataActual && !IsLocked())
         {
             mapMeta.clear();
             int64_t nValueIn = 0;
@@ -1821,7 +1830,6 @@ bool CWallet::GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, ui
             }
             LogPrint("coinstake", "----GetStakeWeight: %zu meta items loaded for %zu coins for wallet %s-----\n", mapMeta.size(), setCoins.size(),strWalletFile.c_str());
             fCoinsDataActual = true;
-            fGlobalCoinsDataActual = pWalletManager->CoinsActualDataCheck();
         }
     }
 
@@ -2001,7 +2009,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     {
         LOCK2(cs_main, cs_wallet);
         // Cache outputs unless best block or wallet transaction set changed
-        if (!fCoinsDataActual)
+        if (!fCoinsDataActual && !IsLocked())
         {
             mapMeta.clear();
             int64_t nValueIn = 0;
@@ -2037,7 +2045,6 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
 
             LogPrint("coinstake", "----CreateCoinStake: %zu meta items loaded for %zu coins for wallet %s-----\n", mapMeta.size(), setCoins.size(),strWalletFile.c_str());
             fCoinsDataActual = true;
-            fGlobalCoinsDataActual = pWalletManager->CoinsActualDataCheck();
         }
     }
 
@@ -2054,7 +2061,7 @@ bool CWallet::CreateCoinStake(const CKeyStore& keystore, unsigned int nBits, int
     unsigned int nTimeTx, nBlockTime;
     CoinsSet::value_type kernelcoin;
 
-    if (ScanForStakeKernelHash(mapMeta, settings, kernelcoin, nTimeTx, nBlockTime))
+    if (ScanForStakeKernelHash(mapMeta, settings, kernelcoin, nTimeTx, nBlockTime, this))
     {
         // Found a kernel
         LogPrint("coinstake","CreateCoinStake : kernel found\n");
@@ -2393,7 +2400,7 @@ bool CWallet::DelAddressBookName(const CTxDestination& address)
 void CWallet::PrintWallet(const CBlock& block)
 {
     {
-        LOCK(cs_wallet);
+        AssertLockHeld(cs_wallet);
         if (block.IsProofOfWork() && mapWallet.count(block.vtx[0].GetHash()))
         {
             CWalletTx& wtx = mapWallet[block.vtx[0].GetHash()];
@@ -3335,7 +3342,7 @@ bool CWalletManager::LoadWalletFromFile(const string& strFile, string& strName, 
 void CWalletManager::RestartStakeMiner()
 {
     {
-       LOCK(cs_WalletManager);
+       AssertLockHeld(cs_WalletManager);
        if (!fShutdown)
        {
          fStopStaking = true;
@@ -3372,7 +3379,7 @@ void CWalletManager::RestartStakeMiner()
 void CWalletManager::StakeForCharity()
 {
     {
-        LOCK(cs_WalletManager);
+        AssertLockHeld(cs_WalletManager);
         if (fShutdown)
             return;
 
@@ -3401,32 +3408,9 @@ void CWalletManager::StakeForCharity()
      }
 }
 
-
-bool CWalletManager::CoinsActualDataCheck()
-{
-    bool fAllCoinsActualData = true;
-
-    if (fShutdown)
-        return false;
-
-    vector<string> vstrNames;
-    vector<boost::shared_ptr<CWallet> > vpWallets;
-
-    BOOST_FOREACH(const wallet_map::value_type& item, wallets)
-    {
-        vstrNames.push_back(item.first);
-        vpWallets.push_back(item.second);
-    }
-
-    for (unsigned int i = 0; i < vstrNames.size(); i++)
-        if (!vpWallets[i].get()->fCoinsDataActual)
-            fAllCoinsActualData = false;
-
-     return fAllCoinsActualData;
-}
 int64_t CWalletManager::GetTotalBalance()
 {
-    LOCK(cs_WalletManager);
+    AssertLockHeld(cs_WalletManager);
     int64_t nTotBalance = 0;
 
     if (!fShutdown) {
@@ -3498,7 +3482,7 @@ void CWalletManager::UnloadAllWallets()
 boost::shared_ptr<CWallet> CWalletManager::GetWallet(const string& strName)
 {
     {
-        LOCK(cs_WalletManager);
+        AssertLockHeld(cs_WalletManager);
         if (!wallets.count(strName))
             throw CWalletManagerException(CWalletManagerException::WALLET_NOT_LOADED,
                                           "CWalletManager::GetWallet() - Wallet not loaded.");

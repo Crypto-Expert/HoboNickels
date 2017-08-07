@@ -13,8 +13,6 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
-
-
 ////////////////////////////////////////////////
 // //
 // THE SIMPLE DEFINITON, EXCLUDING DEBUG CODE //
