@@ -39,7 +39,7 @@ const std::string CLIENT_NAME("HoboNickels");
 
 #    define GIT_COMMIT_ID "87b0f55"
 
-#    define GIT_COMMIT_DATE "Sun Aug 06 22:34:01 2017"
+#    define GIT_COMMIT_DATE "Wed Aug 09 22:28:00 2017"
 #endif
 
 #define BUILD_DESC_FROM_COMMIT(maj,min,rev,build,commit) \

@@ -124,6 +124,7 @@ public:
     int nStakeForCharityPercent;
     int64_t nStakeForCharityMin;
     int64_t nStakeForCharityMax;
+    int64_t nStakeForCharityAccum;
     CBitcoinAddress strStakeForCharityAddress;
     CBitcoinAddress strStakeForCharityChangeAddress;
     std::string strWalletFile;
@@ -167,6 +168,7 @@ public:
         nStakeForCharityPercent = 0;
         nStakeForCharityMin = MIN_TXOUT_AMOUNT;
         nStakeForCharityMax = MAX_MONEY;
+        nStakeForCharityAccum = 0;
         strStakeForCharityAddress = "";
         strStakeForCharityChangeAddress = "";
         nReserveBalance = 0;
