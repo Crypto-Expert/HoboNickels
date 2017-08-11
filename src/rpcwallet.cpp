@@ -1769,8 +1769,7 @@ private:
     isminetype mine;
 
 public:
-    DescribeAddressVisitor(CWallet* _pWallet) : pWallet(_pWallet) { }
-    DescribeAddressVisitor(isminetype mineIn) : mine(mineIn) {}
+    DescribeAddressVisitor(CWallet* _pWallet, isminetype mineIn) : pWallet(_pWallet), mine(mineIn) {}
 
     Object operator()(const CNoDestination &dest) const { return Object(); }
     Object operator()(const CKeyID &keyID) const {
@@ -1831,7 +1830,7 @@ Value validateaddress(CWallet* pWallet, const Array& params, bool fHelp)
         ret.push_back(Pair("ismine", mine != MINE_NO));
         if (mine != MINE_NO) {
            ret.push_back(Pair("watchonly", mine == MINE_WATCH_ONLY));
-           Object detail = boost::apply_visitor(DescribeAddressVisitor(mine), dest);
+           Object detail = boost::apply_visitor(DescribeAddressVisitor(pWallet, mine), dest);
            ret.insert(ret.end(), detail.begin(), detail.end());
         }
         if (pWallet->mapAddressBook.count(dest))
