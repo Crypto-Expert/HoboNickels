@@ -2495,6 +2495,15 @@ bool CBlock::AcceptBlock()
                 pnode->PushInventory(CInv(MSG_BLOCK, hash));
     }
 
+    if (!IsInitialBlockDownload() && (pindexBest->nHeight % 10 ) == 0 )
+    {
+       AssertLockHeld(cs_setpwalletRegistered);
+       BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
+       // Preloaded coins cache invalidation
+       pwallet->SetCoinsDataActual(false);
+       }
+    }
+
     // ppcoin: check pending sync-checkpoint
     Checkpoints::AcceptPendingSyncCheckpoint();
 
