@@ -233,7 +233,7 @@ Please enter percentage to give and HoboNickels address to give to. Min and Max 
     </rect>
    </property>
    <property name="toolTip">
-    <string>Min amount to send</string>
+    <string>Accumulate S4C until this min is met</string>
    </property>
    <property name="text">
     <string>Min Amount:</string>

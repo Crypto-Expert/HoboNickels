@@ -78,6 +78,65 @@ Value importprivkey(CWallet* pWallet, const Array& params, bool fHelp)
     return Value::null;
 }
 
+Value importaddress(CWallet* pWallet, const Array& params, bool fHelp)
+{
+    if (fHelp || params.size() < 1 || params.size() > 3)
+        throw runtime_error(
+            "importaddress <address> [label] [rescan=true]\n"
+            "Adds an address or script (in hex) that can be watched as if it were in your wallet but cannot be used to spend."
+            + HelpRequiringPassphrase(pWallet));
+
+    EnsureWalletIsUnlocked(pWallet);
+
+    if (pWallet->fWalletUnlockMintOnly) // no importwallet in mint-only mode
+        throw JSONRPCError(RPC_WALLET_UNLOCK_NEEDED, "Wallet is unlocked for minting only.");
+
+    CScript script;
+    CBitcoinAddress address(params[0].get_str());
+    if (address.IsValid()) {
+       script.SetDestination(address.Get());
+    } else if (IsHex(params[0].get_str())) {
+       std::vector<unsigned char> data(ParseHex(params[0].get_str()));
+       script = CScript(data.begin(), data.end());
+    } else {
+       throw JSONRPCError(RPC_INVALID_ADDRESS_OR_KEY, "Invalid HoboNickels address or script");
+    }
+
+    string strLabel = "";
+    if (params.size() > 1)
+        strLabel = params[1].get_str();
+
+    // Whether to perform rescan after import
+    bool fRescan = true;
+    if (params.size() > 2)
+        fRescan = params[2].get_bool();
+
+    {
+        LOCK2(cs_main, pWallet->cs_wallet);
+
+        // Don't throw error in case an address is already there
+        if (pWallet->HaveWatchOnly(script))
+            return Value::null;
+
+        pWallet->MarkDirty();
+
+        if (address.IsValid())
+           pWallet->SetAddressBookName(address.Get(), strLabel);
+
+        if (!pWallet->AddWatchOnly(script))
+            throw JSONRPCError(RPC_WALLET_ERROR, "Error adding address to wallet");
+
+        if (fRescan)
+        {
+            pWallet->ScanForWalletTransactions(pindexGenesisBlock, true);
+            pWallet->ReacceptWalletTransactions();
+        }
+    }
+
+    return Value::null;
+}
+
+
 Value importwallet(CWallet* pWallet, const Array& params, bool fHelp)
 {
     if (fHelp || params.size() != 1)

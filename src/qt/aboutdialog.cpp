@@ -3,9 +3,11 @@
 #include "clientmodel.h"
 
 #include "version.h"
+#include "dialogwindowflags.h"
+
 
 AboutDialog::AboutDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::AboutDialog)
 {
     ui->setupUi(this);

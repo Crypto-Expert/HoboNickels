@@ -16,10 +16,20 @@ unsigned int nModifierInterval = MODIFIER_INTERVAL;
 // Hard checkpoints of stake modifiers to ensure they are deterministic
 static std::map<int, unsigned int> mapStakeModifierCheckpoints =
     boost::assign::map_list_of
-    ( 0, 0x0e00670bu )
-    ( 261031, 0x08c12bdb8 )
-    ( 435735, 0x0b956cfa0 )
-
+    ( 0,       0x0e00670bu )
+    ( 261031,  0x08c12bdb8 )
+    ( 435735,  0x0b956cfa0 )
+    ( 750000,  0x0b86ffee4 )
+    ( 1000000, 0x0a68f1279 )
+    ( 2000000, 0x0029173a3 )
+    ( 3000000, 0x0ecd4d6c7 )
+    ( 4000000, 0x0a655151a )
+    ( 5000000, 0x0e02d611e )
+    ( 5499330, 0x03026e5af )
+    ( 5499331, 0x00e5f8ce1 )
+    ( 5499332, 0x091436a27 )
+    ( 5500000, 0x0a053fcf3 )
+    ( 5520100, 0x05c7752ee )
     ;
 
 int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
@@ -241,6 +251,14 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
     return true;
 }
 
+bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifier)
+{
+    int nStakeModifierHeight;
+    int64_t nStakeModifierTime;
+
+    return GetKernelStakeModifier(hashBlockFrom, nStakeModifier, nStakeModifierHeight, nStakeModifierTime, false);
+}
+
 // ppcoin kernel protocol
 // coinstake must meet hash target according to the protocol:
 // kernel (input 0) must meet the formula
@@ -326,6 +344,74 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
     return true;
 }
 
+// Scan given coins set for kernel solution
+bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, CoinsSet::value_type &kernelcoin, unsigned int &nTimeTx, unsigned int &nBlockTime, CWallet* pwallet)
+{
+    uint256 hashProofOfStake = 0;
+
+    // (txid, vout.n) => ((txindex, (tx, vout.n)), (block, modifier))
+    for(MetaMap::const_iterator meta_item = mapMeta.begin(); meta_item != mapMeta.end(); meta_item++)
+    {
+        if (!pwallet->GetCoinsDataActual())
+            break;
+
+        CTxIndex txindex = (*meta_item).second.first.first;
+        CBlock block = (*meta_item).second.second.first;
+        uint64_t nStakeModifier = (*meta_item).second.second.second;
+
+        // Get coin
+        CoinsSet::value_type pcoin = meta_item->second.first.second;
+
+        static int nMaxStakeSearchInterval = 60;
+
+        // only count coins meeting min age requirement
+        if (nStakeMinAge + block.nTime > settings.nTime - nMaxStakeSearchInterval)
+            continue;
+
+        // Transaction offset inside block
+        unsigned int nTxOffset = txindex.pos.nTxPos - txindex.pos.nBlockPos;
+
+        // Current timestamp scanning interval
+        unsigned int nCurrentSearchInterval = min((int64_t)settings.nSearchInterval, (int64_t)nMaxStakeSearchInterval);
+
+        nBlockTime = block.nTime;
+        CBigNum bnTargetPerCoinDay;
+        bnTargetPerCoinDay.SetCompact(settings.nBits);
+        int64_t nValueIn = pcoin.first->vout[pcoin.second].nValue;
+
+        // Search backward in time from the given timestamp
+        // Search nSearchInterval seconds back up to nMaxStakeSearchInterval
+        // Stopping search in case of shutting down or cache invalidation
+        for (unsigned int n=0; n<nCurrentSearchInterval && pwallet->GetCoinsDataActual() && !fShutdown; n++)
+        {
+            nTimeTx = settings.nTime - n;
+            CBigNum bnCoinDayWeight = CBigNum(nValueIn) * GetWeight((int64_t)pcoin.first->nTime, (int64_t)nTimeTx) / COIN / (24 * 60 * 60);
+            CBigNum bnTargetProofOfStake = bnCoinDayWeight * bnTargetPerCoinDay;
+
+            // Build kernel
+            CDataStream ss(SER_GETHASH, 0);
+            ss << nStakeModifier;
+            ss << nBlockTime << nTxOffset << pcoin.first->nTime << pcoin.second << nTimeTx;
+
+            // Calculate kernel hash
+            hashProofOfStake = Hash(ss.begin(), ss.end());
+
+            if (bnTargetProofOfStake >= CBigNum(hashProofOfStake))
+            {
+                LogPrint("coinstake", "nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s Success=true\n",
+                    nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str());
+
+                kernelcoin = pcoin;
+                return true;
+            }
+            //LogPrint("coinstakedeep", "n=%d,nStakeModifier=0x%016x, nBlockTime=%u nTxOffset=%u nTxPrevTime=%u nVout=%u nTimeTx=%u hashProofOfStake=%s wallet=%s Success=false\n",
+            //    n, nStakeModifier, nBlockTime, nTxOffset, pcoin.first->nTime, pcoin.second, nTimeTx, hashProofOfStake.GetHex().c_str(),pwallet->strWalletFile.c_str());
+        }
+    }
+
+    return false;
+}
+
 // Check kernel hash target and coinstake signature
 bool CheckProofOfStake(const CTransaction& tx, unsigned int nBits, uint256& hashProofOfStake, uint256& targetProofOfStake)
 {
@@ -345,7 +431,7 @@ bool CheckProofOfStake(const CTransaction& tx, unsigned int nBits, uint256& hash
      txdb.Close();
 #endif
     // Verify signature
-    if (!VerifySignature(txPrev, tx, 0, 0))
+    if (!VerifySignature(txPrev, tx, 0, MANDATORY_SCRIPT_VERIFY_FLAGS, 0))
         return tx.DoS(100, error("CheckProofOfStake() : VerifySignature failed on coinstake %s", tx.GetHash().ToString()));
 
     // Read block header

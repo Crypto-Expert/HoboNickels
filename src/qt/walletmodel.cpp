@@ -17,7 +17,7 @@
 WalletModel::WalletModel(CWallet *wallet, OptionsModel *optionsModel, QObject *parent) :
     QObject(parent), wallet(wallet), optionsModel(optionsModel), addressTableModel(0),
     transactionTableModel(0),
-    cachedBalance(0), cachedStake(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
+    cachedBalance(0), cachedWatchOnlyBalance(0), cachedStake(0), cachedUnconfirmedBalance(0), cachedImmatureBalance(0),
     cachedNumTransactions(0),
     cachedEncryptionStatus(Unencrypted),
     cachedNumBlocks(0)
@@ -39,28 +39,28 @@ WalletModel::~WalletModel()
 }
 qint64 WalletModel::getBalance(const CCoinControl *coinControl) const
 {
-    if (coinControl)
-    {
-        qint64 nBalance = 0;
-        std::vector<COutput> vCoins;
-        wallet->AvailableCoins(vCoins, true, coinControl);
-        BOOST_FOREACH(const COutput& out, vCoins)
-            nBalance += out.tx->vout[out.i].nValue;
+   if (coinControl)
+   {
+      qint64 nBalance = 0;
+      std::vector<COutput> vCoins;
+      wallet->AvailableCoins(vCoins, true, coinControl);
+      BOOST_FOREACH(const COutput& out, vCoins)
+          nBalance += out.tx->vout[out.i].nValue;
 
-        return nBalance;
-    }
-    return wallet->GetBalance();
+      return nBalance;
+  }
+
+  return wallet->GetBalance();
+}
+
+qint64 WalletModel::getBalanceWatchOnly() const
+{
+    return wallet->GetWatchOnlyBalance();
 }
 
 qint64 WalletModel::getTotBalance() const
 {
-    qint64 nTotBalance = 0;
-    BOOST_FOREACH(const wallet_map::value_type& item, pWalletManager->GetWalletMap())
-    {
-       CWallet* pwallet = pWalletManager->GetWallet(item.first.c_str()).get();
-       nTotBalance+=pwallet->GetBalance();
-    }
-    return nTotBalance;
+    return pWalletManager->GetTotalBalance();
 }
 
 qint64 WalletModel::getUnconfirmedBalance() const
@@ -125,19 +125,23 @@ void WalletModel::pollBalanceChanged()
 
 void WalletModel::checkBalanceChanged()
 {
-    qint64 newBalance = getBalance();
-    qint64 newTotBalance = getTotBalance();
+    qint64 newBalance = getBalance(), newBalanceWatchOnly=getBalanceWatchOnly(), newTotBalance = getTotBalance();
+
     qint64 newStake = getStake();
     qint64 newUnconfirmedBalance = getUnconfirmedBalance();
     qint64 newImmatureBalance = getImmatureBalance();
 
-    if(cachedBalance != newBalance || cachedStake != newStake || cachedUnconfirmedBalance != newUnconfirmedBalance || cachedImmatureBalance != newImmatureBalance)
+    if(cachedBalance != newBalance || cachedStake != newStake
+       || cachedUnconfirmedBalance != newUnconfirmedBalance
+       || cachedImmatureBalance != newImmatureBalance
+       || cachedWatchOnlyBalance != newBalanceWatchOnly)
     {
         cachedBalance = newBalance;
+        cachedWatchOnlyBalance = newBalanceWatchOnly;
         cachedStake = newStake;
         cachedUnconfirmedBalance = newUnconfirmedBalance;
         cachedImmatureBalance = newImmatureBalance;
-        emit balanceChanged(newBalance, newStake, newUnconfirmedBalance, newImmatureBalance);
+        emit balanceChanged(newBalance, newBalanceWatchOnly, newStake, newUnconfirmedBalance, newImmatureBalance);
         emit totBalanceChanged(newTotBalance);
     }
 }
@@ -319,6 +323,7 @@ bool WalletModel::setWalletEncrypted(bool encrypted, const SecureString &passphr
 
 bool WalletModel::setWalletLocked(bool locked, const SecureString &passPhrase, bool formint)
 {
+    LOCK(wallet->cs_wallet);
     bool rc;
     if(locked)
     {
@@ -618,7 +623,7 @@ void WalletModel::getOutputs(const std::vector<COutPoint>& vOutpoints, std::vect
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
         int nDepth = wallet->mapWallet[outpoint.hash].GetDepthInMainChain();
         if (nDepth < 0) continue;
-        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth);
+        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth, true);
         vOutputs.push_back(out);
     }
 }
@@ -638,7 +643,7 @@ void WalletModel::listCoins(std::map<QString, std::vector<COutput> >& mapCoins) 
         if (!wallet->mapWallet.count(outpoint.hash)) continue;
         int nDepth = wallet->mapWallet[outpoint.hash].GetDepthInMainChain();
         if (nDepth < 0) continue;
-        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth);
+        COutput out(&wallet->mapWallet[outpoint.hash], outpoint.n, nDepth, true);
         vCoins.push_back(out);
     }
 
@@ -649,11 +654,12 @@ void WalletModel::listCoins(std::map<QString, std::vector<COutput> >& mapCoins) 
         while (wallet->IsChange(cout.tx->vout[cout.i]) && cout.tx->vin.size() > 0 && wallet->IsMine(cout.tx->vin[0]))
         {
             if (!wallet->mapWallet.count(cout.tx->vin[0].prevout.hash)) break;
-            cout = COutput(&wallet->mapWallet[cout.tx->vin[0].prevout.hash], cout.tx->vin[0].prevout.n, 0);
+            cout = COutput(&wallet->mapWallet[cout.tx->vin[0].prevout.hash], cout.tx->vin[0].prevout.n, 0, true);
         }
 
         CTxDestination address;
-        if(!ExtractDestination(cout.tx->vout[cout.i].scriptPubKey, address)) continue;
+        if(!out.fSpendable || !ExtractDestination(cout.tx->vout[cout.i].scriptPubKey, address))
+           continue;
         mapCoins[CBitcoinAddress(address).ToString().c_str()].push_back(out);
     }
 }

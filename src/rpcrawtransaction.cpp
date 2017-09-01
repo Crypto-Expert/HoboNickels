@@ -77,7 +77,7 @@ void TxToJSON(const CTransaction& tx, const uint256 hashBlock, Object& entry)
         out.push_back(Pair("value", ValueFromAmount(txout.nValue)));
         out.push_back(Pair("n", (boost::int64_t)i));
         Object o;
-        ScriptPubKeyToJSON(txout.scriptPubKey, o, false);
+        ScriptPubKeyToJSON(txout.scriptPubKey, o, true);
         out.push_back(Pair("scriptPubKey", o));
         vout.push_back(out);
     }
@@ -209,7 +209,7 @@ Value listunspent(CWallet* pWallet, const Array& params, bool fHelp)
             CTxDestination address;
             if (ExtractDestination(pk, address))
             {
-                const CScriptID& hash = boost::get<const CScriptID>(address);
+                const CScriptID& hash = boost::get<const CScriptID&>(address);
                 CScript redeemScript;
                 if (pWallet->GetCScript(hash, redeemScript))
                     entry.push_back(Pair("redeemScript", HexStr(redeemScript.begin(), redeemScript.end())));
@@ -217,6 +217,7 @@ Value listunspent(CWallet* pWallet, const Array& params, bool fHelp)
         }
         entry.push_back(Pair("amount",ValueFromAmount(nValue)));
         entry.push_back(Pair("confirmations",out.nDepth));
+        entry.push_back(Pair("spendable", out.fSpendable));
         results.push_back(entry);
     }
 
@@ -470,6 +471,7 @@ Value signrawtransaction(CWallet* pWallet, const Array& params, bool fHelp)
 
             // if redeemScript given and not using the local wallet (private keys
             // given), add redeemScript to the tempKeystore so it can be signed:
+            Value v = find_value(prevOut, "redeemScript");
             if (fGivenKeys && scriptPubKey.IsPayToScriptHash())
             {
                 RPCTypeCheck(prevOut, map_list_of("txid", str_type)("vout", int_type)("scriptPubKey", str_type)("redeemScript",str_type));
@@ -528,7 +530,7 @@ Value signrawtransaction(CWallet* pWallet, const Array& params, bool fHelp)
         {
             txin.scriptSig = CombineSignatures(prevPubKey, mergedTx, i, txin.scriptSig, txv.vin[i].scriptSig);
         }
-        if (!VerifyScript(txin.scriptSig, prevPubKey, mergedTx, i, 0))
+        if (!VerifyScript(txin.scriptSig, prevPubKey, mergedTx, i, STRICT_FLAGS, 0))
             fComplete = false;
     }
 

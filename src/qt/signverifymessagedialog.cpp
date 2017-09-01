@@ -9,6 +9,7 @@
 #include "optionsmodel.h"
 #include "walletmodel.h"
 #include "wallet.h"
+#include "dialogwindowflags.h"
 
 #include <QClipboard>
 #include <QDebug>
@@ -17,7 +18,7 @@
 #include <vector>
 
 SignVerifyMessageDialog::SignVerifyMessageDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::SignVerifyMessageDialog),
     model(0)
 {

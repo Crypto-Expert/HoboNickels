@@ -257,8 +257,8 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 wss.fAnyUnordered = true;
 
             //// debug print
-            // printf("LoadWallet  %s\n", wtx.GetHash().ToString());
-            // printf(" %12d  %s  %s  %s\n",
+            // LogPrintf("LoadWallet  %s\n", wtx.GetHash().ToString());
+            // LogPrintf(" %12d  %s  %s  %s\n",
             //    wtx.vout[0].nValue,
             //    DateTimeStrFormat("%x %H:%M:%S", wtx.GetBlockTime()),
             //    wtx.hashBlock.ToString().substr(0,20),
@@ -280,6 +280,20 @@ ReadKeyValue(CWallet* pwallet, CDataStream& ssKey, CDataStream& ssValue,
                 if (acentry.nOrderPos == -1)
                     wss.fAnyUnordered = true;
             }
+        }
+        else if (strType == "watchs")
+        {
+           CScript script;
+           ssKey >> script;
+           char fYes;
+           ssValue >> fYes;
+           if (fYes == '1')
+              pwallet->LoadWatchOnly(script);
+
+           // Watch-only addresses have no birthday information for now,
+           // so set the wallet birthday to the beginning of time.
+           pwallet->nTimeFirstKey = 1;
+
         }
         else if (strType == "key" || strType == "wkey")
         {
@@ -666,9 +680,10 @@ DBErrors CWalletDB::ZapWalletTx(CWallet* pwallet)
 void ThreadFlushWalletDB(void* parg)
 {
     // Make this thread recognisable as the wallet flushing thread
-    RenameThread("bitcoin-wallet");
+    RenameThread("hobocoin-wallet");
 
     const string& strFile = ((const string*)parg)[0];
+    // Tranz need to ensure multi-wallets get flushed as well.
     static bool fOneThread;
     if (fOneThread)
         return;

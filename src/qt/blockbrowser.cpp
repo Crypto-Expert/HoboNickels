@@ -4,6 +4,7 @@
 #include "base58.h"
 #include "clientmodel.h"
 #include "txdb.h"
+#include "dialogwindowflags.h"
 
 double GetPoSKernelPS(const CBlockIndex* blockindex);
 double GetDifficulty(const CBlockIndex* blockindex);
@@ -227,7 +228,7 @@ double BlockBrowser::getTxFees(std::string txid)
 
 
 BlockBrowser::BlockBrowser(QWidget *parent) :
-    QDialog(parent, (Qt::WindowMinMaxButtonsHint|Qt::WindowCloseButtonHint)),
+    QDialog(parent, (DIALOGWINDOWHINTS|Qt::WindowMinMaxButtonsHint)),
     ui(new Ui::BlockBrowser)
 {
     ui->setupUi(this);

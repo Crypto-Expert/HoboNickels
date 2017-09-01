@@ -12,6 +12,7 @@
 #include "serialize.h"
 #include "uint256.h"
 #include "hash.h"
+#include "bignum.h"
 
 #include <openssl/ec.h> // for EC_KEY definition
 
@@ -154,6 +155,9 @@ public:
     bool Verify(uint256 hash, const std::vector<unsigned char>& vchSig);
 
     bool IsValid();
+
+    // Check whether an element of a signature (r or s) is valid.
+    static bool CheckSignatureElement(const unsigned char *vch, int len, bool half);
 };
 
 /** Check that required EC support is available at runtime */

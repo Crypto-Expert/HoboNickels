@@ -12,6 +12,7 @@
 #include "coincontrol.h"
 #include "coincontroldialog.h"
 #include "base58.h"
+#include "dialogwindowflags.h"
 
 #include <QMessageBox>
 #include <QTextDocument>
@@ -19,7 +20,7 @@
 #include <QClipboard>
 
 SendCoinsDialog::SendCoinsDialog(QWidget *parent) :
-    QDialog(parent),
+    QDialog(parent, DIALOGWINDOWHINTS),
     ui(new Ui::SendCoinsDialog),
     model(0)
 {
@@ -89,8 +90,8 @@ void SendCoinsDialog::setModel(WalletModel *model)
     }
     if(model && model->getOptionsModel())
     {
-        setBalance(model->getBalance(), model->getStake(), model->getUnconfirmedBalance(), model->getImmatureBalance());
-        connect(model, SIGNAL(balanceChanged(qint64, qint64, qint64, qint64)), this, SLOT(setBalance(qint64, qint64, qint64, qint64)));
+        setBalance(model->getBalance(), model->getBalanceWatchOnly(), model->getStake(), model->getUnconfirmedBalance(), model->getImmatureBalance());
+        connect(model, SIGNAL(balanceChanged(qint64, qint64, qint64, qint64, qint64)), this, SLOT(setBalance(qint64, qint64, qint64, qint64, qint64)));
         connect(model->getOptionsModel(), SIGNAL(displayUnitChanged(int)), this, SLOT(updateDisplayUnit()));
 
         // Coin Control
@@ -359,7 +360,7 @@ bool SendCoinsDialog::handleURI(const QString &uri)
     return false;
 }
 
-void SendCoinsDialog::setBalance(qint64 balance, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance)
+void SendCoinsDialog::setBalance(qint64 balance, qint64 watchOnly, qint64 stake, qint64 unconfirmedBalance, qint64 immatureBalance)
 {
     Q_UNUSED(stake);
     Q_UNUSED(unconfirmedBalance);

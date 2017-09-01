@@ -202,9 +202,6 @@ public:
     bool ReadCheckpointPubKey(std::string& strPubKey);
     bool WriteCheckpointPubKey(const std::string& strPubKey);
     bool LoadBlockIndex();
-private:
-    bool LoadBlockIndexGuts();
 };
-
 
 #endif // BITCOIN_DB_H
