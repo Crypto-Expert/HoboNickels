@@ -796,7 +796,7 @@ void CoinControlDialog::updateView()
             itemOutput->setText(COLUMN_AGE_INT64, strPad(QString::number(nCoinAge), 15, " "));
 
             // Potential Stake
-            qint64 nStakeAge = nAge - nStakeMinAge < 0 ? 0 : nCoinAge;
+            qint64 nStakeAge = nAge - SetStakeMinAge() < 0 ? 0 : nCoinAge;
             qint64 nPotentialStake = (((nYearlyPercent * 1.001) / (365 * COIN)) * nStakeAge * nValue) / COIN;
             itemOutput->setText(COLUMN_POTENTIALSTAKE, BitcoinUnits::formatAge(nDisplayUnit, nPotentialStake));
             itemOutput->setText(COLUMN_POTENTIALSTAKE_INT64, strPad(QString::number(nPotentialStake), 15, " "));

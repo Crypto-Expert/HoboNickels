@@ -94,7 +94,7 @@ double ClientModel::getPosKernalPS()
 
 int ClientModel::getStakeTargetSpacing()
 {
-    return nStakeTargetSpacing;
+    return SetTargetSpacing();
 }
 
 quint64 ClientModel::getTotalBytesRecv() const

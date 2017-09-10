@@ -1202,7 +1202,7 @@ void CWallet::AvailableCoinsForStaking(vector<COutput>& vCoins, unsigned int nSp
             const CWalletTx* pcoin = &(*it).second;
 
             // Filtering by tx timestamp instead of block timestamp may give false positives but never false negatives
-            if (pcoin->nTime + nStakeMinAge > nSpendTime)
+            if (pcoin->nTime + SetStakeMinAge() > nSpendTime)
                 continue;
 
             if (pcoin->GetBlocksToMaturity() > 0)
