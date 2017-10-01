@@ -91,7 +91,7 @@ public:
     };
 
     // Send coins to a list of recipients
-    SendCoinsReturn sendCoins(const QList<SendCoinsRecipient> &recipients, const CCoinControl *coinControl=NULL);
+     SendCoinsReturn sendCoins(const QList<SendCoinsRecipient> &recipients, int SplitBlock, const CCoinControl *coinControl=NULL);
 
     // Wallet encryption
     bool setWalletEncrypted(bool encrypted, const SecureString &passphrase);
@@ -117,6 +117,8 @@ public:
     quint64 getReserveBalance();
     // PoS Information about value and time
     void getStakeWeightFromValue(const int64_t& nTime, const int64_t& nValue, uint64_t& nWeight);
+    void setSplitBlock(bool fSplitBlock);
+    bool getSplitBlock();
     // setStakeForCharity Wallet Settings
     void setStakeForCharity(bool fStakeForCharity, int& nStakeForCharityPercent,
                             CBitcoinAddress& strStakeForCharityAddress,

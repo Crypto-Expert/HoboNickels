@@ -231,6 +231,12 @@ void CoinControlDialog::customSelectCoins()
             //Age
             double dAge = (GetTime() - out.tx->GetTxTime()) / (double)(1440 * 60);
 
+            //Tranz  temp code to fix min weight at 8.8 days. (This should be removed once MODIFIER is set correctly
+            if (dAge < 8.8) {
+                nTxWeight = 0;
+            }
+
+
             COutPoint outpt(txhash, out.i);
 
             //selecting the coins
@@ -567,7 +573,7 @@ void CoinControlDialog::updateLabels(WalletModel *model, QDialog* dialog)
         sPriorityLabel = CoinControlDialog::getPriorityLabel(dPriority);
         
         // Fee
-        qint64 nFee = nTransactionFee * (1 + (qint64)nBytes / 1000);
+        qint64 nFee = nTransactionFee;
         
         // Min Fee
         qint64 nMinFee = txDummy.GetMinFee(1, false, GMF_SEND, nBytes);
@@ -796,7 +802,7 @@ void CoinControlDialog::updateView()
             itemOutput->setText(COLUMN_AGE_INT64, strPad(QString::number(nCoinAge), 15, " "));
 
             // Potential Stake
-            qint64 nStakeAge = nAge - SetStakeMinAge() < 0 ? 0 : nCoinAge;
+            qint64 nStakeAge = nAge - GetStakeMinAge() < 0 ? 0 : nCoinAge;
             qint64 nPotentialStake = (((nYearlyPercent * 1.001) / (365 * COIN)) * nStakeAge * nValue) / COIN;
             itemOutput->setText(COLUMN_POTENTIALSTAKE, BitcoinUnits::formatAge(nDisplayUnit, nPotentialStake));
             itemOutput->setText(COLUMN_POTENTIALSTAKE_INT64, strPad(QString::number(nPotentialStake), 15, " "));

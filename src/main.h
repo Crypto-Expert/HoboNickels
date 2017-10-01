@@ -56,7 +56,7 @@ static const int64_t MAX_MINT_PROOF_OF_STAKE_FIX2 = 100 * CENT; // Correct just 
 /** Transactions smaller then this are ignored */
 static const int64_t MIN_TXOUT_AMOUNT = MIN_TX_FEE;
 /** Split/Combine Threshold Max */
-static const int64_t MAX_SPLIT_AMOUNT = 100 * COIN;
+static const int64_t MAX_SPLIT_AMOUNT = 2500 * COIN;
 static const int64_t MAX_COMBINE_AMOUNT = MAX_SPLIT_AMOUNT * 2;
 
 /** Hard Fork Change Times/Block */
@@ -150,7 +150,7 @@ extern bool fUseFastIndex;
 extern int nScriptCheckThreads;
 
 // Minimum disk space required - used in CheckDiskSpace()
-static const uint64_t nMinDiskSpace = 52428800;
+static const uint64_t nMinDiskSpace = 1073741824;
 
 
 class CReserveKey;
@@ -159,8 +159,8 @@ class CTxIndex;
 class CScriptCheck;
 struct CNodeStateStats;
 
-unsigned int SetTargetSpacing();
-unsigned int SetStakeMinAge();
+unsigned int GetTargetSpacing();
+unsigned int GetStakeMinAge();
 void RegisterWallet(CWallet* pwalletIn);
 void UnregisterWallet(CWallet* pwalletIn);
 void UnregisterAllWallets();

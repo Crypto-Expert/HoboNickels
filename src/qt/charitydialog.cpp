@@ -18,7 +18,7 @@ StakeForCharityDialog::StakeForCharityDialog(QWidget *parent) :
 
 #if (QT_VERSION >= 0x040700)
     /* Do not move this to the XML file, Qt before 4.7 will choke on it */
-    ui->charityPercentEdit->setPlaceholderText(tr("Enter % to Give (1-50)"));
+    ui->charityPercentEdit->setPlaceholderText(tr("Enter % to Give (1-100)"));
     ui->charityAddressEdit->setPlaceholderText(tr("Enter Charity Address"));
     ui->charityMinEdit->setPlaceholderText(tr("Enter Min Amount (optional)"));
     ui->charityMaxEdit->setPlaceholderText(tr("Enter Max Amount (optional)"));
@@ -117,10 +117,10 @@ void StakeForCharityDialog::on_enableButton_clicked()
     }
 
     int nCharityPercent = ui->charityPercentEdit->text().toInt(&fValidConversion, 10);
-    if (!fValidConversion || nCharityPercent > 50 || nCharityPercent <= 0)
+    if (!fValidConversion || nCharityPercent > 100 || nCharityPercent <= 0)
     {
         ui->message->setStyleSheet("QLabel { color: red; }");
-        ui->message->setText(tr("Please Enter 1 - 50 for percent."));
+        ui->message->setText(tr("Please Enter 1 - 100 for percent."));
         ui->charityPercentEdit->setFocus();
         return;
     }
