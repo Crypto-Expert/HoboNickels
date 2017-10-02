@@ -1277,7 +1277,7 @@ void BitcoinGUI::updateStakingIcon()
 
     if (!clientModel->getNumConnections())
         labelStakingIcon->setToolTip(tr("Not staking because wallet is offline"));
-    else if (clientModel->getNumConnections() < 3 )
+    else if (clientModel->getNumConnections()< (fTestNet ? 0 : 3) )
         labelStakingIcon->setToolTip(tr("Not staking because wallet is still acquiring nodes"));
     else if (clientModel->inInitialBlockDownload() ||
              clientModel->getNumBlocks() < clientModel->getNumBlocksOfPeers())
@@ -1296,7 +1296,7 @@ void BitcoinGUI::updateStakingIcon()
         else
         {
             quint64 nNetworkWeight = clientModel->getPosKernalPS();
-            int nEstimateTime = clientModel->getStakeTargetSpacing() * 10 * nNetworkWeight / nWeight;
+            int nEstimateTime = clientModel->getStakeTargetSpacing() * nNetworkWeight / nWeight;
             QString text = (GUIUtil::formatDurationStr(nEstimateTime));
 
             labelStakingIcon->setPixmap(QIcon(":/icons/staking_on").pixmap(STATUSBAR_ICONSIZE,STATUSBAR_ICONSIZE));

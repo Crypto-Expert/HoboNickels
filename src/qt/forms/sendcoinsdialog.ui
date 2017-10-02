@@ -450,6 +450,9 @@
              </item>
              <item>
               <layout class="QFormLayout" name="formLayoutCoinControl4">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
                <property name="horizontalSpacing">
                 <number>10</number>
                </property>
@@ -506,7 +509,7 @@
                   <string notr="true">font-weight:bold;</string>
                  </property>
                  <property name="text">
-                  <string>Change</string>
+                  <string>Change:</string>
                  </property>
                 </widget>
                </item>
@@ -540,7 +543,7 @@
          </widget>
         </item>
         <item>
-         <layout class="QHBoxLayout" name="horizontalLayoutCoinControl4" stretch="0,0,0">
+         <layout class="QHBoxLayout" name="horizontalLayoutCoinControl4" stretch="0,0,0,0,0,0,0">
           <property name="spacing">
            <number>12</number>
           </property>
@@ -553,6 +556,58 @@
           <property name="rightMargin">
            <number>5</number>
           </property>
+          <item>
+           <widget class="QCheckBox" name="splitBlockCheckBox">
+            <property name="text">
+             <string>SplitBlock</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="splitBlockLineEdit">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>100</width>
+              <height>16777215</height>
+             </size>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelBlockSizeText">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="font">
+             <font>
+              <weight>75</weight>
+              <bold>true</bold>
+             </font>
+            </property>
+            <property name="text">
+             <string>Block Size:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="labelBlockSize">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string>0.00 HBN</string>
+            </property>
+           </widget>
+          </item>
           <item>
            <widget class="QCheckBox" name="checkBoxCoinControlChange">
             <property name="text">
@@ -644,7 +699,7 @@
         <x>0</x>
         <y>0</y>
         <width>830</width>
-        <height>165</height>
+        <height>158</height>
        </rect>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout_2">

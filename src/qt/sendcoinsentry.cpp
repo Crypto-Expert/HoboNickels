@@ -47,12 +47,23 @@ void SendCoinsEntry::on_addressBookButton_clicked()
 {
     if(!model)
         return;
-    AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::SendingTab, this);
-    dlg.setModel(model->getAddressTableModel());
-    if(dlg.exec())
-    {
-        ui->payTo->setText(dlg.getReturnValue());
-        ui->payAmount->setFocus();
+
+    if (model->getSplitBlock()) {
+       AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::ReceivingTab, this);
+       dlg.setModel(model->getAddressTableModel());
+       if(dlg.exec())
+       {
+           ui->payTo->setText(dlg.getReturnValue());
+           ui->payAmount->setFocus();
+       }
+    } else {
+       AddressBookPage dlg(AddressBookPage::ForSending, AddressBookPage::SendingTab, this);
+       dlg.setModel(model->getAddressTableModel());
+       if(dlg.exec())
+       {
+          ui->payTo->setText(dlg.getReturnValue());
+          ui->payAmount->setFocus();
+       }
     }
 }
 
@@ -89,6 +100,9 @@ void SendCoinsEntry::clear()
     ui->addAsLabel->clear();
     ui->payAmount->clear();
     ui->payTo->setFocus();
+    if (model)
+       model->setSplitBlock(false);
+
     // update the display unit, to not use the default ("BTC")
     updateDisplayUnit();
 }

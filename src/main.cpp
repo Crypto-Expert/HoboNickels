@@ -38,13 +38,11 @@ static CBigNum bnProofOfWorkLimit(~uint256(0) >> 20);
 static CBigNum bnProofOfStakeLimit(~uint256(0) >> 24);
 static CBigNum bnProofOfStakeHardLimit(~uint256(0) >> 30);
 
-
 static CBigNum bnProofOfWorkLimitTestNet(~uint256(0) >> 16);
 static CBigNum bnProofOfStakeLimitTestNet(~uint256(0) >> 20);
 
-unsigned int nStakeMinAge = 60 * 60 * 24 * 10; // minimum age for coin age - 10 days
 unsigned int nStakeMaxAge = 60 * 60 * 24 * 30; // stake age of full weight - 30 days
-unsigned int nStakeTargetSpacing = 1 * 30; // 1-minute block spacing
+
 int64_t nChainStartTime = 1371910049;
 int nCoinbaseMaturity = 5;
 CBlockIndex* pindexGenesisBlock = NULL;
@@ -84,6 +82,23 @@ int64_t nSplitThreshold = GetProofOfWorkReward();
 int64_t nCombineThreshold = GetProofOfWorkReward() * 2;
 extern enum Checkpoints::CPMode CheckpointsMode;
 
+unsigned int GetTargetSpacing()
+{
+   unsigned int nStakeTargetSpacingSwitch = (fTestNet ? 1 * 60 : 1 * 30); // block spacing, 1 min tesnet, 30 seconds Main (OLD)
+   if ( nBestHeight + 1 > (fTestNet ? SPACING_TARGET_SWITCH_TESTNET : SPACING_TARGET_SWITCH))
+       nStakeTargetSpacingSwitch = 4.20 * 30; // 2 Minute 06 Second block spacing (NEW)
+
+   return nStakeTargetSpacingSwitch;
+}
+
+unsigned int GetStakeMinAge()
+{
+   unsigned int nStakeMinAgeSwitch = (fTestNet ? 2 * 60 * 60 : 60 * 60 * 24 * 10); // minimum age for coin age - 2hrs TestNet, 10 days Main (OLD)
+   if (nBestHeight + 1 > (fTestNet ? SPACING_TARGET_SWITCH_TESTNET : SPACING_TARGET_SWITCH))
+         nStakeMinAgeSwitch = 60 * 60 * 24 * 1; // minimum age for coin age - 1 day (NEW)
+
+   return nStakeMinAgeSwitch;
+}
 
 //////////////////////////////////////////////////////////////////////////////
 //
@@ -160,10 +175,9 @@ void SyncWithWallets(const CTransaction& tx, const CBlock* pblock, bool fUpdate,
     {
         LOCK(cs_setpwalletRegistered);
         BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
-            if (pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate) ) {
-               // Preloaded coins cache invalidation
-                pwallet->SetCoinsDataActual(false);
-            }
+           pwallet->AddToWalletIfInvolvingMe(tx, pblock, fUpdate);
+           // Preloaded coins cache invalidation
+           pwallet->SetCoinsDataActual(false);
         }
     }
 }
@@ -838,7 +852,7 @@ bool AcceptToMemoryPool(CTxMemPool& pool, CTransaction &tx,
 
         // Check against previous transactions
         // This is done last to help prevent CPU exhaustion denial-of-service attacks.
-        if (!tx.ConnectInputs(txdb, mapInputs, mapUnused, CDiskTxPos(1,1,1), pindexBest, false, false, true, SIG_SWITCH_TIME < tx.nTime ? STRICT_FLAGS : SOFT_FLAGS))
+        if (!tx.ConnectInputs(txdb, mapInputs, mapUnused, CDiskTxPos(1,1,1), pindexBest, false, false, true, VERSION_2_0_SWITCH_TIME < tx.nTime ? STRICT_FLAGS : SOFT_FLAGS))
         {
             return error("AcceptToMemoryPool : ConnectInputs failed %s", hash.ToString().substr(0,10));
         }
@@ -1094,7 +1108,9 @@ int64_t GetProofOfStakeReward(int64_t nCoinAge, unsigned int nBits, unsigned int
 {
     int64_t nSubsidy = 0;
 
-    if ( nTime > VERSION1_5_SWITCH_TIME )
+    if ( nTime > (fTestNet ? VERSION_2_0_SWITCH_TIME_TESTNET : VERSION_2_0_SWITCH_TIME) )
+       nSubsidy = GetProofOfStakeRewardV3(nCoinAge, nBits, nTime, bCoinYearOnly);
+    else if ( nTime > VERSION1_5_SWITCH_TIME )
         nSubsidy = GetProofOfStakeRewardV2(nCoinAge, nBits, nTime, bCoinYearOnly);
     else
         nSubsidy = GetProofOfStakeRewardV1(nCoinAge, nBits, nTime, bCoinYearOnly);
@@ -1242,8 +1258,59 @@ int64_t GetProofOfStakeRewardV2(int64_t nCoinAge, unsigned int nBits, unsigned i
     return nSubsidy;
 }
 
+int64_t GetProofOfStakeRewardV3(int64_t nCoinAge, unsigned int nBits, unsigned int nTime, bool bCoinYearOnly)
+{
+    CBigNum bnRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2; // Base stake mint rate, 100% year interest
+    int64_t nRewardCoinYearLimit = MAX_MINT_PROOF_OF_STAKE_FIX2;
+    CBigNum bnTarget;
+    bnTarget.SetCompact(nBits);
+    CBigNum bnTargetLimit = bnProofOfStakeLimit;
+    bnTargetLimit.SetCompact(bnTargetLimit.GetCompact());
+    int64_t nSubsidyLimit = 250 * COIN;
+
+    // HoboNickels: reward for coin-year is cut in half every 128x multiply of PoS difficulty
+    // A reasonably continuous curve is used to avoid shock to market
+    // (bnRewardCoinYearLimit / nRewardCoinYear) ** 5 == bnProofOfStakeLimit / bnTarget
+    //
+    // Human readable form:
+    //
+    // nRewardCoinYear = 1 / (posdiff ^ 1/5)
+
+    CBigNum bnLowerBound = 20 * CENT; // Lower interest bound is 20% per year
+    CBigNum bnUpperBound = bnRewardCoinYearLimit;
+    CBigNum bnMidPart, bnRewardPart;
+
+    while (bnLowerBound + CENT <= bnUpperBound)
+    {
+        CBigNum bnMidValue = (bnLowerBound + bnUpperBound) / 2;
+
+        bnMidPart = bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnMidValue * bnMidValue;
+        bnRewardPart = bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit * bnRewardCoinYearLimit;
+
+        LogPrint("creation", "GetProofOfStakeReward() : lower=%d upper=%d mid=%d\n", bnLowerBound.getuint64(), bnUpperBound.getuint64(), bnMidValue.getuint64());
+
+        if (bnMidPart * bnTargetLimit > bnRewardPart * bnTarget)
+            bnUpperBound = bnMidValue;
+        else
+            bnLowerBound = bnMidValue;
+    }
+
+    int64_t nRewardCoinYear = bnUpperBound.getuint64();
+    nRewardCoinYear = min((nRewardCoinYear / CENT) * CENT, nRewardCoinYearLimit);
+
+    if(bCoinYearOnly)
+        return nRewardCoinYear;
+
+    int64_t nSubsidy = (nCoinAge * 33 * nRewardCoinYear) / (365 * 33 + 8);
+
+    LogPrint("creation","GetProofOfStakeReward(): create=%s nCoinAge=%d nBits=%d, Amount Truncated %s\n", FormatMoney(nSubsidy), nCoinAge, nBits, nSubsidyLimit < nSubsidy ? FormatMoney(nSubsidy - nSubsidyLimit) : FormatMoney(0));
+
+    nSubsidy = min(nSubsidy, nSubsidyLimit);
+
+    return nSubsidy;
+}
+
 static const int64_t nTargetTimespan = 0.16 * 24 * 60 * 60;  // 4-hour
-static const int64_t nTargetSpacingWorkMax = 12 * nStakeTargetSpacing; // 2-hour
 
 // maximum nBits value could possible be required nTime after
 //
@@ -1300,6 +1367,7 @@ unsigned int GetNextTargetRequired(const CBlockIndex* pindexLast, bool fProofOfS
 unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
   CBigNum bnTargetLimit = !fProofOfStake ? bnProofOfWorkLimit : bnProofOfStakeLimit;
+  int64_t nTargetSpacingWorkMax = 12 * GetTargetSpacing(); // 2-hour
 
     if(fProofOfStake)
     {
@@ -1331,7 +1399,8 @@ unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofO
     // ppcoin: retarget with exponential moving toward target spacing
     CBigNum bnNew;
     bnNew.SetCompact(pindexPrev->nBits);
-    int64_t nTargetSpacing = fProofOfStake? nStakeTargetSpacing : min(nTargetSpacingWorkMax, (int64_t) nStakeTargetSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
+    unsigned int nTargetStakeSpacing = GetTargetSpacing();
+    int64_t nTargetSpacing = fProofOfStake ? nTargetStakeSpacing : min(nTargetSpacingWorkMax, (int64_t) nTargetStakeSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
     int64_t nInterval = nTargetTimespan / nTargetSpacing;
     bnNew *= ((nInterval - 1) * nTargetSpacing + nActualSpacing + nActualSpacing);
     bnNew /= ((nInterval + 1) * nTargetSpacing);
@@ -1345,6 +1414,7 @@ unsigned int GetNextTargetRequiredV1(const CBlockIndex* pindexLast, bool fProofO
 unsigned int GetNextTargetRequiredV2(const CBlockIndex* pindexLast, bool fProofOfStake)
 {
     CBigNum bnTargetLimit = !fProofOfStake ? bnProofOfWorkLimit : bnProofOfStakeLimit;
+    int64_t nTargetSpacingWorkMax = 12 * GetTargetSpacing(); // 2-hour
 
     if (pindexLast == NULL)
         return bnTargetLimit.GetCompact(); // genesis block
@@ -1356,8 +1426,9 @@ unsigned int GetNextTargetRequiredV2(const CBlockIndex* pindexLast, bool fProofO
     if (pindexPrevPrev->pprev == NULL)
         return bnTargetLimit.GetCompact(); // second block
 
+    unsigned int nTargetStakeSpacing = GetTargetSpacing();
     int64_t nActualSpacing = pindexPrev->GetBlockTime() - pindexPrevPrev->GetBlockTime();
-    int64_t nTargetSpacing = fProofOfStake? nStakeTargetSpacing : min(nTargetSpacingWorkMax, (int64_t) nStakeTargetSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
+    int64_t nTargetSpacing = fProofOfStake ? nTargetStakeSpacing : min(nTargetSpacingWorkMax, (int64_t) nTargetStakeSpacing * (1 + pindexLast->nHeight - pindexPrev->nHeight));
 
     if (nActualSpacing < 0)
         nActualSpacing = nTargetSpacing;
@@ -1673,8 +1744,9 @@ bool CTransaction::ConnectInputs(CTxDB& txdb, MapPrevTx inputs, map<uint256, CTx
             // Check for conflicts (double-spend)
             // This doesn't trigger the DoS code on purpose; if it did, it would make it easier
             // for an attacker to attempt to split the network.
-            if (!txindex.vSpent[prevout.n].IsNull())
-                return fMiner ? false : error("ConnectInputs() : %s prev tx already used at %s", GetHash().ToString().substr(0,10), txindex.vSpent[prevout.n].ToString());
+            if (!txindex.vSpent[prevout.n].IsNull()) {
+                return fMiner ? false : error("ConnectInputs() : %s prev tx already used at %s", GetHash().ToString(), txindex.vSpent[prevout.n].ToString());
+            }
 
             // Skip ECDSA signature verification when connecting blocks (fBlock=true)
             // before the last blockchain checkpoint. This is safe because block merkle hashes are
@@ -2186,7 +2258,7 @@ bool CTransaction::GetCoinAge(CTxDB& txdb, uint64_t& nCoinAge) const
         CBlock block;
         if (!block.ReadFromDisk(txindex.pos.nFile, txindex.pos.nBlockPos, false))
             return false; // unable to read block of previous transaction
-        if (block.GetBlockTime() + nStakeMinAge > nTime)
+        if (block.GetBlockTime() + GetStakeMinAge() > nTime)
             continue; // only count coins meeting min age requirement
 
         int64_t nValueIn = txPrev.vout[txin.prevout.n].nValue;
@@ -2493,15 +2565,6 @@ bool CBlock::AcceptBlock()
         BOOST_FOREACH(CNode* pnode, vNodes)
             if (nBestHeight > (pnode->nStartingHeight != -1 ? pnode->nStartingHeight - 2000 : nBlockEstimate))
                 pnode->PushInventory(CInv(MSG_BLOCK, hash));
-    }
-
-    if (!IsInitialBlockDownload() && (pindexBest->nHeight % 10 ) == 0 )
-    {
-       AssertLockHeld(cs_setpwalletRegistered);
-       BOOST_FOREACH(CWallet* pwallet, setpwalletRegistered) {
-       // Preloaded coins cache invalidation
-       pwallet->SetCoinsDataActual(false);
-       }
     }
 
     // ppcoin: check pending sync-checkpoint
@@ -2817,7 +2880,7 @@ bool CheckDiskSpace(uint64_t nAdditionalBytes)
 {
     uint64_t nFreeBytesAvailable = filesystem::space(GetDataDir()).available;
 
-    // Check for nMinDiskSpace bytes (currently 50MB)
+    // Check for nMinDiskSpace bytes (currently 1GB)
     if (nFreeBytesAvailable < nMinDiskSpace + nAdditionalBytes)
     {
         fShutdown = true;
@@ -2891,10 +2954,7 @@ bool LoadBlockIndex(bool fAllowNew)
 
         bnProofOfStakeLimit = bnProofOfStakeLimitTestNet; // 0x00000fff PoS base target is fixed in testnet
         bnProofOfWorkLimit = bnProofOfWorkLimitTestNet; // 0x0000ffff PoW base target is fixed in testnet
-        nStakeMinAge = 2 * 60 * 60; // test net min age is 2 hours
-        nModifierInterval = 20 * 60; // test modifier interval is 20 minutes
         nCoinbaseMaturity = 10; // test maturity is 10 blocks
-        nStakeTargetSpacing = 1 * 60; // test block spacing is 3 minutes
     }
 
     //
@@ -3612,7 +3672,7 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
                 LogPrint("net", "  getblocks stopping at %d %s\n", pindex->nHeight, pindex->GetBlockHash().ToString().substr(0,20));
                 // ppcoin: tell downloading node about the latest block if it's
                 // without risk being rejected due to stake connection check
-                if (hashStop != hashBestChain && pindex->GetBlockTime() + nStakeMinAge > pindexBest->GetBlockTime())
+                if (hashStop != hashBestChain && pindex->GetBlockTime() + GetStakeMinAge() > pindexBest->GetBlockTime())
                     pfrom->PushInventory(CInv(MSG_BLOCK, hashBestChain));
                 break;
             }

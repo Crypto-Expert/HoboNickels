@@ -316,8 +316,8 @@ std::string HelpMessage()
         strUsage += "  -keypool=<n>           " + _("Set key pool size to <n> (default: 100)") + "\n";
         strUsage += "  -rescan                " + _("Rescan the block chain for missing wallet transactions") + "\n";
         strUsage += "  -zapwallettxes         " + _("Clear list of wallet transactions (diagnostic tool; implies -rescan)") + "\n";
-        strUsage += "  -splitthreshold=<n>    " + _("Set stake split threshold within range (default 5),(max 100))") + "\n";
-        strUsage += "  -combinethreshold=<n>  " + _("Set stake combine threshold within range (default 10),(max 200))") + "\n";
+        strUsage += "  -splitthreshold=<n>    " + _("Set stake split threshold within range (default 25),(max 2500))") + "\n";
+        strUsage += "  -combinethreshold=<n>  " + _("Set stake combine threshold within range (default 50),(max 5000))") + "\n";
         strUsage += "  -salvagewallet         " + _("Attempt to recover private keys from a corrupt wallet.dat") + "\n";
         strUsage += "  -checkblocks=<n>       " + _("How many blocks to check at startup (default: 2500, 0 = all)") + "\n";
         strUsage += "  -checklevel=<n>        " + _("How thorough the block verification is (0-6, default: 1)") + "\n";

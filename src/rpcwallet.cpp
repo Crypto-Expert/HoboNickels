@@ -199,7 +199,7 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
         throw runtime_error(
             "stakeforcharity <HoboNickelsaddress> <percent> [Change Address] [min amount] [max amount]\n"
             "Gives a percentage of a found stake to a different address, after stake matures\n"
-            "Percent is a whole number 1 to 50. Set to 0 to turn off.\n"
+            "Percent is a whole number 1 to 100. Set to 0 to turn off.\n"
             "Change Address, Min and Max Amount are optional\n"
             "Set percentage to zero to turn off"
             + HelpRequiringPassphrase(pWallet));
@@ -274,9 +274,8 @@ Value stakeforcharity(CWallet *pWallet, const Array &params, bool fHelp)
             return Value::null;
         }
 
-       // For now max percentage is 50.
-       if (nPer > 50 )
-           nPer = 50;
+       if (nPer > 100 )
+           nPer = 100;
 
         // Future: These will be an array of addr/per/wallet
         if(fFileBacked)
@@ -885,7 +884,7 @@ Value sendmany(CWallet* pWallet, const Array& params, bool fHelp)
     // Send
     CReserveKey keyChange(pWallet);
     int64_t nFeeRequired = 0;
-    bool fCreated = pWallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired);
+    bool fCreated = pWallet->CreateTransaction(vecSend, wtx, keyChange, nFeeRequired, 1);
     if (!fCreated)
     {
         int64_t nBalance = pWallet->GetBalance(), nWatchOnly = pWallet->GetWatchOnlyBalance();
@@ -1856,8 +1855,8 @@ Value splitthreshold(CWallet* pWallet, const Array& params, bool fHelp)
             throw runtime_error("amount cannot be negative.\n");
 
         int64_t nMaxAmount = MAX_SPLIT_AMOUNT;
-        if ((((pWalletManager->GetTotalBalance() / 500) / CENT ) * CENT) > MAX_SPLIT_AMOUNT)
-            nMaxAmount = (((pWalletManager->GetTotalBalance() / 500) / CENT ) * CENT);
+        if ((((pWalletManager->GetTotalBalance() / 200) / CENT ) * CENT) > MAX_SPLIT_AMOUNT)
+            nMaxAmount = (((pWalletManager->GetTotalBalance() / 200) / CENT ) * CENT);
 
         if (nAmount > nMaxAmount)
             nAmount = nMaxAmount;
@@ -1887,8 +1886,8 @@ Value combinethreshold(CWallet* pWallet, const Array& params, bool fHelp)
             throw runtime_error("amount cannot be negative.\n");
 
         int64_t nMaxAmount = MAX_COMBINE_AMOUNT;
-        if ((((pWalletManager->GetTotalBalance() / 250) / CENT ) * CENT) > MAX_COMBINE_AMOUNT)
-            nMaxAmount = (((pWalletManager->GetTotalBalance() / 250) / CENT ) * CENT);
+        if ((((pWalletManager->GetTotalBalance() / 100) / CENT ) * CENT) > MAX_COMBINE_AMOUNT)
+            nMaxAmount = (((pWalletManager->GetTotalBalance() / 100) / CENT ) * CENT);
 
         if (nAmount > nMaxAmount)
             nAmount = nMaxAmount;

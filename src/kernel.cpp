@@ -9,9 +9,16 @@
 
 using namespace std;
 
-// Modifier interval: time to elapse before new modifier is computed
-// Set to 6-hour for production network and 20-minute for test network
-unsigned int nModifierInterval = MODIFIER_INTERVAL;
+unsigned int GetModiferInterval()
+{
+   // MODIFIER_INTERVAL: time to elapse before new modifier is computed
+   unsigned int nStakeModiferInterval = (fTestNet ? 20 * 60 : 6 * 60 * 60); // Modifier interval - 20min TestNet, 6 hours Mainnet(OLD)
+
+   //if (nBestHeight + 1 > (fTestNet ? MODIFER_TARGET_SWITCH_TESTNET : MODIFER_TARGET_SWITCH))
+   //      nStakeModiferInterval = 10 * 60; // set to 10 mins for both (NEW)
+
+   return nStakeModiferInterval;
+}
 
 // Hard checkpoints of stake modifiers to ensure they are deterministic
 static std::map<int, unsigned int> mapStakeModifierCheckpoints =
@@ -41,9 +48,9 @@ int64_t GetWeight(int64_t nIntervalBeginning, int64_t nIntervalEnd)
     // Maximum TimeWeight is 30 days.
 
     if ( nIntervalEnd > VERSION1_5_SWITCH_TIME )
-        return min(nIntervalEnd - nIntervalBeginning - nStakeMinAge, (int64_t)nStakeMaxAge);
+        return min(nIntervalEnd - nIntervalBeginning - GetStakeMinAge(), (int64_t)nStakeMaxAge);
     else
-        return min(nIntervalEnd - nIntervalBeginning, (int64_t)nStakeMaxAge) - nStakeMinAge;
+        return min(nIntervalEnd - nIntervalBeginning, (int64_t)nStakeMaxAge) - GetStakeMinAge();
 }
 
 // Get the last stake modifier and its generation time from a given block
@@ -64,7 +71,7 @@ static bool GetLastStakeModifier(const CBlockIndex* pindex, uint64_t& nStakeModi
 static int64_t GetStakeModifierSelectionIntervalSection(int nSection)
 {
     assert (nSection >= 0 && nSection < 64);
-    return (nModifierInterval * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1))));
+    return (GetModiferInterval() * 63 / (63 + ((63 - nSection) * (MODIFIER_INTERVAL_RATIO - 1))));
 }
 
 // Get stake modifier selection interval (in seconds)
@@ -137,6 +144,7 @@ static bool SelectBlockFromCandidates(vector<pair<int64_t, uint256> >& vSortedBy
 bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeModifier, bool& fGeneratedStakeModifier)
 {
     nStakeModifier = 0;
+    unsigned int nStakeModifierInterval = GetModiferInterval();
     fGeneratedStakeModifier = false;
     if (!pindexPrev)
     {
@@ -151,14 +159,14 @@ bool ComputeNextStakeModifier(const CBlockIndex* pindexPrev, uint64_t& nStakeMod
 
     LogPrint("stakemodifier", "ComputeNextStakeModifier: prev modifier=0x%016x time=%s\n", nStakeModifier, DateTimeStrFormat(nModifierTime));
 
-    if (nModifierTime / nModifierInterval >= pindexPrev->GetBlockTime() / nModifierInterval)
+    if (nModifierTime / nStakeModifierInterval >= pindexPrev->GetBlockTime() / nStakeModifierInterval)
         return true;
 
     // Sort candidate blocks by timestamp
     vector<pair<int64_t, uint256> > vSortedByTimestamp;
-    vSortedByTimestamp.reserve(64 * nModifierInterval / nStakeTargetSpacing);
+    vSortedByTimestamp.reserve(64 * nStakeModifierInterval / GetTargetSpacing());
     int64_t nSelectionInterval = GetStakeModifierSelectionInterval();
-    int64_t nSelectionIntervalStart = (pindexPrev->GetBlockTime() / nModifierInterval) * nModifierInterval - nSelectionInterval;
+    int64_t nSelectionIntervalStart = (pindexPrev->GetBlockTime() / nStakeModifierInterval) * nStakeModifierInterval - nSelectionInterval;
     const CBlockIndex* pindex = pindexPrev;
     while (pindex && pindex->GetBlockTime() >= nSelectionIntervalStart)
     {
@@ -234,7 +242,7 @@ static bool GetKernelStakeModifier(uint256 hashBlockFrom, uint64_t& nStakeModifi
     {
         if (!pindex->pnext)
         {   // reached best block; may happen if node is behind on block chain
-            if (fPrintProofOfStake || (pindex->GetBlockTime() + nStakeMinAge - nStakeModifierSelectionInterval > GetAdjustedTime()))
+            if (fPrintProofOfStake || (pindex->GetBlockTime() + GetStakeMinAge() - nStakeModifierSelectionInterval > GetAdjustedTime()))
                 return error("GetKernelStakeModifier() : reached best block %s at height %d from block %s",
                     pindex->GetBlockHash().ToString(), pindex->nHeight, hashBlockFrom.ToString());
             else
@@ -287,7 +295,7 @@ bool CheckStakeKernelHash(unsigned int nBits, const CBlock& blockFrom, unsigned 
         return error("CheckStakeKernelHash() : nTime violation");
 
     unsigned int nTimeBlockFrom = blockFrom.GetBlockTime();
-    if (nTimeBlockFrom + nStakeMinAge > nTimeTx) // Min age requirement
+    if (nTimeBlockFrom + GetStakeMinAge() > nTimeTx) // Min age requirement
         return error("CheckStakeKernelHash() : min age violation");
 
     CBigNum bnTargetPerCoinDay;
@@ -365,7 +373,7 @@ bool ScanForStakeKernelHash(MetaMap &mapMeta, KernelSearchSettings &settings, Co
         static int nMaxStakeSearchInterval = 60;
 
         // only count coins meeting min age requirement
-        if (nStakeMinAge + block.nTime > settings.nTime - nMaxStakeSearchInterval)
+        if (GetStakeMinAge() + block.nTime > settings.nTime - nMaxStakeSearchInterval)
             continue;
 
         // Transaction offset inside block

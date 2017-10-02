@@ -129,6 +129,7 @@ public:
     CBitcoinAddress strStakeForCharityChangeAddress;
     std::string strWalletFile;
     int64_t nReserveBalance;
+    bool fSplitBlock;
 
 
 
@@ -172,6 +173,7 @@ public:
         strStakeForCharityAddress = "";
         strStakeForCharityChangeAddress = "";
         nReserveBalance = 0;
+        fSplitBlock = false;
     }
 
     ~CWallet() { CWalletDB::UnloadWallet(this); }
@@ -263,7 +265,7 @@ public:
     int64_t GetNewMint() const;
     int64_t GetWatchOnlyNewMint() const;
     bool StakeForCharity();
-    bool CreateTransaction(const std::vector<std::pair<CScript, int64_t> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64_t& nFeeRet, bool fAllowS4C=false, const CCoinControl *coinControl=NULL);
+    bool CreateTransaction(const std::vector<std::pair<CScript, int64_t> >& vecSend, CWalletTx& wtxNew, CReserveKey& reservekey, int64_t& nFeeRet, int nSplitBlock, bool fAllowS4C=false, const CCoinControl *coinControl=NULL);
     bool CreateTransaction(CScript scriptPubKey, int64_t nValue, CWalletTx& wtxNew, CReserveKey& reservekey, int64_t& nFeeRet, bool fAllowS4C=false, const CCoinControl *coinControl=NULL);
     bool CommitTransaction(CWalletTx& wtxNew, CReserveKey& reservekey);
     bool GetStakeWeight(const CKeyStore& keystore, uint64_t& nMinWeight, uint64_t& nMaxWeight, uint64_t& nWeight);

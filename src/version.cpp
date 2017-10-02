@@ -11,7 +11,7 @@
 const std::string CLIENT_NAME("HoboNickels");
 
 // Client version number
-#define CLIENT_VERSION_SUFFIX   "-V1.5"
+#define CLIENT_VERSION_SUFFIX   "-V2.0"
 
 
 // The following part of the code determines the CLIENT_BUILD variable.
@@ -37,9 +37,9 @@ const std::string CLIENT_NAME("HoboNickels");
 #define GIT_ARCHIVE 1
 #ifdef GIT_ARCHIVE 
 
-#    define GIT_COMMIT_ID "87b0f55"
+#    define GIT_COMMIT_ID ""
 
-#    define GIT_COMMIT_DATE "Wed Aug 09 22:28:00 2017"
+#    define GIT_COMMIT_DATE "Sat Oct 01 15:12:00 2017"
 #endif
 
 #define BUILD_DESC_FROM_COMMIT(maj,min,rev,build,commit) \

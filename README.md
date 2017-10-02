@@ -1,11 +1,13 @@
 HoboNickels Crypto Tokens
 
-* ~2% proof of stake every 10 days.
-  * 100% yearly degrading over difficulty
-  * 250 Max PoS Reward
+* Staking:
+  * 100% Max Yearly Stake Reward
+  * 20% Min Stake Reward
+  * 250 Max Reward Cap
+  * 1 day min weight, 30 days max weight.
   
 * Based on NVC/BitGems/Bottlecaps
-* Proof of Work/Proof of Stake Hybrid
+* Proof of Work/Proof of Stake Hybrid. 
 * Scrypt
 * Linear Difficulty Retarget
 * 25 Confirms
